@@ -4,7 +4,6 @@ import { observer } from "mobx-react";
 import * as d3 from 'd3';
 interface Props {
     generations: string[];
-    expectedOutput?: string;
 }
 
 class SingleExampleHighlights extends React.Component<Props> {
@@ -12,7 +11,6 @@ class SingleExampleHighlights extends React.Component<Props> {
 
     render() {
         let generations = this.props.generations;
-        const expectedOutput = this.props.expectedOutput;
         
         if (!generations) {
             return;
@@ -21,10 +19,6 @@ class SingleExampleHighlights extends React.Component<Props> {
         // Clone generations array for processing
         let displayGenerations = [...generations];
         
-        // Add the expected output to the list if it exists and is not empty
-        if (expectedOutput && expectedOutput.trim() !== '') {
-            displayGenerations.push(expectedOutput);
-        }
         
         // Get common substrings for highlighting
         const [stems, allSubstrings] = this.getAllSubstrings(displayGenerations);
@@ -33,7 +27,6 @@ class SingleExampleHighlights extends React.Component<Props> {
         const sorted = [...displayGenerations].sort();
         return <div className="outputs">
             {sorted.map(generation => {
-                const isExpectedOutput = generation === expectedOutput;
                 
                 // Apply highlights
                 const layeredHighlights = allSubstrings.map(substring => {
@@ -49,7 +42,7 @@ class SingleExampleHighlights extends React.Component<Props> {
                     className='line-holder'
                     key={generation}>
                     {layeredHighlights}
-                    <div style={isExpectedOutput ? { fontWeight: 'bold' } : undefined}> 
+                    <div> 
                         {generation}
                     </div>
                 </div>);

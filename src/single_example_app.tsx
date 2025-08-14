@@ -13,18 +13,13 @@ class SingleExampleApp extends React.Component {
         selectedExample: DEFAULT_TEXT, 
         temperature: state.temp, 
         numGenerations: state.numGenerations,
-        expectedOutput: "",
-        draftExpectedOutput: ""
     };
 
     handleDropdownChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         this.setState({ 
             selectedExample: event.target.value,
-            draftExpectedOutput: "",
-            expectedOutput: ""
         });
         state.setSelectedExample(event.target.value);
-        state.setExpectedOutput("");
     }
 
     handleSliderChange = (event: any, param: string) => {
@@ -33,15 +28,6 @@ class SingleExampleApp extends React.Component {
 
     handleInputChange = (event: any) => {
         this.setState({ selectedExample: event.target.value });
-    }
-
-    handleExpectedOutputChange = (event: any) => {
-        this.setState({ draftExpectedOutput: event.target.value });
-    }
-
-    handleExpectedOutputSubmit = () => {
-        this.setState({ expectedOutput: this.state.draftExpectedOutput });
-        state.setExpectedOutput(this.state.draftExpectedOutput);
     }
 
     handleSubmit = () => {
@@ -107,28 +93,6 @@ class SingleExampleApp extends React.Component {
                                     onChange={(e) => this.handleSliderChange(e, 'numGenerations')}
                                     onMouseUp={() => this.handleSubmit()}
                                 />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="option-row">
-                        <div className='input-header'>(Optional) Comparison output </div>
-                        <div className="input-box">
-                            <div className="input-with-hint">
-                                <input
-                                    type="text"
-                                    className="input-field"
-                                    placeholder="Enter to compare against LLM outputs"
-                                    value={this.state.draftExpectedOutput}
-                                    onChange={this.handleExpectedOutputChange}
-                                    onKeyPress={(e) => {
-                                        if (e.key === 'Enter') {
-                                            this.handleExpectedOutputSubmit();
-                                            this.handleSubmit();
-                                        }
-                                    }}
-                                />
-                                <span className="enter-hint">⏎ Enter</span>
                             </div>
                         </div>
                     </div>

@@ -1,4 +1,10 @@
-# LLM expectations vs outputs
+# LLM consistency visualzation
+
+When an LLM returns a response, we’re actually sampling from a probability distribution over many possible outputs. But we usually only see one of those samples—the response that gets returned.
+
+If we’re just using the model to get an answer or write some text, that’s fine. But if we want to understand how the model behaves—or build systems that depend on it—we need more than just one response. **We need to understand the whole distribution of possible outputs.**
+
+However, it's hard to grasp the shape of a distribution by reading dozens or hundreds of individual outputs. So how can we explore this space more effectively? Can graph lattice visualizations help show patterns beyond a single generation?
 
 ## Development
 
@@ -10,7 +16,7 @@ Download node/npm [here](https://nodejs.org/en/download/) if you don't already h
 Open a terminal, and check that it worked with `npm -v`. It should say a version number (not `command not found`).
 
 ### Run the app in development mode
-`cd` into the llm-outputs-vs-expectations github and run `npm start`. 
+`cd` into the llm-consistency-vis github and run `npm start`. 
 
 Open [http://localhost:3000](http://localhost:3000). When you edit the code, it should update.
 
@@ -18,13 +24,7 @@ Open [http://localhost:3000](http://localhost:3000). When you edit the code, it 
 When it's time to push your changes and deploy, run:
 
 ```
-npm run build
-git add *
-git commit -m "commit message"
-git pull
-git push
+npm run build_and_deploy
 ```
 
-Gitlab will automatically deploy whatever is in the `build/` directory to our [gitlab page](https://llm-outputs-vs-expectations-19d30f.pages.cs.washington.edu/). 
-
-To build the app so it gets deployed properly on gitlab pages, run `npm run build`, and then your updates should show up on the [gitlab page](https://llm-outputs-vs-expectations-19d30f.pages.cs.washington.edu/) a few minutes after you `git push`.
+which will deploy the app [here](https://emilyreif.com/llm-consistency-vis/) (might take a couple of minutes)

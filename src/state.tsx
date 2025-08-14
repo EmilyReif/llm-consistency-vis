@@ -5,16 +5,14 @@ import { OpenAI } from "openai";
 
 const DEFAULT_NUM_GENERATIONS = 10;
 const DEFAULT_TEMP = 0.7;
-// TODO: this is unsafe!! Eventually remove.
-const OPENAI_API_KEY = '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';
-
+// For some demo, use hardcoded key
+const OPENAI_API_KEY = null;
 class State {
     loading = false;
     selectedExample: string = '';
     temp: number = DEFAULT_TEMP;
     numGenerations: number = DEFAULT_NUM_GENERATIONS;
     generationsCache: { [example: string]: { [temp: number]: string[] } } = {};
-    expectedOutput: string = '';
 
     constructor() {
         makeAutoObservable(this);
@@ -39,9 +37,6 @@ class State {
         this.numGenerations = value;
     });
 
-    setExpectedOutput = ((value: string) => {
-        this.expectedOutput = value;
-    });
 
     async fetchFromOpenAI(n: number): Promise<string[]> {
         let openai_api_key = utils.parseUrlParam('openai_api_key') || OPENAI_API_KEY;
@@ -55,9 +50,8 @@ class State {
             console.warn('No API key provided. Skipping OpenAI fetch.');
             return [];
         }
-
         const openaiClient = new OpenAI({
-            apiKey: openai_api_key,
+            apiKey: openai_api_key.trim(),
             dangerouslyAllowBrowser: true,
         });
 

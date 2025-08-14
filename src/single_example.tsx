@@ -100,7 +100,6 @@ class SingleExample extends React.Component {
     renderOutputsGraph() {
         return <SingleExampleWordGraph 
             generations={this.state.generations}
-            expectedOutput={state.expectedOutput}
         ></SingleExampleWordGraph>;
     }
 
@@ -118,7 +117,6 @@ renderOutputsBasic() {
     renderOutputsHighlights() {
         return <SingleExampleHighlights 
             generations={this.state.generations}
-            expectedOutput={state.expectedOutput}
         ></SingleExampleHighlights>;
     }
   componentDidMount() {

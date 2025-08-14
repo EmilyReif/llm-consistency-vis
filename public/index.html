@@ -75,12 +75,19 @@
     <h1>Visualizing LLM outputs</h1>
     <p class="authors"> Emily Reif, Deniz Nazarova, Jared Hwang, Claire Yang </p>
     <p>
-      This visualization explores diversity and consistency in Large Language Model (LLM) outputs by showing the distribution of responses to help users understand whether a single response represents pattern or an outlier.
+      When an LLM returns a response, we’re actually sampling from a probability distribution over many possible
+      outputs. But we usually only see one of those samples—the response that gets returned.
     </p>
     <p>
-      We aim to help users optimize prompt engineering™️, evaluate whether an LLM is safe and reliable for their specific use cases through revealing systematic patterns in how models respond to different types of queries.
+      If we’re just using the model to get an answer or write some text, that’s fine. But if we want to understand how
+      the model behaves—or build systems that depend on it—we need more than just one response. <b>We need to understand
+      the whole distribution of possible outputs.</b>
     </p>
-    this is a test
+    <!-- <p>
+      However, it's hard to grasp the shape of a distribution by reading dozens or hundreds of individual outputs. So
+      how can we explore this space more effectively? Can graph lattice visualizations help show patterns beyond a
+      single generation?
+    </p> -->
   </header>
 
   <noscript>You need to enable JavaScript to run this app.</noscript>

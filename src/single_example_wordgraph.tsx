@@ -7,7 +7,6 @@ import { ellipseForce } from "./force_collide_ellipse";
 
 interface Props {
     generations: string[];
-    expectedOutput?: string; // Optional since it may not always be provided
 }
 
 const NUM_WORDS_TO_WRAP = 4;
@@ -68,10 +67,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
     async componentDidUpdate() {
         const generations = this.props.generations;
-        const expectedOutput = this.props.expectedOutput;
-        
-        // Special color for expected output
-        const expectedOutputColor = "#781eba"; // Magenta or any color that stands out
         
         const edgeColors = d3.scaleOrdinal(d3.schemeTableau10.slice(0, 9)).domain(generations);
         
@@ -80,9 +75,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
         
         // Create a combined array with both generations and expected output (if it exists)
         const allTextToProcess = [...generations];
-        if (expectedOutput && expectedOutput.trim() !== '') {
-            allTextToProcess.push(expectedOutput);
-        }
         
         // Generate graph data from all text
         const { nodesData, linksData } = utils.createGraphDataFromGenerations(allTextToProcess);
@@ -196,7 +188,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
             links.attr("d", (d: any) => this.renderPath(d))
                 .attr("stroke", (d: any) => {
-                    if (expectedOutput && d.sentence === expectedOutput) return expectedOutputColor;
                     return this.linkIsInSents(d) ? edgeColors(d.sentence) : defaultColor;
                 })
                 .attr("stroke-width", (d: any) => {
@@ -211,7 +202,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
             nodes
                 .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
                 .attr('fill', (d: NodeDatum) => {
-                    if (expectedOutput && d.origSentences.has(expectedOutput)) return expectedOutputColor;
                     return this.nodeIsInSents(d) ? selectedColor : defaultColor;
                 })
                 .style('opacity', (d: NodeDatum) => {
@@ -219,7 +209,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
                     if (!activeNode) {
                         return 1;
                     }
-                    if (expectedOutput && d.origSentences.has(expectedOutput)) return 1;
                     return this.nodeIsInSents(d) ? 1 : 0.2;
                 })
                 .classed('blur', (d: NodeDatum) => this.selectedNode ? !this.nodeIsInSents(d) : false)
