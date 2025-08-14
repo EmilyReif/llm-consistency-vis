@@ -1,0 +1,13 @@
+.wordgraph-holder {
+    width: 180vw;
+    background-color: rgba(0, 0, 0, .05);
+    padding: 10px;
+}
+
+text {
+    cursor: default;
+}
+
+.blur {
+    filter: blur(2px);
+}

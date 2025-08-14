@@ -1,0 +1,102 @@
+import { makeAutoObservable, action } from "mobx";
+import { examples } from "./cached_examples";
+import * as utils from "./utils";
+import { OpenAI } from "openai";
+
+const DEFAULT_NUM_GENERATIONS = 10;
+const DEFAULT_TEMP = 0.7;
+// TODO: this is unsafe!! Eventually remove.
+const OPENAI_API_KEY = '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';
+
+class State {
+    loading = false;
+    selectedExample: string = '';
+    temp: number = DEFAULT_TEMP;
+    numGenerations: number = DEFAULT_NUM_GENERATIONS;
+    generationsCache: { [example: string]: { [temp: number]: string[] } } = {};
+    expectedOutput: string = '';
+
+    constructor() {
+        makeAutoObservable(this);
+
+        // Initialize the cache with the examples.
+        const temp = 0.7;
+        for (const [example, outputs] of Object.entries(examples)) {
+            this.generationsCache[example] ??= {};
+            this.generationsCache[example][temp] = outputs;
+        }
+    }
+
+    setSelectedExample = ((value: string) => {
+        this.selectedExample = value;
+    });
+
+    setTemp = ((value: number) => {
+        this.temp = value;
+    });
+
+    setNumGenerations = ((value: number) => {
+        this.numGenerations = value;
+    });
+
+    setExpectedOutput = ((value: string) => {
+        this.expectedOutput = value;
+    });
+
+    async fetchFromOpenAI(n: number): Promise<string[]> {
+        let openai_api_key = utils.parseUrlParam('openai_api_key') || OPENAI_API_KEY;
+
+        if (!openai_api_key) {
+            openai_api_key = prompt('Please enter your OpenAI API key:') || '';
+            utils.setUrlParam('openai_api_key', openai_api_key);
+        }
+
+        if (!openai_api_key) {
+            console.warn('No API key provided. Skipping OpenAI fetch.');
+            return [];
+        }
+
+        const openaiClient = new OpenAI({
+            apiKey: openai_api_key,
+            dangerouslyAllowBrowser: true,
+        });
+
+        const response = await openaiClient.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+                { role: 'system', content: 'You are a helpful assistant. Answer in at most one short sentence.' },
+                { role: 'user', content: this.selectedExample },
+            ],
+            temperature: this.temp,
+            n: n,
+        });
+
+        return response.choices.map((choice) => choice.message.content || '');
+    }
+
+    async fetchGenerations(): Promise<string[]> {
+        const input = this.selectedExample;
+        const numGenerations = this.numGenerations;
+        if (!input) return [];
+
+        this.generationsCache[input] ??= {};
+        this.generationsCache[input][this.temp] ??= [];
+
+        let cached = this.generationsCache[input][this.temp];
+        const alreadyHave = cached.length;
+
+        if (alreadyHave >= numGenerations) {
+            return cached.slice(0, numGenerations);
+        }
+
+        const toGenerate = numGenerations - alreadyHave;
+        this.loading = true;
+        const newGenerations = await this.fetchFromOpenAI(toGenerate);
+        this.generationsCache[input][this.temp].push(...newGenerations);
+        this.loading = false;
+
+        return this.generationsCache[input][this.temp].slice(0, numGenerations);
+    }
+}
+
+export const state = new State();

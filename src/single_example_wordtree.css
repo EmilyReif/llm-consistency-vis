@@ -1,0 +1,13 @@
+.wordtree-holder {
+    width: 230vw;
+    background-color: rgba(0, 0, 0, .05);
+    padding: 10px;
+}
+
+#graph-holder {
+    cursor: grab;
+}
+
+#graph-holder:active {
+    cursor: grabbing;
+}

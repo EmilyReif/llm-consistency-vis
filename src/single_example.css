@@ -1,0 +1,62 @@
+.single-example {
+    font-family: monospace;
+    padding: 1em 2em;;
+}
+
+.generation {
+    text-wrap: nowrap;
+    width: 500px;
+}
+
+.inout {
+    font-size: smaller;
+    padding: 1em;
+}
+
+.outputs {
+    display: flex;
+    flex-direction: column;
+    gap: .5em;
+    margin-top: 1rem;
+}
+
+.instruction-text {
+    text-align: left;
+    color: #666;
+    padding: 20px;
+    font-style: italic;
+    background: #f9f9f9;
+    border-bottom: 1px solid #eee;
+}
+
+/* Add these styles to src/single_example.css */
+input[type="radio"] {
+    width: 0;
+    height: 0;
+    margin-right: 4px;
+    cursor: pointer;
+}
+
+input[type="radio"]+label {
+    cursor: pointer;
+}
+
+:has(> input[type="radio"]:checked) {
+    /* background: #f9f9f9; */
+    font-weight: bold;
+    box-sizing: border-box;
+    border-bottom: 3px solid rgb(223, 208, 234);
+}
+
+.radio-holder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+    /* border: 1px solid #eee; */
+}
+
+.all-radio-holder {
+    display: flex;
+    align-items: flex-start;
+}
