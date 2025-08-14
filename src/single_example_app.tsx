@@ -87,7 +87,7 @@ class SingleExampleApp extends React.Component {
                                 <input
                                     type="range"
                                     min="1"
-                                    max="30"
+                                    max="50"
                                     step="1"
                                     value={this.state.numGenerations}
                                     onChange={(e) => this.handleSliderChange(e, 'numGenerations')}

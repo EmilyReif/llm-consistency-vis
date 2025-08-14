@@ -66,7 +66,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
     }
 
     async componentDidUpdate() {
-        const generations = this.props.generations;
+        const generations = this.props.generations.sort();
         
         const edgeColors = d3.scaleOrdinal(d3.schemeTableau10.slice(0, 9)).domain(generations);
         

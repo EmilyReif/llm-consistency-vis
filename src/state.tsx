@@ -3,7 +3,7 @@ import { examples } from "./cached_examples";
 import * as utils from "./utils";
 import { OpenAI } from "openai";
 
-const DEFAULT_NUM_GENERATIONS = 10;
+const DEFAULT_NUM_GENERATIONS = 30;
 const DEFAULT_TEMP = 0.7;
 // For some demo, use hardcoded key
 const OPENAI_API_KEY = null;
