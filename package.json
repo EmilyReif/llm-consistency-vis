@@ -1,5 +1,5 @@
 {
-  "name": "ui",
+  "name": "llm-consistency-vis",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -24,6 +24,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build_and_deploy": "sh gh-deploy.sh",
     "proxy": "http://localhost:5432"
   },
   "eslintConfig": {
@@ -43,5 +44,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "homepage": "https://emilyreif.com/llm-consistency-vis"
 }
