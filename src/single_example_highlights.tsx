@@ -26,7 +26,7 @@ class SingleExampleHighlights extends React.Component<Props> {
 
         const sorted = [...displayGenerations].sort();
         return <div className="outputs">
-            {sorted.map(generation => {
+            {sorted.map((generation, i) => {
                 
                 // Apply highlights
                 const layeredHighlights = allSubstrings.map(substring => {
@@ -40,7 +40,7 @@ class SingleExampleHighlights extends React.Component<Props> {
                 // Apply bolding to expected output
                 return (<div
                     className='line-holder'
-                    key={generation}>
+                    key={`${generation}-${i}`}>
                     {layeredHighlights}
                     <div> 
                         {generation}

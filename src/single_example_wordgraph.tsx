@@ -148,6 +148,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
             .on('mouseover', (event: any, d: NodeDatum) => {
                 if (!this.selectedNode) {  // Only update hover if nothing is selected
                     this.hoveredNode = d;
+                    this.showHoveredNodeInfo();
                     update();
                 }
             })
@@ -338,6 +339,12 @@ class SingleExampleWordGraph extends React.Component<Props> {
                 .attr("dy", (_d, i) => `${i === 0 ? 0 : 1.2}em`)
                 .text((line: any) => line);
         });
+    }
+
+    private showHoveredNodeInfo() {
+        if (!this.hoveredNode) return;
+        const generations = this.hoveredNode.origSentences;
+        console.log(generations);
     }
 }
 

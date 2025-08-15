@@ -4,33 +4,16 @@
     font-family: monospace;
     min-height: 800px;
 }
+
 .controls {
+    border-bottom: 1px solid #ddd;
     display: flex;
     flex-direction: row;
-    align-items: center;
-    gap: 20px;
-    padding: 1em;
-    border-bottom: 1px solid #ddd;
-    background: white;
-}
-
-.input-section {
-    display: flex;
-    flex-direction: column;
     gap: 15px;
     padding: 8px 15px;
     background: rgb(223, 208, 234);
     border-radius: 8px;
-}
-
-.input-header {
-    font-weight: bold;
-    color: #333;
-    white-space: nowrap;
-}
-
-.input-box {
-    width: 300px;
+    align-items: center;
 }
 
 .sliders {
@@ -88,20 +71,16 @@
     width: 100px;
 }
 
-.custom-dropdown {
-    width: 300px;
-    padding: 4px 32px 4px 8px;
-}
-
 .input-with-hint {
     position: relative;
     display: flex;
     align-items: center;
+    width: 500px;  /* keeps input + dropdown at fixed width */
 }
 
 .input-field {
     width: 100%;
-    padding: 4px 70px 4px 8px;  /* Add right padding to make room for the hint */
+    padding: 4px 70px 4px 8px;  /* space for ⏎ hint */
 }
 
 .enter-hint {
@@ -112,13 +91,32 @@
     background: #f5f5f5;
     padding: 2px 6px;
     border-radius: 4px;
-    pointer-events: none;  /* Makes the hint non-interactive */
+    pointer-events: none;
 }
 
-.option-row {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
+.dropdown-list {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    max-height: 200px;
+    top: 30px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    width: 100%;        /* 👈 matches width of input */
+    box-sizing: border-box;
+}
+
+.dropdown-list li {
+    padding: 6px 8px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.dropdown-list li:hover {
+    background: #eee;
 }
