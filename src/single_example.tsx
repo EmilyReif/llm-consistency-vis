@@ -86,7 +86,7 @@ class SingleExample extends React.Component {
         }
         return (<div className='all-radio-holder'>
             {makeRadioButton('graph')}
-            {/* {makeRadioButton('treeMap')} */}
+            {makeRadioButton('treeMap')}
             {makeRadioButton('highlights')}
             {makeRadioButton('Raw outputs')}
         </div>)

@@ -3992,4 +3992,4 @@ export const examplesNoveltyBench: { [key: string]: string[]; } = {
   ]
 }
 
-export const examples = examplesNoveltyBench;
+export const examples = examplesOrig;

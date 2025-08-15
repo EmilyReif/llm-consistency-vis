@@ -71,11 +71,17 @@ export function createGraphDataFromGenerations(generations: string[]): { nodesDa
 
             // Check if the word is similar to any existing node.
             const similarityThreshold = 0.5;
-            const similarNodes = currentWords.map((existingWord) => [similarity(existingWord, word), existingWord]).sort((a: any, b: any) => b[0] - a[0]) as any;
-            const similarNode = similarNodes?.[0]?.[0] > similarityThreshold ? similarNodes?.[0][1] : null;
-
+            let similarNodes = currentWords.map((existingWord) => [similarity(existingWord, word), existingWord]).sort((a: any, b: any) => b[0] - a[0]) as any;
+            similarNodes = similarNodes.filter((pair: any) => {
+                const [similarityScore, similarWord] = pair;
+                const isAboveThreshold = similarityScore > similarityThreshold;
+                const isFromSameSentence = nodesDict[similarWord]?.origSentIndices.has(i);
+                return isAboveThreshold && !isFromSameSentence;
+            });
+            const similarNode = similarNodes?.[0]?.[1] || null;
+            // const similarNode = similarNodes?.[0]?.[0] > similarityThreshold ? similarNodes?.[0][1] : null;
+            
             if (similarNode && similarNode !== prevWord) {
-                // Don't add if this would create a cycle.
                 word = similarNode;
             }
 
