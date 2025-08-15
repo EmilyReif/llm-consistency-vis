@@ -14,24 +14,45 @@ export function arraysAreEqual(a: string[], b: string[]) {
     return a.length === b.length &&
         a.every((element, index) => element === b[index]);
 }
+export function tokenize(
+    sent: string,
+    sentenceIdx?: number,
+    mode: "space" | "comma" | "sentence" = "space"
+): string[] {
+    // normalize text
 
-export function tokenize(sent: string, sentenceIdx?: number): string[] {
-    sent = sent.replace(/[^\w\s\']|_/g, "").replace(/\s+/g, " ")
-    sent = sent.toLowerCase();
-    let words = sent.split(' ');
-    words = words.map((origWord, i) => {
-        let tokenKey = origWord + sentenceIdx + i;
+    let chunks: string[] = [];
 
-        // Eventually, use a real contextual embedding.
-        embsDict[tokenKey] = { word: origWord, prevWord: words[i - 1], nextWord: words[i - 2], idx: i }
-        // Pad the embeddings dict with the actual word itself.
-        // (This is a hack to fix a bug where the first words of each sentence are likely to be seen as "matches")
+    if (mode === "space") {
+        chunks = sent.split(/\s+/);
+    } else if (mode === "comma") {
+        chunks = sent.split(/\s*,\s*/);
+    } else if (mode === "sentence") {
+        chunks = sent.split(/(?<=[.!?])\s+/);  // split on sentence boundaries
+    }
 
+    // clean out empty strings
+    chunks = chunks.filter(c => c.length > 0);
 
-        tokensToOrigWord[tokenKey] = origWord;
+    // wrap into tokenKeys
+    let tokens: string[] = chunks.map((chunk, i) => {
+            chunk = chunk.replace(/[^\w\s\'.!?]|_/g, "").replace(/\s+/g, " ");
+            chunk = chunk.toLowerCase().trim();
+
+        let tokenKey = chunk + sentenceIdx + i;
+
+        embsDict[tokenKey] = {
+            word: chunk,
+            prevWord: chunks[i - 1],
+            nextWord: chunks[i + 1],
+            idx: i
+        };
+
+        tokensToOrigWord[tokenKey] = chunk;
         return tokenKey;
     });
-    return words;
+
+    return tokens;
 }
 
 /** A hack to approximate contextual similarity between two tokens.
