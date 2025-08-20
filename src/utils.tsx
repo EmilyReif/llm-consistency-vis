@@ -157,9 +157,10 @@ export function createGraphDataFromGenerations(generations: string[]): { nodesDa
             if (!nodesDict[target]) {
                 console.log('target not found', target);
             }
-            sourceNode?.children?.push(targetNode);
-            targetNode?.parents?.push(sourceNode);
+
             return [...sentences].map((sentence) => {
+                sourceNode?.children?.push(targetNode);
+                targetNode?.parents?.push(sourceNode);
                 return {
                     source: sourceNode,
                     target: targetNode,

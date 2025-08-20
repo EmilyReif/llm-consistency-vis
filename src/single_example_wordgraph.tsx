@@ -9,7 +9,7 @@ interface Props {
     generations: string[];
 }
 
-const NUM_WORDS_TO_WRAP = 4;
+const NUM_WORDS_TO_WRAP = 3;
 const SHOW_DEBUG_ELLIPSES = false;
 
 // The structure of each node in the graph.
@@ -120,12 +120,12 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
             simulation
                 .nodes(selectedNodes)
-                .force("collide", ellipseForce(selectedNodes, 0, 0.5, 0.5))
+                .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
                 .force("link", d3.forceLink(selectedLinks)
                     .id((d: any) => d.word)
-                    .strength(.01))
-                .force("y", d3.forceY(height / 2))
-                // .force('y', d3.forceY((d: NodeDatum) => this.getExpectedY(d, height)).strength(0.1))
+                    .strength(.1))
+                // .force("y", d3.forceY(height / 2).strength((d: any) => d.count/30)) // Center nodes vertically
+                .force('y', d3.forceY((d: NodeDatum) => this.getExpectedY(d, height)).strength(0.1))
 
             simulation.alpha(1).restart();
         }
@@ -176,8 +176,8 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
         if (SHOW_DEBUG_ELLIPSES) {
             nodes.append("ellipse")
-                .attr("cx", d => this.textLength(d) / 2)
-                .attr("cy", d => -this.textHeight(d) / 2)
+                .attr("cx", d => d.rx)   // x-position of the node
+                // .attr("cy", d => d.ry)   // y-position of the node
                 .attr("rx", d => d.rx)
                 .attr("ry", d => d.ry)
                 .attr("fill", "rgba(123, 123, 1, 0.5)")
@@ -235,16 +235,17 @@ class SingleExampleWordGraph extends React.Component<Props> {
     /** Add a bounding box rectangle to each node (for collision calculation) */
     private addBoundingBoxData(nodes: NodeDatum[]) {
         nodes.forEach((node) => {
-            node.rx = this.textLength(node);
-            node.ry = this.textHeight(node);
+            node.rx = this.textLength(node)/2;
+            node.ry = this.textHeight(node)/2;
         });
     }
 
 
     private getExpectedX(d: NodeDatum) {
-        const padBetweenWords = 100;
+        const padBetweenWords = 50;
+        // const padBetweenWords = this.fontSize(d) * 5;
         const parents = d.parents.filter(p => this.selectedNode ? this.nodeIsInSents(p) : true);
-        if (d.isRoot) {
+        if (d.isRoot && !parents.length) {
             return padBetweenWords;
         }
         if (!parents.length) {
@@ -256,7 +257,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
         const parentLefts = parents.flatMap((p: NodeDatum) => {
             return p.x + this.textLength(p) + padBetweenWords;
         });
-        return (d3.min(parentLefts) || d.x);
+        return (d3.mean(parentLefts) || d.x);
     }
 
     private getExpectedY(d: NodeDatum, height: number) {
@@ -317,7 +318,10 @@ class SingleExampleWordGraph extends React.Component<Props> {
     }
 
     private textLength(d: any) {
-        return chunkText(d.word)[0].length * this.fontSize(d) * .6;
+        const chunkLengths = chunkText(d.word).map(chunk => {
+            return chunk.length * this.fontSize(d) * 0.6; // Adjusted
+        });
+        return d3.max(chunkLengths) || 0;
     }
 
     private textHeight(d: any) {
