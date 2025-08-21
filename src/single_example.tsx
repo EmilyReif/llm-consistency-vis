@@ -35,8 +35,8 @@ class SingleExample extends React.Component {
         let vis;
         let instructionText = '';
         switch (this.state.visType) {
-            case 'treeMap':
-                vis = this.renderOutputstreeMap();
+            case 'wordtree':
+                vis = this.renderOutputsWordTree();
                 instructionText = `Hover over a word to highlight it across all generated sentences. 
                 The size of the word corresponds to its frequency in the generated sentences.`
                 break;
@@ -86,13 +86,13 @@ class SingleExample extends React.Component {
         }
         return (<div className='all-radio-holder'>
             {makeRadioButton('graph')}
-            {makeRadioButton('treeMap')}
+            {makeRadioButton('word tree')}
             {makeRadioButton('highlights')}
-            {makeRadioButton('Raw outputs')}
+            {makeRadioButton('raw outputs')}
         </div>)
     }
 
-    renderOutputstreeMap() {
+    renderOutputsWordTree() {
         return <SingleExampleWordtree 
             generations={this.state.generations}
         ></SingleExampleWordtree>;
