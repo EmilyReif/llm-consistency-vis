@@ -19,7 +19,9 @@ class SingleExample extends React.Component {
         return (
             <div className="single-example">
                 <div>
-                    <div className='inout'><span>Visualization Options:</span></div>{this.renderOutputs()}
+                    <div className='inout'>
+                        {/* <span>Visualization Options:</span> */}
+                    </div>{this.renderOutputs()}
                 </div>
             </div>
         );
@@ -42,9 +44,7 @@ class SingleExample extends React.Component {
                 vis = this.renderOutputsGraph();
                 instructionText = `Hover over any word or phrase to highlight all sentences containing it. 
                 \nClick to pin the highlight - click again or click elsewhere to unpin.
-                \nDrag to pan, scroll to zoom in and out.
-                \nThe purple text is the text you entered to compare against the LLM outputs (if provided).       
-                \nColors of lines in the graph are not related to the colors used in the highlights visualization.`
+                \nDrag to pan, scroll to zoom in and out.`
                 break;
 
             case 'highlights':
@@ -58,9 +58,9 @@ class SingleExample extends React.Component {
         }
         return (<div>
             {this.renderRadioButtons()}
-            <div className="instruction-text">
+            {/* <div className="instruction-text">
                 {instructionText}
-            </div>
+            </div> */}
             {vis}
         </div>)
     }

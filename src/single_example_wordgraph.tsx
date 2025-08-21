@@ -313,7 +313,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
     }
     private fontSize(d: any) {
         const minFontSize = 11;
-        const maxFontSize = 20;
+        const maxFontSize = 30;
         return Math.min(Math.max(minFontSize, d.count * 5), maxFontSize);
     }
 

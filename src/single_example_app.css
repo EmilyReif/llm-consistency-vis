@@ -8,11 +8,17 @@
 .controls {
     border-bottom: 1px solid #ddd;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 15px;
     padding: 8px 15px;
     background: rgb(223, 208, 234);
     border-radius: 8px;
+}
+
+.controls-row {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
     align-items: center;
 }
 
@@ -119,4 +125,149 @@
 
 .dropdown-list li:hover {
     background: #eee;
+}
+
+.generate-similar-button {
+    background: #8b5cf6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: fit-content;
+}
+
+.generate-similar-button:hover {
+    background: #7c3aed;
+}
+
+.generate-similar-button:active {
+    background: #6d28d9;
+}
+
+.generate-similar-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.expand-caret {
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.2s;
+    margin-left: auto;
+}
+
+.expand-caret:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+.caret {
+    font-size: 18px;
+    color: #666;
+    cursor: pointer;
+    display: inline-block;
+    width: 18px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.caret:hover {
+    color: #333;
+}
+
+
+.similarity-input-container {
+    flex: 1;
+}
+
+.similar-prompts-table-container {
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.similar-prompts-table-container h3 {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-family: monospace;
+}
+
+.similar-prompts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.similar-prompts-table th,
+.similar-prompts-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.similar-prompts-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #333;
+}
+
+.similar-prompts-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.clickable-row:hover {
+    background-color: #e3f2fd !important;
+}
+
+.clickable-row:active {
+    background-color: #bbdefb !important;
+}
+
+.loading-cell {
+    text-align: center;
+    padding: 40px 20px !important;
+}
+
+.loading-cell .loader {
+    width: 24px;
+    height: 24px;
+    position: relative;
+    top: auto;
+    left: auto;
+    margin-right: 12px;
+    display: inline-block;
+}
+
+.loading-cell .loader::before,
+.loading-cell .loader::after {
+    border-width: 3px;
+}
+
+.generate-similar-button .loader {
+    width: 16px;
+    height: 16px;
+    position: relative;
+    top: auto;
+    left: auto;
+    margin-right: 8px;
+    display: inline-block;
+}
+
+.generate-similar-button .loader::before,
+.generate-similar-button .loader::after {
+    border-width: 2px;
 }
