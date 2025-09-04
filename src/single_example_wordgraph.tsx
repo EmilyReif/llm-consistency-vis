@@ -18,9 +18,9 @@ export interface NodeDatum {
 
     // Number of times the word appears overall.
     count: number;
-    origWordIndices: Set<number>;
-    origSentIndices: Set<number>;
-    origSentences: Set<string>;
+    origWordIndices: number[];
+    origSentIndices: number[];
+    origSentences: string[];
 
     // Parent and child nodes.
     children: NodeDatum[];
@@ -73,11 +73,8 @@ class SingleExampleWordGraph extends React.Component<Props> {
         const selectedColor = 'black';
         const defaultColor = 'black';
         
-        // Create a combined array with both generations and expected output (if it exists)
-        const allTextToProcess = [...generations];
-        
         // Generate graph data from all text
-        const { nodesData, linksData } = utils.createGraphDataFromGenerations(allTextToProcess);
+        const { nodesData, linksData } = utils.createGraphDataFromGenerations(generations);
         this.addBoundingBoxData(nodesData);
 
         const width = Math.min(window.innerWidth * 0.95, 5000); // 95% of viewport width, max 5000px
@@ -187,7 +184,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
         const update = () => {
             nodesData.forEach((d: NodeDatum) => d.x = this.getExpectedX(d));
 
-            links.attr("d", (d: any) => this.renderPath(d))
+            links.attr("d", (d: any, i) => this.renderPath(d))
                 .attr("stroke", (d: any) => {
                     return this.linkIsInSents(d) ? edgeColors(d.sentence) : defaultColor;
                 })
@@ -220,7 +217,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
     private linkIsInSents(d: any) {
         const activeNode = this.selectedNode || this.hoveredNode;
-        return activeNode?.origSentences.has(d.sentence);
+        return activeNode?.origSentences.includes(d.sentence);
     }
 
     private nodeIsInSents(d: NodeDatum) {
@@ -228,7 +225,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
         if (!activeNode) return false;
         const activeSents = [...activeNode.origSentences];
         const sents = d.origSentences;
-        const sharedElements = activeSents.filter(e => sents.has(e));
+        const sharedElements = activeSents.filter(e => sents.includes(e));
         return sharedElements.length > 0;
     }
 
@@ -348,7 +345,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
     private showHoveredNodeInfo() {
         if (!this.hoveredNode) return;
         const generations = this.hoveredNode.origSentences;
-        console.log(generations);
     }
 }
 

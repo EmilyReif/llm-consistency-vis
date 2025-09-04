@@ -80,7 +80,7 @@ function similarity(a: string, b: string): number {
 export function createGraphDataFromGenerations(generations: string[]): { nodesData: NodeDatum[], linksData: LinkDatum[] } {
     // getEmbeddings('this is a test')
     // Intermediate data structures for parsing.
-    const linksDict: { [key: string]: { [key: string]: Set<string> } } = {};
+    const linksDict: { [key: string]: { [key: string]: string[] } } = {};
     const nodesDict: { [key: string]: NodeDatum } = {};
 
     // Process generations to create nodes and links.
@@ -96,7 +96,7 @@ export function createGraphDataFromGenerations(generations: string[]): { nodesDa
             similarNodes = similarNodes.filter((pair: any) => {
                 const [similarityScore, similarWord] = pair;
                 const isAboveThreshold = similarityScore > similarityThreshold;
-                const isFromSameSentence = nodesDict[similarWord]?.origSentIndices.has(i);
+                const isFromSameSentence = nodesDict[similarWord]?.origSentIndices.includes(i);
                 return isAboveThreshold && !isFromSameSentence;
             });
             const similarNode = similarNodes?.[0]?.[1] || null;
@@ -116,18 +116,18 @@ export function createGraphDataFromGenerations(generations: string[]): { nodesDa
                     ry: 0,
                     count: 0,
                     word,
-                    origSentences: new Set<string>(),
-                    origWordIndices: new Set<number>(),
-                    origSentIndices: new Set<number>(),
+                    origSentences: [],
+                    origWordIndices: [],
+                    origSentIndices: [],
                     isRoot: j === 0,
                     children: [],
                     parents: [],
                 };
             };
             nodesDict[word].count += 1;
-            nodesDict[word].origSentences.add(generation);
-            nodesDict[word].origWordIndices.add(j);
-            nodesDict[word].origSentIndices.add(i);
+            nodesDict[word].origSentences.push(generation + i);
+            nodesDict[word].origWordIndices.push(j);
+            nodesDict[word].origSentIndices.push(i);
             if (j === 0) {
                 nodesDict[word].isRoot = true;
             }
@@ -138,8 +138,8 @@ export function createGraphDataFromGenerations(generations: string[]): { nodesDa
             // Add a link from the previous word.
             if (j > 0) {
                 linksDict[prevWord] = linksDict[prevWord] || {};
-                const sentences = linksDict[prevWord][word] || new Set<string>();
-                sentences.add(generation);
+                const sentences = linksDict[prevWord][word] || [];
+                sentences.push(generation + i);
                 linksDict[prevWord][word] = sentences;
             }
             prevWord = word;
@@ -175,7 +175,7 @@ export function createGraphDataFromGenerations(generations: string[]): { nodesDa
 }
 
 /** Merge words that are sequential when there are no other branches. */
-function merge(nodesDict: { [key: string]: NodeDatum }, linksDict: { [key: string]: { [key: string]: Set<string> } }) {
+function merge(nodesDict: { [key: string]: NodeDatum }, linksDict: { [key: string]: { [key: string]: string[] } }) {
     for (let i = 0; i < Object.keys(nodesDict).length; i++) {
         for (const source in nodesDict) {
 

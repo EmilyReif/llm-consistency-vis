@@ -15,16 +15,7 @@ export async function getEmbeddings(input: string) {
             // return_all_hidden_states: true,
         }
     )) as any;
-    console.log(' ')
-    console.log(tokens)
-    console.log('OUTPUT', output)
-
     const embeddings = output;
-    console.log(output.dims)
-    console.log('embeddings', getEmbeddingsForLayer(embeddings[0], 0))
-    console.log(`Number of tokens: ${embeddings.length}`);
-    console.log(`Embedding dimension: ${embeddings[0].length}`);
-    console.log(`First token embedding:`, embeddings[0]);
 }
 
 // Get [layer][token][embedding_dim] from the output
@@ -33,7 +24,6 @@ export function getEmbeddingsForLayer(
     layerIndex: number,
 ): number[][] {
     const layerTensor = allLayers[layerIndex];
-    console.log('layerTensor.dims', layerTensor.dims)
     const [numTokens, hiddenSize] = layerTensor.dims;
     const embeddingsForLayer = []
     for (let tokenIndex = 0; tokenIndex < numTokens; tokenIndex++) {
