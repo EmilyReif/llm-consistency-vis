@@ -104,7 +104,5 @@ export const exampleOlmoTrace: { [key: string]: string[]; } = {
  '"It is Boredom!—the eye laden with an involuntary tear, He dreams of gallows while smoking his water pipe. You know him, reader, this delicate monster, Hypocritical reader,—my likeness,—my brother!"',
  '"It is Boredom!—the eye laden with an involuntary tear, He dreams of gallows while smoking his water pipe. You know him, reader, this delicate monster, Hypocritical reader,—my likeness,—my brother!"',
  '"It is Boredom!—the eye laden with an involuntary tear, He dreams of gallows while smoking his water pipe. You know him, reader, this delicate monster, Hypocritical reader,—my likeness,—my brother!"',
-
-
 ]
 }

@@ -35,7 +35,7 @@ class SingleExample extends React.Component {
         let vis;
         let instructionText = '';
         switch (this.state.visType) {
-            case 'wordtree':
+            case 'word tree':
                 vis = this.renderOutputsWordTree();
                 instructionText = `Hover over a word to highlight it across all generated sentences. 
                 The size of the word corresponds to its frequency in the generated sentences.`
