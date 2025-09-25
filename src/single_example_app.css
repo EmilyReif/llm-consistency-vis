@@ -103,6 +103,7 @@
 .dropdown-list {
     position: absolute;
     background: white;
+    color: black;
     border: 1px solid #ccc;
     max-height: 200px;
     top: 30px;
@@ -270,4 +271,53 @@
 .generate-similar-button .loader::before,
 .generate-similar-button .loader::after {
     border-width: 2px;
+}
+
+/* Multi-prompt comparison styles */
+.add-prompt-container {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #e8f4fd;
+    border: 1px solid #b3d9ff;
+    border-radius: 6px;
+    width: fit-content;
+    cursor: pointer;
+}
+
+.add-prompt-container:hover {
+    opacity: .5;
+}
+
+.compare-prompt-container {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid;
+    position: relative;
+}
+
+.delete-prompt-button {
+    background: none;
+    color: #666;
+    border: none;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.delete-prompt-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
 }

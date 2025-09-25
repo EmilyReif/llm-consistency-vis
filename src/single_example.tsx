@@ -9,11 +9,11 @@ import { reaction } from 'mobx';
 
 
 class SingleExample extends React.Component {
-    state = { generations: [], visType: 'graph' };
+    state = {visType: 'graph', promptGroups: [] as { promptId: string, generations: string[] }[] };
     disposer?: () => void;
 
     render() {
-        if (!state.selectedExample) {
+        if (!state.prompts.length || !state.prompts[0]?.text) {
             return;
         }
         return (
@@ -28,7 +28,7 @@ class SingleExample extends React.Component {
     }
 
     renderOutputs() {
-        if (!this.state.generations) {
+        if (!this.state.promptGroups) {
             return;
         }
 
@@ -93,18 +93,21 @@ class SingleExample extends React.Component {
     }
 
     renderOutputsWordTree() {
+        const firstGenerations = this.state.promptGroups[0]?.generations;
         return <SingleExampleWordtree 
-            generations={this.state.generations}
+            generations={firstGenerations}
         ></SingleExampleWordtree>;
     }
     renderOutputsGraph() {
         return <SingleExampleWordGraph 
-            generations={this.state.generations}
+            promptGroups={this.state.promptGroups}
         ></SingleExampleWordGraph>;
     }
 
 renderOutputsBasic() {
-    const sorted = [...this.state.generations].sort();
+    const firstGenerations = this.state.promptGroups[0]?.generations;
+
+    const sorted = [...firstGenerations].sort();
     return (
         <div className="outputs">
             {sorted.map((generation, index) => (
@@ -113,21 +116,26 @@ renderOutputsBasic() {
         </div>
     );
 }
-
     renderOutputsHighlights() {
+        const firstGenerations = this.state.promptGroups[0]?.generations;
         return <SingleExampleHighlights 
-            generations={this.state.generations}
+            generations={firstGenerations}
         ></SingleExampleHighlights>;
     }
   componentDidMount() {
     // react to changes in observable MobX state
     this.disposer = reaction(
-      () => [state.selectedExample, state.numGenerations, state.temp],
-      async ([selectedExample]) => {
-        if (selectedExample) {
-          const generations = await state.fetchGenerations();
-          this.setState({ generations });
+      () => [state.prompts.map(p => p.text).join('\u0001'), state.prompts.map(p => p.temp).join(','), state.numGenerations],
+      async () => {
+        const validPrompts = state.prompts.filter(p => p.text && p.text.trim().length > 0);
+        if (validPrompts.length === 0) return;
+        const groups: { promptId: string, generations: string[] }[] = [];
+        for (const p of validPrompts) {
+          const gens = await state.fetchGenerationsFor(p.text, p.temp);
+          groups.push({ promptId: p.text, generations: gens });
         }
+        // For the basic outputs view, use the first prompt's generations
+        this.setState({promptGroups: groups.length >= 1 ? groups : [] });
       },
       { fireImmediately: true }
     );

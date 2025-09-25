@@ -2,35 +2,72 @@ import { makeAutoObservable, action } from "mobx";
 import { examples } from "./cached_examples";
 import * as utils from "./utils";
 import { OpenAI } from "openai";
+import * as d3 from 'd3';
+
 
 const DEFAULT_NUM_GENERATIONS = 30;
 const DEFAULT_TEMP = 0.7;
+// Opacity for prompt container background colors (0.0 = transparent, 1.0 = opaque)
+const PROMPT_COLOR_OPACITY = 0.3;
 // For some demo, use hardcoded key
 const OPENAI_API_KEY = null;
+
+
+// D3 schemeTableau10 color scale for prompt containers with reduced opacity
+// Maps each color to a semi-transparent version using D3's color manipulation
+const PROMPT_COLOR_SCALE = d3.schemeTableau10.map(c => d3.color(c)?.copy({opacity:PROMPT_COLOR_OPACITY}).formatHex8() || 'black');
+
 class State {
     loading = false;
-    selectedExample: string = '';
-    temp: number = DEFAULT_TEMP;
+    // Unified prompt list; no special first prompt
+    prompts: { text: string, temp: number }[] = [];
     numGenerations: number = DEFAULT_NUM_GENERATIONS;
     generationsCache: { [example: string]: { [temp: number]: string[] } } = {};
+
+    // Get color for a prompt index, cycling through the color scale
+    // Uses modulo to cycle through colors when there are more prompts than colors
+    getPromptColor = (index: number): string => {
+        return PROMPT_COLOR_SCALE[index % PROMPT_COLOR_SCALE.length];
+    };
 
     constructor() {
         makeAutoObservable(this);
 
-        // Initialize the cache with the examples.
-        const temp = 0.7;
+        // Initialize the cache with the examples using the default temperature
+        const temp = DEFAULT_TEMP;
         for (const [example, outputs] of Object.entries(examples)) {
             this.generationsCache[example] ??= {};
             this.generationsCache[example][temp] = outputs;
         }
+        // Initialize with a default prompt using the first available example
+        const first = Object.keys(examples)[0];
+        this.prompts = [{ text: first, temp: DEFAULT_TEMP }];
     }
 
-    setSelectedExample = ((value: string) => {
-        this.selectedExample = value;
+    addPrompt = ((value: string = '') => {
+        const last = this.prompts[this.prompts.length - 1];
+        const defaultText = value || last?.text || '';
+        const defaultTemp = last?.temp ?? DEFAULT_TEMP;
+        this.prompts = [...this.prompts, { text: defaultText, temp: defaultTemp }];
     });
 
-    setTemp = ((value: number) => {
-        this.temp = value;
+    updatePromptTextAt = ((index: number, value: string) => {
+        const next = [...this.prompts];
+        next[index] = { ...next[index], text: value };
+        this.prompts = next;
+    });
+
+    updatePromptTempAt = ((index: number, value: number) => {
+        const next = [...this.prompts];
+        next[index] = { ...next[index], temp: value };
+        this.prompts = next;
+    });
+
+    removePromptAt = ((index: number) => {
+        if (index === 0) return; // Keep at least one prompt
+        const next = [...this.prompts];
+        next.splice(index, 1);
+        this.prompts = next;
     });
 
     setNumGenerations = ((value: number) => {
@@ -38,7 +75,7 @@ class State {
     });
 
 
-    async fetchFromOpenAI(n: number): Promise<string[]> {
+    async fetchFromOpenAI(promptText: string, temp: number, n: number): Promise<string[]> {
         let openai_api_key = utils.parseUrlParam('openai_api_key') || OPENAI_API_KEY;
 
         if (!openai_api_key) {
@@ -54,29 +91,29 @@ class State {
             apiKey: openai_api_key.trim(),
             dangerouslyAllowBrowser: true,
         });
-
+        console.log('Calling OpenAI api', promptText, temp, n);
         const response = await openaiClient.chat.completions.create({
             model: 'gpt-4o',
             messages: [
                 { role: 'system', content: 'You are a helpful assistant. Answer in at most one short sentence.' },
-                { role: 'user', content: this.selectedExample },
+                { role: 'user', content: promptText },
             ],
-            temperature: this.temp,
+            temperature: temp,
             n: n,
         });
 
         return response.choices.map((choice) => choice.message.content || '');
     }
 
-    async fetchGenerations(): Promise<string[]> {
-        const input = this.selectedExample;
+    async fetchGenerationsFor(prompt: string, temp: number): Promise<string[]> {
+        const input = prompt;
         const numGenerations = this.numGenerations;
         if (!input) return [];
 
         this.generationsCache[input] ??= {};
-        this.generationsCache[input][this.temp] ??= [];
+        this.generationsCache[input][temp] ??= [];
 
-        let cached = this.generationsCache[input][this.temp];
+        let cached = this.generationsCache[input][temp];
         const alreadyHave = cached.length;
 
         if (alreadyHave >= numGenerations) {
@@ -85,14 +122,14 @@ class State {
 
         const toGenerate = numGenerations - alreadyHave;
         this.loading = true;
-        const newGenerations = await this.fetchFromOpenAI(toGenerate);
-        this.generationsCache[input][this.temp].push(...newGenerations);
+        const newGenerations = await this.fetchFromOpenAI(input, temp, toGenerate);
+        this.generationsCache[input][temp].push(...newGenerations);
         this.loading = false;
 
-        return this.generationsCache[input][this.temp].slice(0, numGenerations);
+        return this.generationsCache[input][temp].slice(0, numGenerations);
     }
 
-    async generateSimilarPrompts(currentPrompt: string, similarityText: string): Promise<string[]> {
+    async generateSimilarPrompts(currentPrompt: string, similarityText: string, temp: number): Promise<string[]> {
         let openai_api_key = utils.parseUrlParam('openai_api_key') || OPENAI_API_KEY;
 
         if (!openai_api_key) {
@@ -118,7 +155,7 @@ class State {
                 { role: 'system', content: 'You are a helpful assistant. Generate exactly 10 similar prompts in JavaScript array format like ["prompt1", "prompt2", ...].' },
                 { role: 'user', content: promptText },
             ],
-            temperature: this.temp,
+            temperature: temp,
             n: 1,
         });
 

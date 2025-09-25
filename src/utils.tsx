@@ -76,106 +76,107 @@ function similarity(a: string, b: string): number {
     return counter
 }
 
-
-export function createGraphDataFromGenerations(generations: string[]): { nodesData: NodeDatum[], linksData: LinkDatum[] } {
-    // getEmbeddings('this is a test')
-    // Intermediate data structures for parsing.
-    const linksDict: { [key: string]: { [key: string]: string[] } } = {};
+/** Create graph data from prompt groups. */
+export function createGraphDataFromPromptGroups(
+    groups: { promptId: string; generations: string[] }[]
+): { nodesData: NodeDatum[]; linksData: LinkDatum[] } {
+    const linksDict: { [key: string]: { [key: string]: { sentence: string, promptId: string }[] } } = {};
     const nodesDict: { [key: string]: NodeDatum } = {};
 
-    // Process generations to create nodes and links.
-    generations.forEach((generation, i) => {
-        let prevWord = '';
-        const words = tokenize(generation, i);
-        words.forEach((word, j) => {
-            const currentWords = Object.keys(nodesDict);
+    groups.forEach(({ promptId, generations }) => {
+        generations.forEach((generation, i) => {
+            let prevWord = '';
+            const words = tokenize(generation, i);
+            words.forEach((word, j) => {
+                const currentWords = Object.keys(nodesDict);
 
-            // Check if the word is similar to any existing node.
-            const similarityThreshold = 0.5;
-            let similarNodes = currentWords.map((existingWord) => [similarity(existingWord, word), existingWord]).sort((a: any, b: any) => b[0] - a[0]) as any;
-            similarNodes = similarNodes.filter((pair: any) => {
-                const [similarityScore, similarWord] = pair;
-                const isAboveThreshold = similarityScore > similarityThreshold;
-                const isFromSameSentence = nodesDict[similarWord]?.origSentIndices.includes(i);
-                return isAboveThreshold && !isFromSameSentence;
-            });
-            const similarNode = similarNodes?.[0]?.[1] || null;
-            // const similarNode = similarNodes?.[0]?.[0] > similarityThreshold ? similarNodes?.[0][1] : null;
-            
-            if (similarNode && similarNode !== prevWord) {
-                word = similarNode;
-            }
+                const similarityThreshold = 0.5;
+                let similarNodes = currentWords.map((existingWord) => [similarity(existingWord, word), existingWord]).sort((a: any, b: any) => b[0] - a[0]) as any;
+                similarNodes = similarNodes.filter((pair: any) => {
+                    const [similarityScore, similarWord] = pair;
+                    const isAboveThreshold = similarityScore > similarityThreshold;
+                    const isFromSameSentence = nodesDict[similarWord]?.origSentIndices.includes(i);
+                    return isAboveThreshold && !isFromSameSentence;
+                });
+                const similarNode = similarNodes?.[0]?.[1] || null;
+                if (similarNode && similarNode !== prevWord) {
+                    word = similarNode;
+                }
 
-            if (!nodesDict[word]) {
-                nodesDict[word] = {
-                    x: 0,
-                    y: 0,
-                    vx: 0,
-                    vy: 0,
-                    rx: 0,
-                    ry: 0,
-                    count: 0,
-                    word,
-                    origSentences: [],
-                    origWordIndices: [],
-                    origSentIndices: [],
-                    isRoot: j === 0,
-                    children: [],
-                    parents: [],
+                if (!nodesDict[word]) {
+                    nodesDict[word] = {
+                        x: 0,
+                        y: 0,
+                        vx: 0,
+                        vy: 0,
+                        rx: 0,
+                        ry: 0,
+                        count: 0,
+                        word,
+                        origSentences: [],
+                        origWordIndices: [],
+                        origSentIndices: [],
+                        // @ts-ignore augment at runtime for multi-prompt support
+                        origPromptIds: [],
+                        isRoot: j === 0,
+                        children: [],
+                        parents: [],
+                    };
                 };
-            };
-            nodesDict[word].count += 1;
-            nodesDict[word].origSentences.push(generation + i);
-            nodesDict[word].origWordIndices.push(j);
-            nodesDict[word].origSentIndices.push(i);
-            if (j === 0) {
-                nodesDict[word].isRoot = true;
-            }
-            if (j === words.length - 1) {
-                nodesDict[word].isEnd = true;
-            }
+                nodesDict[word].count += 1;
+                nodesDict[word].origSentences.push(generation + i);
+                nodesDict[word].origWordIndices.push(j);
+                nodesDict[word].origSentIndices.push(i);
+                // @ts-ignore optional field present when type extended
+                nodesDict[word].origPromptIds && nodesDict[word].origPromptIds.push(promptId);
+                if (j === 0) {
+                    nodesDict[word].isRoot = true;
+                }
+                if (j === words.length - 1) {
+                    nodesDict[word].isEnd = true;
+                }
 
             // Add a link from the previous word.
-            if (j > 0) {
-                linksDict[prevWord] = linksDict[prevWord] || {};
-                const sentences = linksDict[prevWord][word] || [];
-                sentences.push(generation + i);
-                linksDict[prevWord][word] = sentences;
-            }
-            prevWord = word;
+                if (j > 0) {
+                    linksDict[prevWord] = linksDict[prevWord] || {};
+                    const entries = linksDict[prevWord][word] || [];
+                    entries.push({ sentence: generation + i, promptId });
+                    linksDict[prevWord][word] = entries;
+                }
+                prevWord = word;
+            });
         });
     });
-    merge(nodesDict, linksDict);
 
-    // Process nodes and links to create data arrays.
+    merge(nodesDict as any, linksDict as any);
+
     const nodesData = Object.values(nodesDict);
-
     const linksData: LinkDatum[] = Object.entries(linksDict).flatMap(([source, targets]) => {
-        return Object.entries(targets).flatMap(([target, sentences]) => {
+        return Object.entries(targets).flatMap(([target, entries]) => {
             const targetNode = nodesDict[target];
             const sourceNode = nodesDict[source];
             if (!nodesDict[target]) {
                 console.log('target not found', target);
             }
-
-            return [...sentences].map((sentence) => {
+            return [...entries].map(({ sentence, promptId }) => {
                 sourceNode?.children?.push(targetNode);
                 targetNode?.parents?.push(sourceNode);
                 return {
                     source: sourceNode,
                     target: targetNode,
                     sentence,
+                    // @ts-ignore optional coloring field
+                    promptId,
                 };
             });
         });
     });
 
-
     return { nodesData, linksData };
 }
 
 /** Merge words that are sequential when there are no other branches. */
-function merge(nodesDict: { [key: string]: NodeDatum }, linksDict: { [key: string]: { [key: string]: string[] } }) {
+function merge(nodesDict: { [key: string]: NodeDatum }, linksDict: { [key: string]: { [key: string]: any[] } }) {
     for (let i = 0; i < Object.keys(nodesDict).length; i++) {
         for (const source in nodesDict) {
 

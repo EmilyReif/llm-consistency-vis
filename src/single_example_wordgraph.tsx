@@ -6,7 +6,8 @@ import * as d3 from "d3";
 import { ellipseForce } from "./force_collide_ellipse";
 
 interface Props {
-    generations: string[];
+    // Prompts (grouped inputs for multi-prompt)
+    promptGroups: { promptId: string, generations: string[] }[];
 }
 
 const NUM_WORDS_TO_WRAP = 3;
@@ -21,6 +22,8 @@ export interface NodeDatum {
     origWordIndices: number[];
     origSentIndices: number[];
     origSentences: string[];
+    // Optional: which prompts contributed to this node
+    origPromptIds?: string[];
 
     // Parent and child nodes.
     children: NodeDatum[];
@@ -43,6 +46,8 @@ export interface NodeDatum {
 export interface LinkDatum {
     source: NodeDatum;
     target: NodeDatum;
+    // Optional: for multi-prompt coloring
+    promptId?: string;
 }
 class SingleExampleWordGraph extends React.Component<Props> {
     private hoveredNode: NodeDatum | null = null;
@@ -66,18 +71,17 @@ class SingleExampleWordGraph extends React.Component<Props> {
     }
 
     async componentDidUpdate() {
-        const generations = this.props.generations.sort();
-        
-        const edgeColors = d3.scaleOrdinal(d3.schemeTableau10.slice(0, 9)).domain(generations);
+        const promptIds = this.props.promptGroups.map(g => g.promptId);
+        const edgeColors = d3.scaleOrdinal(d3.schemeTableau10).domain(promptIds);
         
         const selectedColor = 'black';
         const defaultColor = 'black';
         
         // Generate graph data from all text
-        const { nodesData, linksData } = utils.createGraphDataFromGenerations(generations);
+        const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups)
         this.addBoundingBoxData(nodesData);
 
-        const width = Math.min(window.innerWidth * 0.95, 5000); // 95% of viewport width, max 5000px
+        const width = Math.min(window.innerWidth * 0.95, 5000); // 95% of viewport width, max 5000p;x
         const height = Math.min(window.innerHeight * 0.6, 800); // 70% of viewport height, max 800px
         const svg = d3.select("#graph-holder")
             .html('')
@@ -186,14 +190,14 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
             links.attr("d", (d: any, i) => this.renderPath(d))
                 .attr("stroke", (d: any) => {
-                    return this.linkIsInSents(d) ? edgeColors(d.sentence) : defaultColor;
+                    return edgeColors(d.promptId);
                 })
                 .attr("stroke-width", (d: any) => {
-                    return this.linkIsInSents(d) ? 2 : 1;
+                    return 2;
                 })
                 .attr("stroke-opacity", (d: any) => {
                     if (d.source.word === '') return 0;
-                    return this.linkIsInSents(d) ? .5 : .2;
+                    return .5;
                 })
                 .classed('blur', (d: LinkDatum) => this.selectedNode ? !this.linkIsInSents(d) : false)
 
@@ -259,7 +263,8 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
     private getExpectedY(d: NodeDatum, height: number) {
         const avgSentIndex = d3.min(d.origSentIndices || []) || 0;
-        const percentage = (avgSentIndex / this.props.generations.length);
+        const totalSents =this.props.promptGroups.reduce((acc, g) => acc + g.generations.length, 0);
+        const percentage = (avgSentIndex / Math.max(1, totalSents));
         const pad = height * 0.1;
         return pad + percentage * (height - 2 * pad);
     }
