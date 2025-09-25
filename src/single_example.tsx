@@ -130,9 +130,10 @@ renderOutputsBasic() {
         const validPrompts = state.prompts.filter(p => p.text && p.text.trim().length > 0);
         if (validPrompts.length === 0) return;
         const groups: { promptId: string, generations: string[] }[] = [];
-        for (const p of validPrompts) {
+        for (let i = 0; i < validPrompts.length; i++) {
+          const p = validPrompts[i];
           const gens = await state.fetchGenerationsFor(p.text, p.temp);
-          groups.push({ promptId: p.text, generations: gens });
+          groups.push({ promptId: `${p.text}_${i}`, generations: gens });
         }
         // For the basic outputs view, use the first prompt's generations
         this.setState({promptGroups: groups.length >= 1 ? groups : [] });
