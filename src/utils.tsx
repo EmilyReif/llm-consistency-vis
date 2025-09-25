@@ -80,13 +80,14 @@ function similarity(a: string, b: string): number {
 export function createGraphDataFromPromptGroups(
     groups: { promptId: string; generations: string[] }[]
 ): { nodesData: NodeDatum[]; linksData: LinkDatum[] } {
-    const linksDict: { [key: string]: { [key: string]: { sentence: string, promptId: string }[] } } = {};
+    const linksDict: { [key: string]: { [key: string]: { sentIdx: number, promptId: string }[] } } = {};
     const nodesDict: { [key: string]: NodeDatum } = {};
-
+    let sentIdx = 0;
     groups.forEach(({ promptId, generations }) => {
-        generations.forEach((generation, i) => {
+        generations.forEach((generation) => {
+            sentIdx++;
             let prevWord = '';
-            const words = tokenize(generation, i);
+            const words = tokenize(generation, sentIdx);
             words.forEach((word, j) => {
                 const currentWords = Object.keys(nodesDict);
 
@@ -95,7 +96,8 @@ export function createGraphDataFromPromptGroups(
                 similarNodes = similarNodes.filter((pair: any) => {
                     const [similarityScore, similarWord] = pair;
                     const isAboveThreshold = similarityScore > similarityThreshold;
-                    const isFromSameSentence = nodesDict[similarWord]?.origSentIndices.includes(i);
+                    // const isFromSameSentence = nodesDict[similarWord]?.origSentIndices.includes(sentIdx);
+                    const isFromSameSentence = false;
                     return isAboveThreshold && !isFromSameSentence;
                 });
                 const similarNode = similarNodes?.[0]?.[1] || null;
@@ -113,7 +115,6 @@ export function createGraphDataFromPromptGroups(
                         ry: 0,
                         count: 0,
                         word,
-                        origSentences: [],
                         origWordIndices: [],
                         origSentIndices: [],
                         // @ts-ignore augment at runtime for multi-prompt support
@@ -124,9 +125,8 @@ export function createGraphDataFromPromptGroups(
                     };
                 };
                 nodesDict[word].count += 1;
-                nodesDict[word].origSentences.push(generation + i);
                 nodesDict[word].origWordIndices.push(j);
-                nodesDict[word].origSentIndices.push(i);
+                nodesDict[word].origSentIndices.push(sentIdx);
                 // @ts-ignore optional field present when type extended
                 nodesDict[word].origPromptIds && nodesDict[word].origPromptIds.push(promptId);
                 if (j === 0) {
@@ -140,7 +140,7 @@ export function createGraphDataFromPromptGroups(
                 if (j > 0) {
                     linksDict[prevWord] = linksDict[prevWord] || {};
                     const entries = linksDict[prevWord][word] || [];
-                    entries.push({ sentence: generation + i, promptId });
+                    entries.push({ sentIdx, promptId });
                     linksDict[prevWord][word] = entries;
                 }
                 prevWord = word;
@@ -158,13 +158,13 @@ export function createGraphDataFromPromptGroups(
             if (!nodesDict[target]) {
                 console.log('target not found', target);
             }
-            return [...entries].map(({ sentence, promptId }) => {
+            return [...entries].map(({ sentIdx, promptId }) => {
                 sourceNode?.children?.push(targetNode);
                 targetNode?.parents?.push(sourceNode);
                 return {
                     source: sourceNode,
                     target: targetNode,
-                    sentence,
+                    sentIdx,
                     // @ts-ignore optional coloring field
                     promptId,
                 };

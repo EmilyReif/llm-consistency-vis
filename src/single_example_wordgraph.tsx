@@ -21,7 +21,6 @@ export interface NodeDatum {
     count: number;
     origWordIndices: number[];
     origSentIndices: number[];
-    origSentences: string[];
     // Optional: which prompts contributed to this node
     origPromptIds?: string[];
 
@@ -78,7 +77,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
         const defaultColor = 'black';
         
         // Generate graph data from all text
-        const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups)
+        const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups);
         this.addBoundingBoxData(nodesData);
 
         const width = Math.min(window.innerWidth * 0.95, 5000); // 95% of viewport width, max 5000p;x
@@ -221,14 +220,14 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
     private linkIsInSents(d: any) {
         const activeNode = this.selectedNode || this.hoveredNode;
-        return activeNode?.origSentences.includes(d.sentence);
+        return activeNode?.origSentIndices.includes(d.sentIdx);
     }
 
     private nodeIsInSents(d: NodeDatum) {
         const activeNode = this.selectedNode || this.hoveredNode;
         if (!activeNode) return false;
-        const activeSents = [...activeNode.origSentences];
-        const sents = d.origSentences;
+        const activeSents = [...activeNode.origSentIndices];
+        const sents = d.origSentIndices;
         const sharedElements = activeSents.filter(e => sents.includes(e));
         return sharedElements.length > 0;
     }
@@ -263,7 +262,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
     private getExpectedY(d: NodeDatum, height: number) {
         const avgSentIndex = d3.min(d.origSentIndices || []) || 0;
-        const totalSents =this.props.promptGroups.reduce((acc, g) => acc + g.generations.length, 0);
+        const totalSents = this.props.promptGroups.reduce((acc, g) => acc + g.generations.length, 0);
         const percentage = (avgSentIndex / Math.max(1, totalSents));
         const pad = height * 0.1;
         return pad + percentage * (height - 2 * pad);
@@ -276,10 +275,11 @@ class SingleExampleWordGraph extends React.Component<Props> {
      */
     private renderPath(d: any) {
         const getY = (node: NodeDatum) => {
-            const lineHeight = this.fontSize(node) * 0.5;
+            const lineHeight = 0.75;
             // Calculate the offset for this line compared to the other lines in this node.
-            const offsetY = [...node.origSentences].indexOf(d.sentence) * this.fontSize(node) * 0.05;
-            return node.y - lineHeight + offsetY;
+            const percentage = [...node.origSentIndices].indexOf(d.sentIdx) / node.origSentIndices.length;
+            const offsetY = (percentage - lineHeight) * this.fontSize(node);
+            return node.y + offsetY;
         };
         const [y1, y2] = [getY(d.source), getY(d.target)];
 
@@ -349,7 +349,8 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
     private showHoveredNodeInfo() {
         if (!this.hoveredNode) return;
-        const generations = this.hoveredNode.origSentences;
+        const generations = this.hoveredNode.origSentIndices;
+        // console.log('generations', generations);
     }
 }
 
