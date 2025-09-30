@@ -3,14 +3,14 @@ import { NodeDatum, LinkDatum } from './single_example_wordgraph';
 
 export const MILLER_STONE_COLORS = [
     "#4f6980", // Blue
+    "#f47942", // Orange
+    "#bfbb60", // Yellow-Green
+    "#b66353", // Brown
+    "#638b66", // Green
     "#d7ce9f", // Light Yellow
     "#a2ceaa", // Light Green
     "#fbb04e", // Light Orange
-    "#f47942", // Orange
     "#849db1", // Light Blue
-    "#638b66", // Green
-    "#bfbb60", // Yellow-Green
-    "#b66353", // Brown
     "#b9aa97", // Light Brown
     "#7e756d"  // Gray
   ];
