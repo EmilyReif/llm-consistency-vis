@@ -1,6 +1,7 @@
 import { makeAutoObservable, action } from "mobx";
 import { examples } from "./cached_examples";
 import * as utils from "./utils";
+import * as color_utils from "./color_utils";
 import { OpenAI } from "openai";
 import * as d3 from 'd3';
 
@@ -13,9 +14,9 @@ const PROMPT_COLOR_OPACITY = 0.3;
 const OPENAI_API_KEY = null;
 
 
-// D3 schemeTableau10 color scale for prompt containers with reduced opacity
+// MILLER_STONE_COLORS color scale for prompt containers with reduced opacity
 // Maps each color to a semi-transparent version using D3's color manipulation
-const PROMPT_COLOR_SCALE = d3.schemeTableau10.map(c => d3.color(c)?.copy({opacity:PROMPT_COLOR_OPACITY}).formatHex8() || 'black');
+const PROMPT_COLOR_SCALE = color_utils.MILLER_STONE_COLORS.map(c => d3.color(c)?.copy({opacity:PROMPT_COLOR_OPACITY}).formatHex8() || 'black');
 
 class State {
     loading = false;

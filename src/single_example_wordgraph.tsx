@@ -2,8 +2,10 @@ import React from "react";
 import './single_example_wordgraph.css';
 import { observer } from "mobx-react";
 import * as utils from './utils';
+import * as color_utils from './color_utils';
 import * as d3 from "d3";
 import { ellipseForce } from "./force_collide_ellipse";
+import { getNodeColor } from './color_utils';
 
 interface Props {
     // Prompts (grouped inputs for multi-prompt)
@@ -69,7 +71,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
         const totalGenerations = this.props.promptGroups.reduce((acc, group) => acc + group.generations.length, 0);
         const minFontSize = 11;
         const maxFontSize = 50;
-        
+
         this.fontScale = d3.scaleLinear()
             .domain([1, totalGenerations])
             .range([minFontSize, maxFontSize])
@@ -83,11 +85,11 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
     async componentDidUpdate() {
         const promptIds = this.props.promptGroups.map(g => g.promptId);
-        const edgeColors = d3.scaleOrdinal(d3.schemeTableau10).domain(promptIds);
-        
+        const edgeColors = d3.scaleOrdinal(color_utils.MILLER_STONE_COLORS).domain(promptIds);
+
         const selectedColor = 'black';
         const defaultColor = 'black';
-        
+
         // Generate graph data from all text
         const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups);
         this.createFontScale(); // Create font scale based on total generations
@@ -209,14 +211,14 @@ class SingleExampleWordGraph extends React.Component<Props> {
                 })
                 .attr("stroke-opacity", (d: any) => {
                     if (d.source.word === '') return 0;
-                    return .5;
+                    return this.linkIsInSents(d) ? .5 : 0.2;
                 })
                 .classed('blur', (d: LinkDatum) => this.selectedNode ? !this.linkIsInSents(d) : false)
 
             nodes
                 .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
                 .attr('fill', (d: NodeDatum) => {
-                    return this.nodeIsInSents(d) ? selectedColor : defaultColor;
+                        return getNodeColor(d, linksData, edgeColors);
                 })
                 .style('opacity', (d: NodeDatum) => {
                     const activeNode = this.selectedNode || this.hoveredNode;
@@ -248,8 +250,8 @@ class SingleExampleWordGraph extends React.Component<Props> {
     /** Add a bounding box rectangle to each node (for collision calculation) */
     private addBoundingBoxData(nodes: NodeDatum[]) {
         nodes.forEach((node) => {
-            node.rx = this.textLength(node)/2;
-            node.ry = this.textHeight(node)/2;
+            node.rx = this.textLength(node) / 2;
+            node.ry = this.textHeight(node) / 2;
         });
     }
 
@@ -276,9 +278,13 @@ class SingleExampleWordGraph extends React.Component<Props> {
     private getExpectedY(d: NodeDatum, height: number) {
         const avgSentIndex = d3.min(d.origSentIndices || []) || 0;
         const totalSents = this.props.promptGroups.reduce((acc, g) => acc + g.generations.length, 0);
-        const percentage = (avgSentIndex / Math.max(1, totalSents));
-        const pad = height * 0.1;
-        return pad + percentage * (height - 2 * pad);
+        
+        // Use D3 linear scale for Y positioning
+        const yScale = d3.scaleLinear()
+            .domain([0, totalSents])
+            .range([height * 0.1, height * 0.9]);
+            
+        return yScale(avgSentIndex);
     }
 
     /**

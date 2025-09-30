@@ -5,7 +5,6 @@ import {getEmbeddings} from './embed'
 const tokensToOrigWord: { [key: string]: string } = {};
 const embsDict: { [key: string]: { word: string, prevWord: string, nextWord: string, idx: number } } = {};
 
-
 export function unformat(word: string) {
     return tokensToOrigWord[word];
 }
@@ -155,6 +154,8 @@ export function createGraphDataFromPromptGroups(
         return Object.entries(targets).flatMap(([target, entries]) => {
             const targetNode = nodesDict[target];
             const sourceNode = nodesDict[source];
+            // sourceNode.origSentIndices = d3.shuffle(sourceNode.origSentIndices);
+            // targetNode.origSentIndices = d3.shuffle(targetNode.origSentIndices);
             if (!nodesDict[target]) {
                 console.log('target not found', target);
             }
