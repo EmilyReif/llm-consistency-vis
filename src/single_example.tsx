@@ -125,15 +125,19 @@ renderOutputsBasic() {
   componentDidMount() {
     // react to changes in observable MobX state
     this.disposer = reaction(
-      () => [state.prompts.map(p => p.text).join('\u0001'), state.prompts.map(p => p.temp).join(','), state.numGenerations],
+      () => [state.prompts.map(p => p.text).join('\u0001'), state.prompts.map(p => p.temp).join(','), state.numGenerations, state.disabledPrompts],
       async () => {
-        const validPrompts = state.prompts.filter(p => p.text && p.text.trim().length > 0);
-        if (validPrompts.length === 0) return;
+        const validPromptsWithIndex = state.prompts
+          .map((p, index) => ({ prompt: p, originalIndex: index }))
+          .filter(({ prompt, originalIndex }) => 
+            prompt.text && prompt.text.trim().length > 0 && !state.isPromptDisabled(originalIndex)
+          );
+        if (validPromptsWithIndex.length === 0) return;
         const groups: { promptId: string, generations: string[] }[] = [];
-        for (let i = 0; i < validPrompts.length; i++) {
-          const p = validPrompts[i];
-          const gens = await state.fetchGenerationsFor(p.text, p.temp);
-          groups.push({ promptId: `${p.text}_${i}`, generations: gens });
+        for (let i = 0; i < validPromptsWithIndex.length; i++) {
+          const { prompt, originalIndex } = validPromptsWithIndex[i];
+          const gens = await state.fetchGenerationsFor(prompt.text, prompt.temp);
+          groups.push({ promptId: `${prompt.text}_${originalIndex}`, generations: gens });
         }
         // For the basic outputs view, use the first prompt's generations
         this.setState({promptGroups: groups.length >= 1 ? groups : [] });

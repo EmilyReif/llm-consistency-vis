@@ -8,6 +8,9 @@ interface PromptContainerProps {
     onUpdateText: (index: number, text: string) => void;
     onUpdateTemp: (index: number, temp: number) => void;
     onDelete: (index: number) => void;
+    onToggleDisabled: (index: number) => void;
+    isDisabled: boolean;
+    totalPrompts: number;
 }
 
 class PromptContainer extends React.Component<PromptContainerProps, { expanded: boolean; generatingSimilar: boolean; similarPrompts: string[] }> {
@@ -39,19 +42,21 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
     };
 
     render() {
-        const { prompt, promptIndex, onUpdateText, onUpdateTemp, onDelete } = this.props;
+        const { prompt, promptIndex, onUpdateText, onUpdateTemp, onDelete, onToggleDisabled, isDisabled, totalPrompts } = this.props;
         const { expanded, generatingSimilar, similarPrompts } = this.state;
 
         // Get semi-transparent background color from D3 color scheme
         const backgroundColor = state.getPromptColor(promptIndex);
+        console.log(`Prompt container ${promptIndex} color: ${backgroundColor}`);
 
         return (
             <div
-                className='compare-prompt-container'
+                className={`compare-prompt-container ${isDisabled ? 'disabled' : ''}`}
                 style={{
-                    backgroundColor,
-                    color: 'black', // Always use black text for readability
-                    borderColor: backgroundColor
+                    backgroundColor: isDisabled ? '#f0f0f0' : backgroundColor,
+                    color: isDisabled ? '#666' : 'black', // Grey text when disabled
+                    borderColor: isDisabled ? '#ccc' : backgroundColor,
+                    opacity: isDisabled ? 0.6 : 1
                 }}
             >
                 <div className="controls-row">
@@ -78,14 +83,23 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                 onChange={(e) => onUpdateTemp(promptIndex, parseFloat((e.target as HTMLInputElement).value))}
                             />
                         </div>
-                    {promptIndex > 0 && (
-                        <button
-                            className="delete-prompt-button"
-                            onClick={() => onDelete(promptIndex)}
-                            title="Delete this prompt"
-                        >
-                            ×
-                        </button>
+                    {totalPrompts > 1 && (
+                        <>
+                            <button
+                                className="toggle-disabled-button"
+                                onClick={() => onToggleDisabled(promptIndex)}
+                                title={isDisabled ? "Enable this prompt" : "Disable this prompt"}
+                            >
+                                {isDisabled ? '👁️' : '🚫'}
+                            </button>
+                            <button
+                                className="delete-prompt-button"
+                                onClick={() => onDelete(promptIndex)}
+                                title="Delete this prompt"
+                            >
+                                ×
+                            </button>
+                        </>
                     )}
                 </div>
                 {expanded && (

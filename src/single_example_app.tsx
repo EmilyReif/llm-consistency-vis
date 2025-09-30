@@ -79,6 +79,9 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         onUpdateText={state.updatePromptTextAt}
                         onUpdateTemp={state.updatePromptTempAt}
                         onDelete={state.removePromptAt}
+                        onToggleDisabled={state.togglePromptDisabled}
+                        isDisabled={state.isPromptDisabled(idx)}
+                        totalPrompts={state.prompts.length}
                     />
                 ))}
                 

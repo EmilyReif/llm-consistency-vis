@@ -24,6 +24,8 @@ class State {
     prompts: { text: string, temp: number }[] = [];
     numGenerations: number = DEFAULT_NUM_GENERATIONS;
     generationsCache: { [example: string]: { [temp: number]: string[] } } = {};
+    // Track which prompts are disabled
+    disabledPrompts: number[] = [];
 
     // Get color for a prompt index, cycling through the color scale
     // Uses modulo to cycle through colors when there are more prompts than colors
@@ -64,11 +66,32 @@ class State {
         this.prompts = next;
     });
 
-    removePromptAt = ((index: number) => {
-        if (index === 0) return; // Keep at least one prompt
+    removePromptAt = action((index: number) => {
+        // Can only delete the first prompt if there are multiple prompts
+        if (index === 0 && this.prompts.length <= 1) return;
         const next = [...this.prompts];
         next.splice(index, 1);
         this.prompts = next;
+        
+        // Update disabled array when prompt is deleted
+        // Remove the deleted prompt and shift indices of subsequent prompts
+        this.disabledPrompts = this.disabledPrompts
+            .filter(disabledIndex => disabledIndex !== index)
+            .map(disabledIndex => disabledIndex > index ? disabledIndex - 1 : disabledIndex);
+    });
+
+    togglePromptDisabled = action((index: number) => {
+        // Can only disable the first prompt if there are multiple prompts
+        if (index === 0 && this.prompts.length <= 1) return;
+        if (this.disabledPrompts.includes(index)) {
+            this.disabledPrompts = this.disabledPrompts.filter(i => i !== index);
+        } else {
+            this.disabledPrompts = [...this.disabledPrompts, index];
+        }
+    });
+
+    isPromptDisabled = ((index: number): boolean => {
+        return this.disabledPrompts.includes(index);
     });
 
     setNumGenerations = ((value: number) => {

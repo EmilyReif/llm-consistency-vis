@@ -24,7 +24,7 @@ export const MILLER_STONE_COLORS = [
 export function getNodeColor(
     node: NodeDatum, 
     linksData: LinkDatum[], 
-    edgeColors: d3.ScaleOrdinal<string, string>
+    edgeColors: (originalIndex: string) => string
 ): string {
     // Get all edges connected to this node
     const connectedEdges = linksData.filter(link => 
@@ -35,25 +35,29 @@ export function getNodeColor(
         return 'black'; // Default color if no edges
     }
 
-    // Count edges by promptId
-    const promptCounts: { [promptId: string]: number } = {};
+    // Count edges by original prompt index (extracted from promptId)
+    const promptCounts: { [originalIndex: string]: number } = {};
     connectedEdges.forEach(edge => {
         if (edge.promptId) {
-            promptCounts[edge.promptId] = (promptCounts[edge.promptId] || 0) + 1;
+            // Extract original prompt index from promptId
+            const match = edge.promptId.match(/_(\d+)$/);
+            const originalIndex = match ? match[1] : '0';
+            promptCounts[originalIndex] = (promptCounts[originalIndex] || 0) + 1;
         }
     });
 
     // Calculate weights (proportions)
     const totalEdges = connectedEdges.length;
-    const weights: { [promptId: string]: number } = {};
-    Object.keys(promptCounts).forEach(promptId => {
-        weights[promptId] = promptCounts[promptId] / totalEdges;
+    const weights: { [originalIndex: string]: number } = {};
+    Object.keys(promptCounts).forEach(originalIndex => {
+        weights[originalIndex] = promptCounts[originalIndex] / totalEdges;
     });
 
-    // Get colors for each promptId
-    const colors: { [promptId: string]: string } = {};
-    Object.keys(weights).forEach(promptId => {
-        colors[promptId] = edgeColors(promptId);
+    // Get colors for each original prompt index using the same logic as state.getPromptColor()
+    const colors: { [originalIndex: string]: string } = {};
+    Object.keys(weights).forEach(originalIndex => {
+        const index = parseInt(originalIndex);
+        colors[originalIndex] = MILLER_STONE_COLORS[index % MILLER_STONE_COLORS.length];
     });
 
     // Blend colors based on weights

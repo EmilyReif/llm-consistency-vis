@@ -84,8 +84,14 @@ class SingleExampleWordGraph extends React.Component<Props> {
     }
 
     async componentDidUpdate() {
-        const promptIds = this.props.promptGroups.map(g => g.promptId);
-        const edgeColors = d3.scaleOrdinal(color_utils.MILLER_STONE_COLORS).domain(promptIds);
+        // Create color scale that matches the state's color assignment
+        // Use the same logic as state.getPromptColor() for consistency
+        const edgeColors = (originalIndex: string) => {
+            const index = parseInt(originalIndex);
+            const color = color_utils.MILLER_STONE_COLORS[index % color_utils.MILLER_STONE_COLORS.length];
+            console.log(`Graph color for original index ${originalIndex}: ${color}`);
+            return color;
+        };
 
         const selectedColor = 'black';
         const defaultColor = 'black';
@@ -204,7 +210,10 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
             links.attr("d", (d: any, i) => this.renderPath(d))
                 .attr("stroke", (d: any) => {
-                    return edgeColors(d.promptId);
+                    // Extract original prompt index from promptId for consistent coloring
+                    const match = d.promptId.match(/_(\d+)$/);
+                    const originalIndex = match ? match[1] : '0';
+                    return edgeColors(originalIndex);
                 })
                 .attr("stroke-width", (d: any) => {
                     return 2;
