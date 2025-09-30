@@ -53,7 +53,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
             <div className='single-input-holder'>
                 <div className='controls'>
                     <div className="controls-row">
-                        <div className="sliders">
+                    <label><b>Global Controls</b></label>
                             <div className="slider-container">
                                 <label>Num Gen: {this.state.numGenerations}</label>
                                 <div className="tooltip">
@@ -69,7 +69,6 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                     onMouseUp={() => state.setNumGenerations(this.state.numGenerations)}
                                 />
                             </div>
-                        </div>
                     </div>
                 </div>
                 {state.prompts.map((p, idx) => (

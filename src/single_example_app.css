@@ -11,8 +11,8 @@
     flex-direction: column;
     gap: 15px;
     padding: 8px 15px;
-    background: rgb(223, 208, 234);
     border-radius: 8px;
+    border: 1px solid #ddd;
 }
 
 .controls-row {
@@ -20,11 +20,6 @@
     flex-direction: row;
     gap: 15px;
     align-items: center;
-}
-
-.sliders {
-    display: flex;
-    gap: 15px;
 }
 
 .slider-container {
@@ -151,8 +146,9 @@
 
 .generate-similar-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 10px;
+    padding: 10px 0px;
 }
 
 .expand-caret {
@@ -193,6 +189,7 @@
     background: white;
     border-radius: 8px;
     border: 1px solid #ddd;
+    width: -webkit-fill-available;
 }
 
 .similar-prompts-table-container h3 {

@@ -24,7 +24,7 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
     handleGenerateSimilar = async () => {
         const similarityText = (document.querySelector(`.similarity-input-${this.props.promptIndex}`) as HTMLInputElement)?.value || '';
         this.setState({ generatingSimilar: true, similarPrompts: [] });
-        
+
         try {
             const similarPrompts = await state.generateSimilarPrompts(this.props.prompt.text, similarityText, this.props.prompt.temp);
             this.setState({ similarPrompts, generatingSimilar: false });
@@ -46,8 +46,8 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
         const backgroundColor = state.getPromptColor(promptIndex);
 
         return (
-            <div 
-                className='compare-prompt-container' 
+            <div
+                className='compare-prompt-container'
                 style={{
                     backgroundColor,
                     color: 'black', // Always use black text for readability
@@ -62,7 +62,6 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                         options={Object.keys(examples)}
                         onSubmit={(val: string) => onUpdateText(promptIndex, val)}
                     />
-                    <div className="sliders">
                         <div className="slider-container">
                             <label>Temp: {prompt.temp}</label>
                             <input
@@ -74,7 +73,6 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                 onChange={(e) => onUpdateTemp(promptIndex, parseFloat((e.target as HTMLInputElement).value))}
                             />
                         </div>
-                    </div>
                     <div className="expand-caret" onClick={this.toggleExpanded}>
                         <span className={`caret ${expanded ? 'expanded' : ''}`}>
                             {expanded ? '−' : '+'}
@@ -92,50 +90,56 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                 </div>
                 {expanded && (
                     <div className="generate-similar-container">
-                        <button 
-                            className="generate-similar-button"
-                            onClick={this.handleGenerateSimilar}
-                            disabled={generatingSimilar}
-                        >
-                            generate similar prompts
-                        </button>
-                        <div className="similarity-input-container">
-                            <div className="input-with-hint">
-                                <input
-                                    type="text"
-                                    className={`input-field similarity-input-${promptIndex}`}
-                                    placeholder="Optionally specify what aspect of the input you care about, e.g., 'about food', 'asking for advice', 'formal tone'"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            (e.target as HTMLInputElement).blur();
-                                        }
-                                    }}
-                                />
-                                <span className="enter-hint">⏎ Enter</span>
+                        <div className='controls-row'>
+                            <button
+                                className="generate-similar-button"
+                                onClick={this.handleGenerateSimilar}
+                                disabled={generatingSimilar}
+                            >
+                                generate similar prompts
+                            </button>
+                            <div className="similarity-input-container">
+                                <div className="input-with-hint">
+                                    <input
+                                        type="text"
+                                        className={`input-field similarity-input-${promptIndex}`}
+                                        placeholder="Optionally specify what aspect of the input you care about, e.g., 'about food', 'asking for advice', 'formal tone'"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                (e.target as HTMLInputElement).blur();
+                                            }
+                                        }}
+                                    />
+                                    <span className="enter-hint">⏎ Enter</span>
+                                </div>
                             </div>
                         </div>
-                        {similarPrompts.length > 0 && (
-                            <div className="similar-prompts-table-container">
-                                <table className="similar-prompts-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Prompt</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {similarPrompts.map((prompt, index) => (
-                                            <tr 
-                                                key={index}
-                                                className="clickable-row"
-                                                onClick={() => this.handlePromptSelect(prompt)}
-                                            >
-                                                <td>{prompt}</td>
+                            {similarPrompts.length > 0 && (
+                        <div className='controls-row'>
+
+                                <div className="similar-prompts-table-container">
+                                    <table className="similar-prompts-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Prompt</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                                        </thead>
+                                        <tbody>
+                                            {similarPrompts.map((prompt, index) => (
+                                                <tr
+                                                    key={index}
+                                                    className="clickable-row"
+                                                    onClick={() => this.handlePromptSelect(prompt)}
+                                                >
+                                                    <td>{prompt}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                        </div>
+
+                            )}
                         {generatingSimilar && (
                             <div className="similar-prompts-table-container">
                                 <table className="similar-prompts-table">
