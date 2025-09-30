@@ -35,7 +35,7 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
     };
 
     handlePromptSelect = (prompt: string) => {
-        this.props.onUpdateText(this.props.promptIndex, prompt);
+        state.addPrompt(prompt);
     };
 
     render() {
@@ -55,6 +55,11 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                 }}
             >
                 <div className="controls-row">
+                <div className="expand-caret" onClick={this.toggleExpanded}>
+                        <span className={`${expanded ? 'expanded' : ''}`}>
+                            {expanded ? '▲' : '▼'}
+                        </span>
+                    </div>
                     <div className='input-header'>Prompt {promptIndex + 1}</div>
                     <EditableDropdown
                         key={'prompt-' + promptIndex + '-' + (prompt.text || '')}
@@ -73,11 +78,6 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                 onChange={(e) => onUpdateTemp(promptIndex, parseFloat((e.target as HTMLInputElement).value))}
                             />
                         </div>
-                    <div className="expand-caret" onClick={this.toggleExpanded}>
-                        <span className={`caret ${expanded ? 'expanded' : ''}`}>
-                            {expanded ? '−' : '+'}
-                        </span>
-                    </div>
                     {promptIndex > 0 && (
                         <button
                             className="delete-prompt-button"
