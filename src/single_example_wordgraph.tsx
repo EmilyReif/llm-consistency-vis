@@ -51,6 +51,7 @@ export interface LinkDatum {
 class SingleExampleWordGraph extends React.Component<Props> {
     private hoveredNode: NodeDatum | null = null;
     private selectedNode: NodeDatum | null = null;  // Add this new property
+    private fontScale: d3.ScaleLinear<number, number> | null = null;
 
     componentDidMount() {
         window.addEventListener('resize', this.handleResize);
@@ -62,6 +63,17 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
     private handleResize = () => {
         this.componentDidUpdate();
+    }
+
+    private createFontScale() {
+        const totalGenerations = this.props.promptGroups.reduce((acc, group) => acc + group.generations.length, 0);
+        const minFontSize = 11;
+        const maxFontSize = 50;
+        
+        this.fontScale = d3.scaleLinear()
+            .domain([1, totalGenerations])
+            .range([minFontSize, maxFontSize])
+            .clamp(true);
     }
 
     render() {
@@ -78,6 +90,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
         
         // Generate graph data from all text
         const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups);
+        this.createFontScale(); // Create font scale based on total generations
         this.addBoundingBoxData(nodesData);
 
         const width = Math.min(window.innerWidth * 0.95, 5000); // 95% of viewport width, max 5000p;x
@@ -314,9 +327,10 @@ class SingleExampleWordGraph extends React.Component<Props> {
         return lineGenerator(points);
     }
     private fontSize(d: any) {
-        const minFontSize = 11;
-        const maxFontSize = 30;
-        return Math.min(Math.max(minFontSize, d.count * 5), maxFontSize);
+        if (!this.fontScale) {
+            return 10; // Default font size
+        }
+        return this.fontScale(d.count);
     }
 
     private textLength(d: any) {
