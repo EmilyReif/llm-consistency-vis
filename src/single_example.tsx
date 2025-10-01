@@ -101,6 +101,7 @@ class SingleExample extends React.Component {
     renderOutputsGraph() {
         return <SingleExampleWordGraph 
             promptGroups={this.state.promptGroups}
+            similarityThreshold={state.similarityThreshold}
         ></SingleExampleWordGraph>;
     }
 
@@ -151,7 +152,7 @@ renderOutputsBasic() {
   componentDidMount() {
     // react to changes in observable MobX state
     this.disposer = reaction(
-      () => [state.prompts.map(p => p.text).join('\u0001'), state.prompts.map(p => p.temp).join(','), state.numGenerations, state.disabledPrompts],
+      () => [state.prompts.map(p => p.text).join('\u0001'), state.prompts.map(p => p.temp).join(','), state.numGenerations, state.similarityThreshold, state.disabledPrompts],
       async () => {
         const validPromptsWithIndex = state.prompts
           .map((p, index) => ({ prompt: p, originalIndex: index }))

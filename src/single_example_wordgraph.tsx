@@ -10,6 +10,7 @@ import { getNodeColor } from './color_utils';
 interface Props {
     // Prompts (grouped inputs for multi-prompt)
     promptGroups: { promptId: string, generations: string[] }[];
+    similarityThreshold: number;
 }
 
 const NUM_WORDS_TO_WRAP = 3;
@@ -92,12 +93,10 @@ class SingleExampleWordGraph extends React.Component<Props> {
             const color = color_utils.MILLER_STONE_COLORS[index % color_utils.MILLER_STONE_COLORS.length];
             return color;
         };
-
-        const selectedColor = 'black';
-        const defaultColor = 'black';
+        console.log(JSON.stringify(this.props.promptGroups, null, 2))
 
         // Generate graph data from all text
-        const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups);
+        const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold);
         this.createFontScale(); // Create font scale based on total generations
         this.addBoundingBoxData(nodesData);
 

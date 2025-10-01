@@ -8,6 +8,7 @@ import * as d3 from 'd3';
 
 const DEFAULT_NUM_GENERATIONS = 30;
 const DEFAULT_TEMP = 0.7;
+const DEFAULT_SIMILARITY_THRESHOLD = 0.5;
 // Opacity for prompt container background colors (0.0 = transparent, 1.0 = opaque)
 const PROMPT_COLOR_OPACITY = 0.3;
 // For some demo, use hardcoded key
@@ -23,6 +24,7 @@ class State {
     // Unified prompt list; no special first prompt
     prompts: { text: string, temp: number }[] = [];
     numGenerations: number = DEFAULT_NUM_GENERATIONS;
+    similarityThreshold: number = DEFAULT_SIMILARITY_THRESHOLD;
     generationsCache: { [example: string]: { [temp: number]: string[] } } = {};
     // Track which prompts are disabled
     disabledPrompts: number[] = [];
@@ -96,6 +98,10 @@ class State {
 
     setNumGenerations = ((value: number) => {
         this.numGenerations = value;
+    });
+
+    setSimilarityThreshold = ((value: number) => {
+        this.similarityThreshold = value;
     });
 
 

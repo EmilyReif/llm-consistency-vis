@@ -14,6 +14,7 @@ interface SingleExampleAppState {
     selectedExample: string;
     temperature: number;
     numGenerations: number;
+    similarityThreshold: number;
 }
 
 class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
@@ -21,6 +22,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         selectedExample: DEFAULT_TEXT,
         temperature: state.prompts[0]?.temp ?? 0.7,
         numGenerations: state.numGenerations,
+        similarityThreshold: state.similarityThreshold,
     };
 
     handleSliderChange = (event: any, param: string) => {
@@ -67,6 +69,21 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                     value={this.state.numGenerations}
                                     onChange={(e) => this.handleSliderChange(e, 'numGenerations')}
                                     onMouseUp={() => state.setNumGenerations(this.state.numGenerations)}
+                                />
+                            </div>
+                            <div className="slider-container">
+                                <label>Similarity Threshold: {this.state.similarityThreshold.toFixed(1)}</label>
+                                <div className="tooltip">
+                                    Similarity Threshold controls how similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.1"
+                                    value={this.state.similarityThreshold}
+                                    onChange={(e) => this.handleSliderChange(e, 'similarityThreshold')}
+                                    onMouseUp={() => state.setSimilarityThreshold(this.state.similarityThreshold)}
                                 />
                             </div>
                     </div>

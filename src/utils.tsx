@@ -77,7 +77,8 @@ function similarity(a: string, b: string): number {
 
 /** Create graph data from prompt groups. */
 export function createGraphDataFromPromptGroups(
-    groups: { promptId: string; generations: string[] }[]
+    groups: { promptId: string; generations: string[] }[],
+    similarityThreshold: number = 0.5
 ): { nodesData: NodeDatum[]; linksData: LinkDatum[] } {
     const linksDict: { [key: string]: { [key: string]: { sentIdx: number, promptId: string }[] } } = {};
     const nodesDict: { [key: string]: NodeDatum } = {};
@@ -89,14 +90,12 @@ export function createGraphDataFromPromptGroups(
             const words = tokenize(generation, sentIdx);
             words.forEach((word, j) => {
                 const currentWords = Object.keys(nodesDict);
-
-                const similarityThreshold = 0.5;
                 let similarNodes = currentWords.map((existingWord) => [similarity(existingWord, word), existingWord]).sort((a: any, b: any) => b[0] - a[0]) as any;
                 similarNodes = similarNodes.filter((pair: any) => {
                     const [similarityScore, similarWord] = pair;
                     const isAboveThreshold = similarityScore > similarityThreshold;
-                    // const isFromSameSentence = nodesDict[similarWord]?.origSentIndices.includes(sentIdx);
-                    const isFromSameSentence = false;
+                    const isFromSameSentence = nodesDict[similarWord]?.origSentIndices.includes(sentIdx);
+                    // const isFromSameSentence = false;
                     return isAboveThreshold && !isFromSameSentence;
                 });
                 const similarNode = similarNodes?.[0]?.[1] || null;
