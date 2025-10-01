@@ -93,6 +93,13 @@
     padding: 2px 6px;
     border-radius: 4px;
     pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.enter-hint .material-icons {
+    font-size: 12px;
 }
 
 .dropdown-list {
@@ -143,6 +150,10 @@
     color: #666;
     cursor: pointer;
     font-weight: bold;
+}
+
+.expand-caret .material-icons {
+    font-size: 18px;
 }
 
 .expand-caret:hover {
@@ -255,6 +266,10 @@
     opacity: .5;
 }
 
+.add-prompt-container .material-icons {
+    font-size: 18px;
+}
+
 .compare-prompt-container {
     margin-top: 8px;
     padding: 8px 12px;
@@ -275,6 +290,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.delete-prompt-button .material-icons {
+    font-size: 18px;
 }
 
 .delete-prompt-button:hover {
@@ -314,9 +335,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
     width: 24px;
     height: 24px;
+}
+
+.toggle-disabled-button .material-icons {
+    font-size: 18px;
 }
 
 .toggle-disabled-button:hover {

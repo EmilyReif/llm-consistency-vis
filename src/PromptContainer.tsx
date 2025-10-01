@@ -59,9 +59,9 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                 }}
             >
                 <div className="controls-row">
-                <div className="expand-caret" onClick={this.toggleExpanded}>
-                        <span className={`${expanded ? 'expanded' : ''}`}>
-                            {expanded ? '▲' : '▼'}
+                    <div className="expand-caret" onClick={this.toggleExpanded}>
+                        <span className={`material-icons ${expanded ? 'expanded' : ''}`}>
+                            {expanded ? 'expand_less' : 'expand_more'}
                         </span>
                     </div>
                     <div className='input-header'>Prompt {promptIndex + 1}</div>
@@ -89,14 +89,16 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                 onClick={() => onToggleDisabled(promptIndex)}
                                 title={isDisabled ? "Enable this prompt" : "Disable this prompt"}
                             >
-                                {isDisabled ? '👁️' : '🚫'}
+                                <span className="material-icons">
+                                    {isDisabled ? 'visibility' : 'visibility_off'}
+                                </span>
                             </button>
                             <button
                                 className="delete-prompt-button"
                                 onClick={() => onDelete(promptIndex)}
                                 title="Delete this prompt"
                             >
-                                ×
+                                <span className="material-icons">close</span>
                             </button>
                         </>
                     )}
@@ -123,7 +125,9 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                             }
                                         }}
                                     />
-                                    <span className="enter-hint">⏎ Enter</span>
+                                    <span className="enter-hint">
+                                        <span className="material-icons">keyboard_return</span> Enter
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -254,7 +258,9 @@ class EditableDropdown extends React.Component<any, any> {
                         ))}
                     </ul>
                 )}
-                <span className="enter-hint">⏎ Enter</span>
+                <span className="enter-hint">
+                    <span className="material-icons">keyboard_return</span> Enter
+                </span>
             </div>
         );
     }

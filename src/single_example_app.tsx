@@ -87,8 +87,9 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                 
                 <div className="add-prompt-container" onClick={() => state.addPrompt('')}>
                     <div className="controls-row" style={{ width: 'fit-content' }}>
-                        <div className='input-header'
-                        >+</div>
+                        <div className='input-header'>
+                            <span className="material-icons">add</span>
+                        </div>
                     </div>
                 </div>
                 {state.loading ? this.renderLoading() : <SingleExample />}
