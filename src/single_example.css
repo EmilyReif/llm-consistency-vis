@@ -59,3 +59,35 @@ input[type="radio"]+label {
     display: flex;
     align-items: flex-start;
 }
+
+/* Styles for prompt output groups in raw outputs view */
+.prompt-output-group {
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.prompt-output-header {
+    padding: 8px 12px;
+    color: black;
+    font-weight: bold;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.output-item {
+    padding: 6px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    font-family: monospace;
+}
+
+.output-item:last-child {
+    border-bottom: none;
+}
+
+.prompt-separator {
+    height: 2px;
+    background: #ddd;
+    margin: 1rem 0;
+    border-radius: 1px;
+}

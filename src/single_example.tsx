@@ -86,9 +86,9 @@ class SingleExample extends React.Component {
         }
         return (<div className='all-radio-holder'>
             {makeRadioButton('graph')}
-            {makeRadioButton('word tree')}
-            {makeRadioButton('highlights')}
             {makeRadioButton('raw outputs')}
+            {/* {makeRadioButton('word tree')}
+            {makeRadioButton('highlights')} */}
         </div>)
     }
 
@@ -105,14 +105,40 @@ class SingleExample extends React.Component {
     }
 
 renderOutputsBasic() {
-    const firstGenerations = this.state.promptGroups[0]?.generations;
+    if (!this.state.promptGroups || this.state.promptGroups.length === 0) {
+        return <div className="outputs">No outputs available</div>;
+    }
 
-    const sorted = [...firstGenerations].sort();
     return (
         <div className="outputs">
-            {sorted.map((generation, index) => (
-                <div key={`${generation}-${index}`}>{generation}</div>
-            ))}
+            {this.state.promptGroups.map((group, groupIndex) => {
+                // Extract original prompt index from promptId for consistent coloring
+                const match = group.promptId.match(/_(\d+)$/);
+                const originalIndex = match ? parseInt(match[1]) : 0;
+                const backgroundColor = state.getPromptColor(originalIndex);
+                const promptText = state.prompts[originalIndex]?.text || '';
+                
+                return (
+                    <div key={`group-${groupIndex}`} className="prompt-output-group" style={{ borderColor: backgroundColor }}>
+                        <div className="prompt-output-header"  style={{ backgroundColor: backgroundColor }}>
+                            Prompt {originalIndex + 1}: {promptText} ({group.generations.length} outputs)
+                        </div>
+                        <div>
+                            {group.generations.map((generation, index) => (
+                                <div 
+                                    key={`${generation}-${index}`}
+                                    className="output-item"
+                                >
+                                    {generation}
+                                </div>
+                            ))}
+                        </div>
+                        {groupIndex < this.state.promptGroups.length - 1 && (
+                            <div className="prompt-separator"></div>
+                        )}
+                    </div>
+                );
+            })}
         </div>
     );
 }
