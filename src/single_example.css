@@ -44,7 +44,7 @@ input[type="radio"]+label {
     /* background: #f9f9f9; */
     font-weight: bold;
     box-sizing: border-box;
-    border-bottom: 3px solid rgb(223, 208, 234);
+    border-bottom: 3px solid #ddd;
 }
 
 .radio-holder {

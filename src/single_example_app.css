@@ -255,15 +255,14 @@
 .add-prompt-container {
     margin-top: 8px;
     padding: 8px 12px;
-    background: #e8f4fd;
-    border: 1px solid #b3d9ff;
+    border: 1px solid #ddd;
     border-radius: 6px;
     width: fit-content;
     cursor: pointer;
 }
 
 .add-prompt-container:hover {
-    opacity: .5;
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .add-prompt-container .material-icons {
