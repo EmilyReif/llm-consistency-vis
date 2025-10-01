@@ -47,7 +47,6 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
 
         // Get semi-transparent background color from D3 color scheme
         const backgroundColor = state.getPromptColor(promptIndex);
-        console.log(`Prompt container ${promptIndex} color: ${backgroundColor}`);
 
         return (
             <div

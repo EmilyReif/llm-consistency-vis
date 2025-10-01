@@ -89,7 +89,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
         const edgeColors = (originalIndex: string) => {
             const index = parseInt(originalIndex);
             const color = color_utils.MILLER_STONE_COLORS[index % color_utils.MILLER_STONE_COLORS.length];
-            console.log(`Graph color for original index ${originalIndex}: ${color}`);
             return color;
         };
 
@@ -379,7 +378,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
     private showHoveredNodeInfo() {
         if (!this.hoveredNode) return;
         const generations = this.hoveredNode.origSentIndices;
-        // console.log('generations', generations);
     }
 }
 
