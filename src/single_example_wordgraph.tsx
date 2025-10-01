@@ -49,6 +49,7 @@ export interface LinkDatum {
     target: NodeDatum;
     // Optional: for multi-prompt coloring
     promptId?: string;
+    sentIdx: number;
 }
 class SingleExampleWordGraph extends React.Component<Props> {
     private hoveredNode: NodeDatum | null = null;
@@ -300,7 +301,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
      * The path is a cubic Bezier curve that starts at the source node, curves towards the target node,
      * and ends at the target node.
      */
-    private renderPath(d: any) {
+    private renderPath(d: LinkDatum) {
         const getY = (node: NodeDatum) => {
             const lineHeight = 0.75;
             // Calculate the offset for this line compared to the other lines in this node.
