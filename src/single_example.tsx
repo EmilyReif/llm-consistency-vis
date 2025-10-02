@@ -152,7 +152,7 @@ renderOutputsBasic() {
   componentDidMount() {
     // react to changes in observable MobX state
     this.disposer = reaction(
-      () => [state.prompts.map(p => p.text).join('\u0001'), state.prompts.map(p => p.temp).join(','), state.numGenerations, state.similarityThreshold, state.disabledPrompts],
+      () => [state.prompts.map(p => p.text).join('\u0001'), state.prompts.map(p => p.temp).join(','), state.numGenerations, state.similarityThreshold, state.shuffle, state.disabledPrompts],
       async () => {
         const validPromptsWithIndex = state.prompts
           .map((p, index) => ({ prompt: p, originalIndex: index }))

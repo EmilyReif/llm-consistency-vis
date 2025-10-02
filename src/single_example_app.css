@@ -68,7 +68,7 @@
     opacity: 1;
 }
 
-.slider-container input {
+.slider-container input[type="range"] {
     width: 100px;
 }
 

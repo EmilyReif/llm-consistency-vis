@@ -25,6 +25,7 @@ class State {
     prompts: { text: string, temp: number }[] = [];
     numGenerations: number = DEFAULT_NUM_GENERATIONS;
     similarityThreshold: number = DEFAULT_SIMILARITY_THRESHOLD;
+    shuffle: boolean = false;
     generationsCache: { [example: string]: { [temp: number]: string[] } } = {};
     // Track which prompts are disabled
     disabledPrompts: number[] = [];
@@ -102,6 +103,10 @@ class State {
 
     setSimilarityThreshold = ((value: number) => {
         this.similarityThreshold = value;
+    });
+
+    setShuffle = ((value: boolean) => {
+        this.shuffle = value;
     });
 
 

@@ -78,7 +78,8 @@ function similarity(a: string, b: string): number {
 /** Create graph data from prompt groups. */
 export function createGraphDataFromPromptGroups(
     groups: { promptId: string; generations: string[] }[],
-    similarityThreshold: number = 0.5
+    similarityThreshold: number = 0.5,
+    shuffle: boolean = false
 ): { nodesData: NodeDatum[]; linksData: LinkDatum[] } {
     const linksDict: { [key: string]: { [key: string]: { sentIdx: number, promptId: string }[] } } = {};
     const nodesDict: { [key: string]: NodeDatum } = {};
@@ -153,8 +154,10 @@ export function createGraphDataFromPromptGroups(
         return Object.entries(targets).flatMap(([target, entries]) => {
             const targetNode = nodesDict[target];
             const sourceNode = nodesDict[source];
-            // sourceNode.origSentIndices = d3.shuffle(sourceNode.origSentIndices);
-            // targetNode.origSentIndices = d3.shuffle(targetNode.origSentIndices);
+            if (shuffle) {
+                sourceNode.origSentIndices = d3.shuffle(sourceNode.origSentIndices);
+                targetNode.origSentIndices = d3.shuffle(targetNode.origSentIndices);
+            }
             if (!nodesDict[target]) {
                 console.log('target not found', target);
             }

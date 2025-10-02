@@ -15,6 +15,7 @@ interface SingleExampleAppState {
     temperature: number;
     numGenerations: number;
     similarityThreshold: number;
+    shuffle: boolean;
 }
 
 class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
@@ -23,10 +24,16 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         temperature: state.prompts[0]?.temp ?? 0.7,
         numGenerations: state.numGenerations,
         similarityThreshold: state.similarityThreshold,
+        shuffle: state.shuffle,
     };
 
     handleSliderChange = (event: any, param: string) => {
         (this.state as any)[param] = parseFloat(event.target.value);
+        this.setState({} as any);
+    };
+
+    handleCheckboxChange = (event: any, param: string) => {
+        (this.state as any)[param] = event.target.checked;
         this.setState({} as any);
     };
 
@@ -85,6 +92,20 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                     onChange={(e) => this.handleSliderChange(e, 'similarityThreshold')}
                                     onMouseUp={() => state.setSimilarityThreshold(this.state.similarityThreshold)}
                                 />
+                            </div>
+                            <div className="slider-container">
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={this.state.shuffle}
+                                        onChange={(e) => this.handleCheckboxChange(e, 'shuffle')}
+                                        onMouseUp={() => state.setShuffle(!this.state.shuffle)}
+                                    />
+                                    Shuffle Sentence Indices
+                                </label>
+                                <div className="tooltip">
+                                    When enabled, shuffles the origSentIndices to randomize the visual ordering of sentence connections in the graph.
+                                </div>
                             </div>
                     </div>
                 </div>

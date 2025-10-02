@@ -6,6 +6,7 @@ import * as color_utils from './color_utils';
 import * as d3 from "d3";
 import { ellipseForce } from "./force_collide_ellipse";
 import { getNodeColor } from './color_utils';
+import { state } from './state';
 
 interface Props {
     // Prompts (grouped inputs for multi-prompt)
@@ -96,7 +97,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
         console.log(JSON.stringify(this.props.promptGroups, null, 2))
 
         // Generate graph data from all text
-        const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold);
+        const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle);
         this.createFontScale(); // Create font scale based on total generations
         this.addBoundingBoxData(nodesData);
 
