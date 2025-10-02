@@ -94,7 +94,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
             const color = color_utils.MILLER_STONE_COLORS[index % color_utils.MILLER_STONE_COLORS.length];
             return color;
         };
-        console.log(JSON.stringify(this.props.promptGroups, null, 2))
 
         // Generate graph data from all text
         const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle);
@@ -130,29 +129,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
             });
 
         svg.call(zoom as any);
-
-        // Create the simulation.
-
-        const updateSimulation = () => {
-            simulation.stop();
-
-            const selectedLinks = this.selectedNode ? linksData.filter(d => this.linkIsInSents(d)) : linksData;
-            const selectedNodes = this.selectedNode ? nodesData.filter(d => this.nodeIsInSents(d)) : nodesData;
-
-            simulation
-                .nodes(selectedNodes)
-                .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
-                .force("link", d3.forceLink(selectedLinks)
-                    .id((d: any) => d.word)
-                    .strength(.1))
-                // .force("y", d3.forceY(height / 2).strength((d: any) => d.count/30)) // Center nodes vertically
-                .force('y', d3.forceY((d: NodeDatum) => this.getExpectedY(d, height)).strength(0.1))
-
-            simulation.alpha(1).restart();
-        }
-        // Create the simulation.
-        const simulation = d3.forceSimulation(nodesData);
-        updateSimulation();
 
         // Draw links.
         const links = g.selectAll(".link")
@@ -240,7 +216,88 @@ class SingleExampleWordGraph extends React.Component<Props> {
                 .classed('blur', (d: NodeDatum) => this.selectedNode ? !this.nodeIsInSents(d) : false)
         };
 
+                // Create the simulation.
+                const updateSimulation = () => {
+                    simulation.stop();
+        
+                    const selectedLinks = this.selectedNode ? linksData.filter(d => this.linkIsInSents(d)) : linksData;
+                    const selectedNodes = this.selectedNode ? nodesData.filter(d => this.nodeIsInSents(d)) : nodesData;
+        
+                    simulation
+                        .nodes(selectedNodes)
+                        .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
+                        .force("link", d3.forceLink(selectedLinks)
+                            .id((d: any) => d.word)
+                            .strength(.1))
+                        // .force("y", d3.forceY(height / 2).strength((d: any) => d.count/30)) // Center nodes vertically
+                        .force('y', d3.forceY((d: NodeDatum) => this.getExpectedY(d, height)).strength(0.1))
+        
+                        this.runSimulationToConvergence(simulation, nodesData, update);
+                    }
+                // Create the simulation.
+                const simulation = d3.forceSimulation(nodesData);
+                updateSimulation();
+
         simulation.on("tick", () => update());
+        this.runSimulationToConvergence(simulation, nodesData, update);
+    }
+
+    /**
+     * Runs a D3 simulation until it converges to stable positions
+     * @param simulation - The D3 force simulation
+     * @param nodesData - Array of node data
+     * @param update - Function to call after each tick for visual updates
+     * @param convergenceThreshold - Stop when movement is less than this threshold (default: 1 pixel)
+     * @param maxIterations - Maximum number of iterations (default: 1000)
+     */
+    private runSimulationToConvergence(
+        simulation: d3.Simulation<NodeDatum, LinkDatum>,
+        nodesData: NodeDatum[],
+        update: () => void,
+        animateSteps: boolean = true,
+        convergenceThreshold: number = 1,
+        maxIterations: number = 1000
+    ): void {
+        simulation.stop();
+        if (animateSteps) {
+            simulation.alpha(1).restart();
+            return;
+        }
+        
+        // Store previous positions to detect convergence
+        const prevPositions = nodesData.map(d => ({ x: d.x, y: d.y }));
+        
+        let converged = false;
+        let iteration = 0;
+        
+        while (!converged && iteration < maxIterations) {
+            simulation.tick();
+            update(); // Manually call update since tick events aren't fired
+            
+            // Check if positions have converged
+            converged = true;
+            for (let i = 0; i < nodesData.length; i++) {
+                const node = nodesData[i];
+                const prev = prevPositions[i];
+                const dx = Math.abs(node.x - prev.x);
+                const dy = Math.abs(node.y - prev.y);
+                
+                if (dx > convergenceThreshold || dy > convergenceThreshold) {
+                    converged = false;
+                    break;
+                }
+            }
+            
+            // Update previous positions for next iteration
+            nodesData.forEach((d, i) => {
+                prevPositions[i] = { x: d.x, y: d.y };
+            });
+            
+            iteration++;
+        }
+        
+        console.log(`Simulation converged after ${iteration} iterations`);
+        // Simulation remains stopped for stable positioning
     }
 
     private linkIsInSents(d: any) {
