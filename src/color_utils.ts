@@ -40,7 +40,8 @@ export function getNodeColor(
     connectedEdges.forEach(edge => {
         if (edge.promptId) {
             // Extract original prompt index from promptId
-            const match = edge.promptId.match(/_(\d+)$/);
+            // Format: ${prompt.text}_${originalIndex}_${prompt.modelFamily}_${prompt.model}
+            const match = edge.promptId.match(/_(\d+)_/);
             const originalIndex = match ? match[1] : '0';
             promptCounts[originalIndex] = (promptCounts[originalIndex] || 0) + 1;
         }

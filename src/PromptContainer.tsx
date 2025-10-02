@@ -1,12 +1,15 @@
 import React from "react";
 import { state } from "./state";
 import { examples } from "./cached_examples";
+import { MODEL_FAMILIES, getModelsForFamily } from "./llm/config";
 
 interface PromptContainerProps {
     promptIndex: number;
-    prompt: { text: string; temp: number };
+    prompt: { text: string; temp: number; modelFamily: string; model: string };
     onUpdateText: (index: number, text: string) => void;
     onUpdateTemp: (index: number, temp: number) => void;
+    onUpdateModelFamily: (index: number, modelFamily: string) => void;
+    onUpdateModel: (index: number, model: string) => void;
     onDelete: (index: number) => void;
     onToggleDisabled: (index: number) => void;
     isDisabled: boolean;
@@ -42,7 +45,7 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
     };
 
     render() {
-        const { prompt, promptIndex, onUpdateText, onUpdateTemp, onDelete, onToggleDisabled, isDisabled, totalPrompts } = this.props;
+        const { prompt, promptIndex, onUpdateText, onUpdateTemp, onUpdateModelFamily, onUpdateModel, onDelete, onToggleDisabled, isDisabled, totalPrompts } = this.props;
         const { expanded, generatingSimilar, similarPrompts } = this.state;
 
         // Get semi-transparent background color from D3 color scheme
@@ -81,6 +84,34 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                 value={prompt.temp}
                                 onChange={(e) => onUpdateTemp(promptIndex, parseFloat((e.target as HTMLInputElement).value))}
                             />
+                        </div>
+                        <div className="dropdown-container">
+                            <label>Model Family:</label>
+                            <select
+                                value={prompt.modelFamily}
+                                onChange={(e) => onUpdateModelFamily(promptIndex, e.target.value)}
+                                disabled={isDisabled}
+                            >
+                                {MODEL_FAMILIES.map(family => (
+                                    <option key={family.id} value={family.id}>
+                                        {family.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="dropdown-container">
+                            <label>Model:</label>
+                            <select
+                                value={prompt.model}
+                                onChange={(e) => onUpdateModel(promptIndex, e.target.value)}
+                                disabled={isDisabled}
+                            >
+                                {getModelsForFamily(prompt.modelFamily).map(model => (
+                                    <option key={model.id} value={model.id}>
+                                        {model.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     {totalPrompts > 1 && (
                         <>

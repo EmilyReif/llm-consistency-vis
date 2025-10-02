@@ -72,6 +72,27 @@
     width: 100px;
 }
 
+.dropdown-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.dropdown-container label {
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.dropdown-container select {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    font-size: 0.9em;
+    min-width: 120px;
+}
+
 .input-with-hint {
     position: relative;
     display: flex;

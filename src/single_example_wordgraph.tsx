@@ -211,7 +211,8 @@ class SingleExampleWordGraph extends React.Component<Props> {
             links.attr("d", (d: any, i) => this.renderPath(d))
                 .attr("stroke", (d: any) => {
                     // Extract original prompt index from promptId for consistent coloring
-                    const match = d.promptId.match(/_(\d+)$/);
+                    // Format: ${prompt.text}_${originalIndex}_${prompt.modelFamily}_${prompt.model}
+                    const match = d.promptId.match(/_(\d+)_/);
                     const originalIndex = match ? match[1] : '0';
                     return edgeColors(originalIndex);
                 })

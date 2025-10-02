@@ -12,6 +12,10 @@ class SingleExample extends React.Component {
     state = {visType: 'graph', promptGroups: [] as { promptId: string, generations: string[] }[] };
     disposer?: () => void;
 
+    private getPromptGroupKey(prompt: any, originalIndex: number): string {
+        return `${prompt.text}_${originalIndex}_${prompt.modelFamily}_${prompt.model}`;
+    }
+
     render() {
         if (!state.prompts.length || !state.prompts[0]?.text) {
             return;
@@ -114,7 +118,8 @@ renderOutputsBasic() {
         <div className="outputs">
             {this.state.promptGroups.map((group, groupIndex) => {
                 // Extract original prompt index from promptId for consistent coloring
-                const match = group.promptId.match(/_(\d+)$/);
+                // Format: ${prompt.text}_${originalIndex}_${prompt.modelFamily}_${prompt.model}
+                const match = group.promptId.match(/_(\d+)_/);
                 const originalIndex = match ? parseInt(match[1]) : 0;
                 const backgroundColor = state.getPromptColor(originalIndex);
                 const promptText = state.prompts[originalIndex]?.text || '';
@@ -122,7 +127,7 @@ renderOutputsBasic() {
                 return (
                     <div key={`group-${groupIndex}`} className="prompt-output-group" style={{ borderColor: backgroundColor }}>
                         <div className="prompt-output-header"  style={{ backgroundColor: backgroundColor }}>
-                            Prompt {originalIndex + 1}: {promptText} ({group.generations.length} outputs)
+                            Prompt {originalIndex + 1}: {promptText} ({group.generations.length} outputs) - {state.prompts[originalIndex]?.modelFamily}/{state.prompts[originalIndex]?.model}
                         </div>
                         <div>
                             {group.generations.map((generation, index) => (
@@ -152,7 +157,27 @@ renderOutputsBasic() {
   componentDidMount() {
     // react to changes in observable MobX state
     this.disposer = reaction(
-      () => [state.prompts.map(p => p.text).join('\u0001'), state.prompts.map(p => p.temp).join(','), state.numGenerations, state.similarityThreshold, state.shuffle, state.disabledPrompts],
+      () => {
+        const promptTexts = state.prompts.map(p => p.text).join('\u0001');
+        const promptTemps = state.prompts.map(p => p.temp).join(',');
+        const promptModelFamilies = state.prompts.map(p => p.modelFamily).join(',');
+        const promptModels = state.prompts.map(p => p.model).join(',');
+        const numGenerations = state.numGenerations;
+        const similarityThreshold = state.similarityThreshold;
+        const shuffle = state.shuffle;
+        const disabledPrompts = state.disabledPrompts;
+
+        return [
+          promptTexts,
+          promptTemps,
+          promptModelFamilies,
+          promptModels,
+          numGenerations,
+          similarityThreshold,
+          shuffle,
+          disabledPrompts
+        ];
+      },
       async () => {
         const validPromptsWithIndex = state.prompts
           .map((p, index) => ({ prompt: p, originalIndex: index }))
@@ -163,8 +188,8 @@ renderOutputsBasic() {
         const groups: { promptId: string, generations: string[] }[] = [];
         for (let i = 0; i < validPromptsWithIndex.length; i++) {
           const { prompt, originalIndex } = validPromptsWithIndex[i];
-          const gens = await state.fetchGenerationsFor(prompt.text, prompt.temp);
-          groups.push({ promptId: `${prompt.text}_${originalIndex}`, generations: gens });
+          const gens = await state.fetchGenerationsFor(originalIndex);
+          groups.push({ promptId: this.getPromptGroupKey(prompt, originalIndex), generations: gens });
         }
         // For the basic outputs view, use the first prompt's generations
         this.setState({promptGroups: groups.length >= 1 ? groups : [] });

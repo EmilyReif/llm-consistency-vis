@@ -2,8 +2,10 @@ import { makeAutoObservable, action } from "mobx";
 import { examples } from "./cached_examples";
 import * as utils from "./utils";
 import * as color_utils from "./color_utils";
-import { OpenAI } from "openai";
 import * as d3 from 'd3';
+import { createLLM } from "./llm/factory";
+import { MODEL_FAMILIES, getDefaultModelFamily, getDefaultModel, getModelsForFamily } from "./llm/config";
+import { LLM } from "./llm/base";
 
 
 const DEFAULT_NUM_GENERATIONS = 30;
@@ -19,16 +21,28 @@ const OPENAI_API_KEY = null;
 // Maps each color to a semi-transparent version using D3's color manipulation
 const PROMPT_COLOR_SCALE = color_utils.MILLER_STONE_COLORS.map(c => d3.color(c)?.copy({opacity:PROMPT_COLOR_OPACITY}).formatHex8() || 'black');
 
+interface Prompt {
+    text: string;
+    temp: number;
+    modelFamily: string;
+    model: string;
+}
+
 class State {
     loading = false;
     // Unified prompt list; no special first prompt
-    prompts: { text: string, temp: number }[] = [];
+    prompts: Prompt[] = [];
     numGenerations: number = DEFAULT_NUM_GENERATIONS;
     similarityThreshold: number = DEFAULT_SIMILARITY_THRESHOLD;
     shuffle: boolean = false;
-    generationsCache: { [example: string]: { [temp: number]: string[] } } = {};
+    generationsCache: { [example: string]: { [temp: number]: { [modelFamily: string]: { [model: string]: string[] } } } } = {};
     // Track which prompts are disabled
     disabledPrompts: number[] = [];
+    
+    // Global model selection state (for new prompts)
+    selectedModelFamily: string = getDefaultModelFamily();
+    selectedModel: string = getDefaultModel(getDefaultModelFamily());
+    private llmInstanceCache: { [key: string]: LLM } = {};
 
     // Get color for a prompt index, cycling through the color scale
     // Uses modulo to cycle through colors when there are more prompts than colors
@@ -39,22 +53,40 @@ class State {
     constructor() {
         makeAutoObservable(this);
 
-        // Initialize the cache with the examples using the default temperature
+        // Initialize the cache with the examples using the default temperature and model
         const temp = DEFAULT_TEMP;
+        const defaultModelFamily = getDefaultModelFamily();
+        const defaultModel = getDefaultModel(defaultModelFamily);
+        
         for (const [example, outputs] of Object.entries(examples)) {
             this.generationsCache[example] ??= {};
-            this.generationsCache[example][temp] = outputs;
+            this.generationsCache[example][temp] ??= {};
+            this.generationsCache[example][temp][defaultModelFamily] ??= {};
+            this.generationsCache[example][temp][defaultModelFamily][defaultModel] = outputs;
         }
+        
         // Initialize with a default prompt using the first available example
         const first = Object.keys(examples)[0];
-        this.prompts = [{ text: first, temp: DEFAULT_TEMP }];
+        this.prompts = [{ 
+            text: first, 
+            temp: DEFAULT_TEMP, 
+            modelFamily: defaultModelFamily, 
+            model: defaultModel 
+        }];
     }
 
     addPrompt = ((value: string = '') => {
         const last = this.prompts[this.prompts.length - 1];
         const defaultText = value || last?.text || '';
         const defaultTemp = last?.temp ?? DEFAULT_TEMP;
-        this.prompts = [...this.prompts, { text: defaultText, temp: defaultTemp }];
+        const defaultModelFamily = last?.modelFamily ?? this.selectedModelFamily;
+        const defaultModel = last?.model ?? this.selectedModel;
+        this.prompts = [...this.prompts, { 
+            text: defaultText, 
+            temp: defaultTemp, 
+            modelFamily: defaultModelFamily, 
+            model: defaultModel 
+        }];
     });
 
     updatePromptTextAt = ((index: number, value: string) => {
@@ -66,6 +98,20 @@ class State {
     updatePromptTempAt = ((index: number, value: number) => {
         const next = [...this.prompts];
         next[index] = { ...next[index], temp: value };
+        this.prompts = next;
+    });
+
+    updatePromptModelFamilyAt = ((index: number, value: string) => {
+        const next = [...this.prompts];
+        next[index] = { ...next[index], modelFamily: value };
+        // Reset to default model for the new family
+        next[index] = { ...next[index], model: getDefaultModel(value) };
+        this.prompts = next;
+    });
+
+    updatePromptModelAt = ((index: number, value: string) => {
+        const next = [...this.prompts];
+        next[index] = { ...next[index], model: value };
         this.prompts = next;
     });
 
@@ -109,46 +155,53 @@ class State {
         this.shuffle = value;
     });
 
+    setModelFamily = ((familyId: string) => {
+        this.selectedModelFamily = familyId;
+        // Reset to default model for the new family
+        this.selectedModel = getDefaultModel(familyId);
+    });
 
-    async fetchFromOpenAI(promptText: string, temp: number, n: number): Promise<string[]> {
-        let openai_api_key = utils.parseUrlParam('openai_api_key') || OPENAI_API_KEY;
+    setModel = ((modelId: string) => {
+        this.selectedModel = modelId;
+    });
 
-        if (!openai_api_key) {
-            openai_api_key = prompt('Please enter your OpenAI API key:') || '';
-            utils.setUrlParam('openai_api_key', openai_api_key);
+    private getLLMInstance(modelFamily: string, model: string): LLM {
+        const cacheKey = `${modelFamily}:${model}`;
+        if (!this.llmInstanceCache[cacheKey]) {
+            this.llmInstanceCache[cacheKey] = createLLM(modelFamily, model);
         }
-
-        if (!openai_api_key) {
-            console.warn('No API key provided. Skipping OpenAI fetch.');
-            return [];
-        }
-        const openaiClient = new OpenAI({
-            apiKey: openai_api_key.trim(),
-            dangerouslyAllowBrowser: true,
-        });
-        console.log('Calling OpenAI api', promptText, temp, n);
-        const response = await openaiClient.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-                { role: 'system', content: 'You are a helpful assistant. Answer in at most one short sentence.' },
-                { role: 'user', content: promptText },
-            ],
-            temperature: temp,
-            n: n,
-        });
-
-        return response.choices.map((choice) => choice.message.content || '');
+        return this.llmInstanceCache[cacheKey];
     }
 
-    async fetchGenerationsFor(prompt: string, temp: number): Promise<string[]> {
-        const input = prompt;
+
+    async fetchFromLLM(promptText: string, temp: number, n: number, modelFamily: string, model: string): Promise<string[]> {
+        try {
+            const llm = this.getLLMInstance(modelFamily, model);
+            return await llm.generateCompletions(promptText, temp, n);
+        } catch (error) {
+            console.error('Error fetching from LLM:', error);
+            return [];
+        }
+    }
+
+    async fetchGenerationsFor(promptIndex: number): Promise<string[]> {
+        const prompt = this.prompts[promptIndex];
+        if (!prompt) return [];
+        
+        const input = prompt.text;
+        const temp = prompt.temp;
+        const modelFamily = prompt.modelFamily;
+        const model = prompt.model;
         const numGenerations = this.numGenerations;
+        
         if (!input) return [];
 
         this.generationsCache[input] ??= {};
-        this.generationsCache[input][temp] ??= [];
+        this.generationsCache[input][temp] ??= {};
+        this.generationsCache[input][temp][modelFamily] ??= {};
+        this.generationsCache[input][temp][modelFamily][model] ??= [];
 
-        let cached = this.generationsCache[input][temp];
+        let cached = this.generationsCache[input][temp][modelFamily][model];
         const alreadyHave = cached.length;
 
         if (alreadyHave >= numGenerations) {
@@ -157,63 +210,24 @@ class State {
 
         const toGenerate = numGenerations - alreadyHave;
         this.loading = true;
-        const newGenerations = await this.fetchFromOpenAI(input, temp, toGenerate);
-        this.generationsCache[input][temp].push(...newGenerations);
+        const newGenerations = await this.fetchFromLLM(input, temp, toGenerate, modelFamily, model);
+        this.generationsCache[input][temp][modelFamily][model].push(...newGenerations);
         this.loading = false;
 
-        return this.generationsCache[input][temp].slice(0, numGenerations);
+        return this.generationsCache[input][temp][modelFamily][model].slice(0, numGenerations);
     }
 
     async generateSimilarPrompts(currentPrompt: string, similarityText: string, temp: number): Promise<string[]> {
-        let openai_api_key = utils.parseUrlParam('openai_api_key') || OPENAI_API_KEY;
-
-        if (!openai_api_key) {
-            openai_api_key = prompt('Please enter your OpenAI API key:') || '';
-            utils.setUrlParam('openai_api_key', openai_api_key);
-        }
-
-        if (!openai_api_key) {
-            console.warn('No API key provided. Skipping OpenAI fetch.');
-            return [];
-        }
-
-        const openaiClient = new OpenAI({
-            apiKey: openai_api_key.trim(),
-            dangerouslyAllowBrowser: true,
-        });
-
-        const promptText = `Here is a test input to a model: ${currentPrompt} Generate 10 similar inputs, in the format of a js list. By similar, I mean: ${similarityText}`;
-
-        const response = await openaiClient.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-                { role: 'system', content: 'You are a helpful assistant. Generate exactly 10 similar prompts in JavaScript array format like ["prompt1", "prompt2", ...].' },
-                { role: 'user', content: promptText },
-            ],
-            temperature: temp,
-            n: 1,
-        });
-
-        const content = response.choices[0]?.message?.content || '';
-        
-        // Parse the JavaScript array from the response
         try {
-            // Extract array content from the response
-            const arrayMatch = content.match(/\[[\s\S]*\]/);
-            if (arrayMatch) {
-                const arrayString = arrayMatch[0];
-                return JSON.parse(arrayString);
-            } else {
-                // Fallback: try to parse the entire response as JSON
-                return JSON.parse(content);
-            }
+            // Always use GPT-4o for generating similar prompts for consistency
+            const defaultModelFamily = getDefaultModelFamily();
+            const defaultModel = getDefaultModel(defaultModelFamily);
+            
+            const llm = this.getLLMInstance(defaultModelFamily, defaultModel);
+            return await llm.generateSimilarPrompts(currentPrompt, similarityText, temp);
         } catch (error) {
-            console.error('Error parsing similar prompts:', error);
-            // Fallback: split by newlines and clean up
-            return content.split('\n')
-                .map(line => line.trim())
-                .filter(line => line.length > 0 && !line.startsWith('[') && !line.startsWith(']'))
-                .slice(0, 10);
+            console.error('Error generating similar prompts:', error);
+            return [];
         }
     }
 }

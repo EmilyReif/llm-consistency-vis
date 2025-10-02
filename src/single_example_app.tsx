@@ -54,7 +54,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         state.updatePromptTempAt(0, this.state.temperature);
         state.setNumGenerations(this.state.numGenerations);
         // Fetch new generations for the selected prompt
-        state.fetchGenerationsFor(prompt, state.prompts[0]?.temp ?? 0.7);
+        state.fetchGenerationsFor(0);
     };
 
     render() {
@@ -116,6 +116,8 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         prompt={p}
                         onUpdateText={state.updatePromptTextAt}
                         onUpdateTemp={state.updatePromptTempAt}
+                        onUpdateModelFamily={state.updatePromptModelFamilyAt}
+                        onUpdateModel={state.updatePromptModelAt}
                         onDelete={state.removePromptAt}
                         onToggleDisabled={state.togglePromptDisabled}
                         isDisabled={state.isPromptDisabled(idx)}
