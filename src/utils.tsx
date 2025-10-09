@@ -5,7 +5,22 @@ import {getEmbeddings} from './embed'
 export type TokenizeMode = "space" | "comma" | "sentence";
 
 const tokensToOrigWord: { [key: string]: string } = {};
-const embsDict: { [key: string]: { word: string, prevWord: string, nextWord: string, idx: number } } = {};
+const embsDict: { [key: string]: { word: string, prevWords: string[], nextWords: string[], idx: number } } = {};
+const CONTEXT_WINDOW_SIZE = 2; // Number of words on either side to consider
+
+// Common English stopwords to ignore when building context windows
+export const STOPWORDS = new Set([
+    'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from',
+    'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'that', 'the',
+    'to', 'was', 'will', 'with', 'or', 'but', 'not', 'this', 'these',
+    'those', 'i', 'you', 'we', 'they', 'them', 'their', 'our', 'your',
+    'been', 'being', 'have', 'had', 'do', 'does', 'did', 'am'
+]);
+
+function isStopword(word: string): boolean {
+    const normalized = word.toLowerCase().replace(/[^\w\s\'.!?]|_/g, "").replace(/\s+/g, " ").trim();
+    return STOPWORDS.has(normalized);
+}
 
 export function unformat(word: string) {
     return tokensToOrigWord[word];
@@ -42,10 +57,38 @@ export function tokenize(
 
         let tokenKey = chunk + sentenceIdx + i;
 
+        // Collect n non-stopword words before and after the current word
+        const prevWords: string[] = [];
+        const nextWords: string[] = [];
+        
+        // Collect previous words (skipping stopwords)
+        let prevCount = 0;
+        let prevOffset = 1;
+        while (prevCount < CONTEXT_WINDOW_SIZE && i - prevOffset >= 0) {
+            const prevWord = chunks[i - prevOffset];
+            if (!isStopword(prevWord)) {
+                prevWords.unshift(prevWord);
+                prevCount++;
+            }
+            prevOffset++;
+        }
+        
+        // Collect next words (skipping stopwords)
+        let nextCount = 0;
+        let nextOffset = 1;
+        while (nextCount < CONTEXT_WINDOW_SIZE && i + nextOffset < chunks.length) {
+            const nextWord = chunks[i + nextOffset];
+            if (!isStopword(nextWord)) {
+                nextWords.push(nextWord);
+                nextCount++;
+            }
+            nextOffset++;
+        }
+
         embsDict[tokenKey] = {
             word: chunk,
-            prevWord: chunks[i - 1],
-            nextWord: chunks[i + 1],
+            prevWords,
+            nextWords,
             idx: i
         };
 
@@ -56,24 +99,105 @@ export function tokenize(
     return tokens;
 }
 
+/** Calculate Levenshtein distance between two strings. */
+function levenshteinDistance(str1: string, str2: string): number {
+    if (!str1) return str2 ? str2.length : 0;
+    if (!str2) return str1.length;
+    
+    const matrix: number[][] = [];
+    
+    // Initialize first column and row
+    for (let i = 0; i <= str2.length; i++) {
+        matrix[i] = [i];
+    }
+    for (let j = 0; j <= str1.length; j++) {
+        matrix[0][j] = j;
+    }
+    
+    // Fill in the rest of the matrix
+    for (let i = 1; i <= str2.length; i++) {
+        for (let j = 1; j <= str1.length; j++) {
+            if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1, // substitution
+                    matrix[i][j - 1] + 1,     // insertion
+                    matrix[i - 1][j] + 1      // deletion
+                );
+            }
+        }
+    }
+    
+    return matrix[str2.length][str1.length];
+}
+
+/** Convert Levenshtein distance to a similarity score (0 to 1, higher is more similar). */
+function levenshteinSimilarity(str1: string, str2: string): number {
+    if (!str1 || !str2) return 0;
+    const distance = levenshteinDistance(str1, str2);
+    const maxLength = Math.max(str1.length, str2.length);
+    return 1 - (distance / maxLength);
+}
+
 /** A hack to approximate contextual similarity between two tokens.
  * TODO: Replace with a real embedding model.
  */
 function similarity(a: string, b: string): number {
-    const embA = embsDict[a] || [];
-    const embB = embsDict[b] || [];
+    const embA = embsDict[a] || { word: '', prevWords: [], nextWords: [], idx: 0 };
+    const embB = embsDict[b] || { word: '', prevWords: [], nextWords: [], idx: 0 };
     let counter = 0;
-    if (embA.prevWord === embB.prevWord) {
-        counter += .25; // First word match
-    }
-    if (embA.word === embB.word) {
-        counter += .5; // Actual word exact match
-    }
-    if (embA.nextWord === embB.nextWord) {
-        counter += .25; // Third word match
-    }
-    counter -= Math.abs(embA.idx - embB.idx) / 20; // They have similar positions in the sentence.
 
+    // Check if the words themselves are stopwords
+    const aIsStopword = isStopword(embA.word);
+    const bIsStopword = isStopword(embB.word);
+    
+    // Use Levenshtein similarity for the actual word
+    // If both are stopwords, reduce weight significantly and rely more on context
+    if (embA.word && embB.word) {
+        const wordWeight = (aIsStopword && bIsStopword) ? 0.1 : 0.5;
+        counter += levenshteinSimilarity(embA.word, embB.word) * wordWeight;
+    }
+    
+    // Adjust context weights if both words are stopwords (give more weight to context)
+    const prevWeight = (aIsStopword && bIsStopword) ? 0.45 : 0.25;
+    const nextWeight = (aIsStopword && bIsStopword) ? 0.45 : 0.25;
+    
+    // Compare sliding window of previous words
+    if (embA.prevWords.length > 0 && embB.prevWords.length > 0) {
+        let prevSimilarity = 0;
+        const maxLen = Math.max(embA.prevWords.length, embB.prevWords.length);
+        
+        for (let i = 0; i < maxLen; i++) {
+            const wordA = embA.prevWords[i];
+            const wordB = embB.prevWords[i];
+            if (wordA && wordB) {
+                // Weight closer words more heavily (exponential decay)
+                const weight = Math.pow(0.7, maxLen - i - 1);
+                prevSimilarity += levenshteinSimilarity(wordA, wordB) * weight;
+            }
+        }
+        counter += (prevSimilarity / maxLen) * prevWeight;
+    }
+    
+    // Compare sliding window of next words
+    if (embA.nextWords.length > 0 && embB.nextWords.length > 0) {
+        let nextSimilarity = 0;
+        const maxLen = Math.max(embA.nextWords.length, embB.nextWords.length);
+        
+        for (let i = 0; i < maxLen; i++) {
+            const wordA = embA.nextWords[i];
+            const wordB = embB.nextWords[i];
+            if (wordA && wordB) {
+                // Weight closer words more heavily (exponential decay)
+                const weight = Math.pow(0.7, i);
+                nextSimilarity += levenshteinSimilarity(wordA, wordB) * weight;
+            }
+        }
+        counter += (nextSimilarity / maxLen) * nextWeight;
+    }
+    
+    counter -= Math.abs(embA.idx - embB.idx) / 20; // They have similar positions in the sentence.
     return counter
 }
 
