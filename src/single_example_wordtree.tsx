@@ -3,6 +3,8 @@ import './single_example_wordtree.css';
 import { observer } from "mobx-react";
 import * as d3 from 'd3';
 import { Trie, TrieNode } from './trie';
+import { state } from './state';
+
 interface Props {
     generations: string[];
 }
@@ -16,7 +18,7 @@ class SingleExampleWordtree extends React.Component<Props> {
         if (!generations) {
             return;
         }
-        this.trie = new Trie();
+        this.trie = new Trie(state.tokenizeMode);
         this.trie.insertSents(generations);
         const totalVisHeight = 35*generations.length;
         const heightPerChild = totalVisHeight / this.trie.root.numTotalChildren;

@@ -1,4 +1,5 @@
 import * as utils from './utils';
+import { TokenizeMode } from './utils';
 
 class TrieNode {
     // Dictionary to store child nodes, where keys are words and values are TrieNode instances.
@@ -27,14 +28,16 @@ class TrieNode {
 class Trie {
     // Root node of the Trie, which is an empty node.
     root: TrieNode;
+    tokenizeMode: TokenizeMode;
 
-    constructor() {
+    constructor(tokenizeMode: TokenizeMode = "space") {
         this.root = new TrieNode();
+        this.tokenizeMode = tokenizeMode;
     }
 
     // Inserts a single sentence into the Trie.
     insert(sent: string) {
-        const words = utils.tokenize(sent); // Split the sentence into words.
+        const words = utils.tokenize(sent, undefined, this.tokenizeMode); // Split the sentence into words.
         let node = this.root;
 
         for (let word of words) {

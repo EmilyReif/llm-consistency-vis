@@ -165,6 +165,7 @@ renderOutputsBasic() {
         const numGenerations = state.numGenerations;
         const similarityThreshold = state.similarityThreshold;
         const shuffle = state.shuffle;
+        const tokenizeMode = state.tokenizeMode;
         const disabledPrompts = state.disabledPrompts;
 
         return [
@@ -175,6 +176,7 @@ renderOutputsBasic() {
           numGenerations,
           similarityThreshold,
           shuffle,
+          tokenizeMode,
           disabledPrompts
         ];
       },

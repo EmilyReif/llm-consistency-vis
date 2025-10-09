@@ -7,6 +7,7 @@ import PromptContainer from './PromptContainer';
 import './single_example_app.css'
 import './loading.css'
 import { examples } from "./cached_examples";
+import { TokenizeMode } from "./utils";
 
 const DEFAULT_TEXT = Object.keys(examples)[0];
 
@@ -16,6 +17,7 @@ interface SingleExampleAppState {
     numGenerations: number;
     similarityThreshold: number;
     shuffle: boolean;
+    tokenizeMode: TokenizeMode;
 }
 
 class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
@@ -25,6 +27,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         numGenerations: state.numGenerations,
         similarityThreshold: state.similarityThreshold,
         shuffle: state.shuffle,
+        tokenizeMode: state.tokenizeMode,
     };
 
     handleSliderChange = (event: any, param: string) => {
@@ -34,6 +37,11 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
 
     handleCheckboxChange = (event: any, param: string) => {
         (this.state as any)[param] = event.target.checked;
+        this.setState({} as any);
+    };
+
+    handleDropdownChange = (event: any, param: string) => {
+        (this.state as any)[param] = event.target.value;
         this.setState({} as any);
     };
 
@@ -106,6 +114,20 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                 <div className="tooltip">
                                     When enabled, shuffles the origSentIndices to randomize the visual ordering of sentence connections in the graph.
                                 </div>
+                            </div>
+                            <div className="dropdown-container">
+                                <label>Tokenize Mode:</label>
+                                <select
+                                    value={this.state.tokenizeMode}
+                                    onChange={(e) => {
+                                        this.handleDropdownChange(e, 'tokenizeMode');
+                                        state.setTokenizeMode(e.target.value as TokenizeMode);
+                                    }}
+                                >
+                                    <option value="space">Space</option>
+                                    <option value="comma">Comma</option>
+                                    <option value="sentence">Sentence</option>
+                                </select>
                             </div>
                     </div>
                 </div>

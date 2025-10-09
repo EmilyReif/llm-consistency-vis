@@ -2,6 +2,8 @@ import { NodeDatum, LinkDatum } from './single_example_wordgraph';
 import * as d3 from "d3";
 import {getEmbeddings} from './embed'
 
+export type TokenizeMode = "space" | "comma" | "sentence";
+
 const tokensToOrigWord: { [key: string]: string } = {};
 const embsDict: { [key: string]: { word: string, prevWord: string, nextWord: string, idx: number } } = {};
 
@@ -16,7 +18,7 @@ export function arraysAreEqual(a: string[], b: string[]) {
 export function tokenize(
     sent: string,
     sentenceIdx?: number,
-    mode: "space" | "comma" | "sentence" = "space"
+    mode: TokenizeMode = "space"
 ): string[] {
     // normalize text
 
@@ -79,7 +81,8 @@ function similarity(a: string, b: string): number {
 export function createGraphDataFromPromptGroups(
     groups: { promptId: string; generations: string[] }[],
     similarityThreshold: number = 0.5,
-    shuffle: boolean = false
+    shuffle: boolean = false,
+    tokenizeMode: TokenizeMode = "space"
 ): { nodesData: NodeDatum[]; linksData: LinkDatum[] } {
     const linksDict: { [key: string]: { [key: string]: { sentIdx: number, promptId: string }[] } } = {};
     const nodesDict: { [key: string]: NodeDatum } = {};
@@ -88,7 +91,7 @@ export function createGraphDataFromPromptGroups(
         generations.forEach((generation) => {
             sentIdx++;
             let prevWord = '';
-            const words = tokenize(generation, sentIdx);
+            const words = tokenize(generation, sentIdx, tokenizeMode);
             words.forEach((word, j) => {
                 const currentWords = Object.keys(nodesDict);
                 let similarNodes = currentWords.map((existingWord) => [similarity(existingWord, word), existingWord]).sort((a: any, b: any) => b[0] - a[0]) as any;

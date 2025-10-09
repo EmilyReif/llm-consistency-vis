@@ -6,6 +6,7 @@ import * as d3 from 'd3';
 import { createLLM } from "./llm/factory";
 import { MODEL_FAMILIES, getDefaultModelFamily, getDefaultModel, getModelsForFamily } from "./llm/config";
 import { LLM } from "./llm/base";
+import { TokenizeMode } from "./utils";
 
 
 const DEFAULT_NUM_GENERATIONS = 30;
@@ -35,6 +36,7 @@ class State {
     numGenerations: number = DEFAULT_NUM_GENERATIONS;
     similarityThreshold: number = DEFAULT_SIMILARITY_THRESHOLD;
     shuffle: boolean = false;
+    tokenizeMode: TokenizeMode = "space";
     generationsCache: { [example: string]: { [temp: number]: { [modelFamily: string]: { [model: string]: string[] } } } } = {};
     // Track which prompts are disabled
     disabledPrompts: number[] = [];
@@ -153,6 +155,10 @@ class State {
 
     setShuffle = ((value: boolean) => {
         this.shuffle = value;
+    });
+
+    setTokenizeMode = ((value: TokenizeMode) => {
+        this.tokenizeMode = value;
     });
 
     setModelFamily = ((familyId: string) => {

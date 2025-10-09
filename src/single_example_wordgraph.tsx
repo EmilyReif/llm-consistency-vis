@@ -96,7 +96,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
         };
 
         // Generate graph data from all text
-        const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle);
+        const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, state.tokenizeMode);
         this.createFontScale(); // Create font scale based on total generations
         this.addBoundingBoxData(nodesData);
 
