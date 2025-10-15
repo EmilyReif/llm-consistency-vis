@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.29",
     "@ai-sdk/openai": "^2.0.0",
     "@ai-sdk/xai": "^2.0.26",
     "@huggingface/transformers": "^3.5.1",

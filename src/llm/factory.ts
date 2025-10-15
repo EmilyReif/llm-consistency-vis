@@ -1,19 +1,18 @@
 import { LLM } from "./base";
+import { getProviderConfig } from "./config";
 import { OpenAILLM } from "./openai";
-import { GrokLLM } from "./grok";
 
 export function createLLM(familyId: string, modelId: string, apiKey?: string): LLM {
-    switch (familyId) {
-        case "openai":
-            return new OpenAILLM(modelId, apiKey);
-        case "grok":
-            return new GrokLLM(modelId, apiKey);
-        // Future model families can be added here:
-        // case "anthropic":
-        //     return new AnthropicLLM(modelId, apiKey);
-        // case "google":
-        //     return new GoogleLLM(modelId, apiKey);
-        default:
-            throw new Error(`Unknown model family: ${familyId}`);
+    // Special case for OpenAI to support generateSimilarPrompts
+    if (familyId === "openai") {
+        return new OpenAILLM(modelId, apiKey);
     }
+    
+    // Generic config-based LLM for all other providers
+    const config = getProviderConfig(familyId);
+    if (!config) {
+        throw new Error(`Unknown provider: ${familyId}`);
+    }
+    
+    return new LLM(config, modelId, apiKey);
 }

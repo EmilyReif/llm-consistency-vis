@@ -1,84 +1,15 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import { LLM } from "./base";
-import * as utils from "../utils";
+import { getProviderConfig } from "./config";
 
-export interface OpenAIModel {
-    id: string;
-    name: string;
-    family: string;
-}
-
-export const OPENAI_MODELS: OpenAIModel[] = [
-    { id: "gpt-4o", name: "GPT-4o", family: "GPT-4" },
-    { id: "gpt-4o-mini", name: "GPT-4o Mini", family: "GPT-4" },
-    { id: "gpt-4-turbo", name: "GPT-4 Turbo", family: "GPT-4" },
-    { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", family: "GPT-3.5" },
-];
-
+// OpenAI-specific LLM class that extends base with generateSimilarPrompts
 export class OpenAILLM extends LLM {
-    private provider: ReturnType<typeof createOpenAI> | null = null;
-    private modelId: string;
-    
-    constructor(modelId: string = "gpt-4o", apiKey?: string) {
-        super(apiKey);
-        this.modelId = modelId;
-    }
-    
-    setModel(modelId: string) {
-        this.modelId = modelId;
-        // Reset provider to ensure it uses the new model
-        this.provider = null;
-    }
-    
-    private getProvider(): ReturnType<typeof createOpenAI> {
-        if (!this.provider) {
-            const apiKey = this.getApiKey('openai_api_key', 'Please enter your OpenAI API key:');
-            if (!apiKey) {
-                throw new Error('OpenAI API key is required');
-            }
-            
-            this.provider = createOpenAI({
-                apiKey: apiKey.trim(),
-            });
+    constructor(modelId?: string, apiKey?: string) {
+        const config = getProviderConfig("openai");
+        if (!config) {
+            throw new Error("OpenAI provider config not found");
         }
-        return this.provider;
-    }
-    
-    protected getApiKey(paramName: string, promptMessage: string): string | null {
-        let apiKey = utils.parseUrlParam(paramName) || this.apiKey;
-        
-        if (!apiKey) {
-            apiKey = prompt(promptMessage) || '';
-            if (apiKey) {
-                utils.setUrlParam(paramName, apiKey);
-            }
-        }
-        
-        return apiKey;
-    }
-    
-    async generateCompletions(promptText: string, temp: number, n: number): Promise<string[]> {
-        const provider = this.getProvider();
-        const model = provider(this.modelId);
-        
-        console.log('Calling OpenAI API via Vercel AI SDK', promptText, temp, n, 'with model:', this.modelId);
-
-
-        // Generate multiple completions in parallel
-        const promises = Array.from({ length: n }, () =>
-            generateText({
-                model,
-                messages: [
-                    { role: 'system', content: 'You are a helpful assistant. Answer in at most one short sentence.' },
-                    { role: 'user', content: promptText },
-                ],
-                temperature: temp,
-            })
-        );
-        
-        const results = await Promise.all(promises);
-        return results.map(result => result.text);
+        super(config, modelId, apiKey);
     }
     
     async generateSimilarPrompts(currentPrompt: string, similarityText: string, temp: number): Promise<string[]> {
