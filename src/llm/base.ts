@@ -58,26 +58,33 @@ export class LLM {
         temp: number, 
         n: number
     ): Promise<string[]> {
-        const provider = this.getProvider();
-        const model = provider(this.modelId);
-        const providerName = this.config.name;
-        
-        console.log(`Calling ${providerName} API via Vercel AI SDK`, promptText, temp, n, 'with model:', this.modelId);
+        try {
+            const provider = this.getProvider();
+            const model = provider(this.modelId);
+            const providerName = this.config.name;
+            
+            console.log(`Calling ${providerName} API via Vercel AI SDK`, promptText, temp, n, 'with model:', this.modelId);
 
-        // Generate multiple completions in parallel
-        const promises = Array.from({ length: n }, () =>
-            generateText({
-                model,
-                messages: [
-                    { role: 'system', content: 'You are a helpful assistant. Answer in at most one short sentence.' },
-                    { role: 'user', content: promptText },
-                ],
-                temperature: temp,
-            })
-        );
-        
-        const results = await Promise.all(promises);
-        return results.map(result => result.text);
+            // Generate multiple completions in parallel
+            const promises = Array.from({ length: n }, () =>
+                generateText({
+                    model,
+                    messages: [
+                        { role: 'system', content: 'You are a helpful assistant. Answer in at most one short sentence.' },
+                        { role: 'user', content: promptText },
+                    ],
+                    temperature: temp,
+                })
+            );
+            
+            const results = await Promise.all(promises);
+            return results.map(result => result.text);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.error(`Error generating completions with ${this.config.name}:`, error);
+            alert(`Error calling ${this.config.name} API: ${errorMessage}\n\nPlease check your API key and model selection, then try again.`);
+            return [];
+        }
     }
     
     // Common method to validate API key

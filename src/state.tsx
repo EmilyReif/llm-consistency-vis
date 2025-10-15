@@ -41,6 +41,8 @@ class State {
     generationsCache: { [example: string]: { [temp: number]: { [modelFamily: string]: { [model: string]: string[] } } } } = {};
     // Track which prompts are disabled
     disabledPrompts: number[] = [];
+    // Track failed fetch attempts to prevent infinite retries
+    failedFetches: Set<string> = new Set();
     
     // Global model selection state (for new prompts)
     selectedModelFamily: string = getDefaultModelFamily();
@@ -106,6 +108,9 @@ class State {
 
     updatePromptModelFamilyAt = ((index: number, value: string) => {
         const next = [...this.prompts];
+        // Clear failed fetch for old configuration before changing
+        this.clearFailedFetchForPrompt(next[index]);
+        
         next[index] = { ...next[index], modelFamily: value };
         // Reset to default model for the new family
         next[index] = { ...next[index], model: getDefaultModel(value) };
@@ -114,6 +119,9 @@ class State {
 
     updatePromptModelAt = ((index: number, value: string) => {
         const next = [...this.prompts];
+        // Clear failed fetch for old configuration before changing
+        this.clearFailedFetchForPrompt(next[index]);
+        
         next[index] = { ...next[index], model: value };
         this.prompts = next;
     });
@@ -180,6 +188,23 @@ class State {
         return this.llmInstanceCache[cacheKey];
     }
 
+    // Clear failed fetch for a specific prompt configuration
+    clearFailedFetchForPrompt = (prompt: Prompt) => {
+        const fetchKey = `${prompt.text}|${prompt.temp}|${prompt.modelFamily}|${prompt.model}`;
+        this.failedFetches.delete(fetchKey);
+        
+        // Also clear the LLM instance cache for this model so it can re-initialize with new API key
+        const llmCacheKey = `${prompt.modelFamily}:${prompt.model}`;
+        delete this.llmInstanceCache[llmCacheKey];
+    };
+
+    // Clear all failed fetches (useful for "retry all" functionality)
+    clearAllFailedFetches = () => {
+        this.failedFetches.clear();
+        // Clear all LLM instances so they can re-initialize with new API keys
+        this.llmInstanceCache = {};
+    };
+
 
     async fetchFromLLM(promptText: string, temp: number, n: number, modelFamily: string, model: string): Promise<string[]> {
         try {
@@ -215,9 +240,21 @@ class State {
             return cached.slice(0, numGenerations);
         }
 
+        // Check if this fetch has already failed - if so, don't retry
+        const fetchKey = `${input}|${temp}|${modelFamily}|${model}`;
+        if (this.failedFetches.has(fetchKey)) {
+            return cached; // Return whatever we have, even if empty
+        }
+
         const toGenerate = numGenerations - alreadyHave;
         this.loading = true;
         const newGenerations = await this.fetchFromLLM(input, temp, toGenerate, modelFamily, model);
+        
+        // If we got an empty result, mark this as a failed fetch
+        if (newGenerations.length === 0) {
+            this.failedFetches.add(fetchKey);
+        }
+        
         this.generationsCache[input][temp][modelFamily][model].push(...newGenerations);
         this.loading = false;
 
