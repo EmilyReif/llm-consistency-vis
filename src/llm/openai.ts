@@ -40,7 +40,6 @@ export class OpenAILLM extends LLM {
             
             this.provider = createOpenAI({
                 apiKey: apiKey.trim(),
-                compatibility: 'strict',
             });
         }
         return this.provider;

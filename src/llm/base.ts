@@ -6,9 +6,8 @@ export abstract class LLM {
         this.apiKey = apiKey || null;
     }
     
-    // Abstract methods that must be implemented by each model family
+    // Abstract method that must be implemented by each model family
     abstract generateCompletions(promptText: string, temp: number, n: number): Promise<string[]>;
-    abstract generateSimilarPrompts(currentPrompt: string, similarityText: string, temp: number): Promise<string[]>;
     
     // Common method to get API key with fallback to prompt
     protected getApiKey(paramName: string, promptMessage: string): string | null {

@@ -1,4 +1,5 @@
 import { OpenAIModel, OPENAI_MODELS } from "./openai";
+import { GrokModel, GROK_MODELS } from "./grok";
 
 export interface ModelFamily {
     id: string;
@@ -17,6 +18,11 @@ export const MODEL_FAMILIES: ModelFamily[] = [
         id: "openai",
         name: "OpenAI",
         models: OPENAI_MODELS
+    },
+    {
+        id: "grok",
+        name: "xAI (Grok)",
+        models: GROK_MODELS
     }
     // Future model families can be added here:
     // {

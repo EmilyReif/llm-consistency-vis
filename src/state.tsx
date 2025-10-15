@@ -6,6 +6,7 @@ import * as d3 from 'd3';
 import { createLLM } from "./llm/factory";
 import { MODEL_FAMILIES, getDefaultModelFamily, getDefaultModel, getModelsForFamily } from "./llm/config";
 import { LLM } from "./llm/base";
+import { OpenAILLM } from "./llm/openai";
 import { TokenizeMode } from "./utils";
 
 
@@ -225,12 +226,9 @@ class State {
 
     async generateSimilarPrompts(currentPrompt: string, similarityText: string, temp: number): Promise<string[]> {
         try {
-            // Always use GPT-4o for generating similar prompts for consistency
-            const defaultModelFamily = getDefaultModelFamily();
-            const defaultModel = getDefaultModel(defaultModelFamily);
-            
-            const llm = this.getLLMInstance(defaultModelFamily, defaultModel);
-            return await llm.generateSimilarPrompts(currentPrompt, similarityText, temp);
+            // Always use OpenAI GPT-4o for generating similar prompts for consistency
+            const openaiLLM = this.getLLMInstance('openai', 'gpt-4o') as OpenAILLM;
+            return await openaiLLM.generateSimilarPrompts(currentPrompt, similarityText, temp);
         } catch (error) {
             console.error('Error generating similar prompts:', error);
             return [];
