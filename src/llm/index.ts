@@ -3,11 +3,10 @@ export { LLM } from "./base";
 export { OpenAILLM } from "./openai";
 export { 
     PROVIDERS, 
-    MODEL_FAMILIES, 
     getProviderConfig,
     getModelsForFamily, 
     getDefaultModelFamily, 
     getDefaultModel 
 } from "./config";
-export type { ProviderConfig, ModelFamily, Model } from "./config";
+export type { ProviderConfig, Model } from "./config";
 export { createLLM } from "./factory";

@@ -1,7 +1,7 @@
 import React from "react";
 import { state } from "./state";
 import { examples } from "./cached_examples";
-import { MODEL_FAMILIES, getModelsForFamily } from "./llm/config";
+import { PROVIDERS, getModelsForFamily } from "./llm/config";
 
 interface PromptContainerProps {
     promptIndex: number;
@@ -92,9 +92,9 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                 onChange={(e) => onUpdateModelFamily(promptIndex, e.target.value)}
                                 disabled={isDisabled}
                             >
-                                {MODEL_FAMILIES.map(family => (
-                                    <option key={family.id} value={family.id}>
-                                        {family.name}
+                                {PROVIDERS.map(provider => (
+                                    <option key={provider.id} value={provider.id}>
+                                        {provider.name}
                                     </option>
                                 ))}
                             </select>

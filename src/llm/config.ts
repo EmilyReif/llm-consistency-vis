@@ -54,22 +54,7 @@ export const PROVIDERS: ProviderConfig[] = [
             { id: "claude-3-5-haiku-latest", name: "Claude 3.5 Haiku", family: "Claude" },
         ]
     }
-    // Future providers can be added here - just add a new config object!
 ];
-
-// Legacy interface for backward compatibility
-export interface ModelFamily {
-    id: string;
-    name: string;
-    models: Model[];
-}
-
-// Legacy export for backward compatibility
-export const MODEL_FAMILIES: ModelFamily[] = PROVIDERS.map(p => ({
-    id: p.id,
-    name: p.name,
-    models: p.models
-}));
 
 export function getProviderConfig(providerId: string): ProviderConfig | undefined {
     return PROVIDERS.find(p => p.id === providerId);

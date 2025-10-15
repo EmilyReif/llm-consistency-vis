@@ -4,7 +4,7 @@ import * as utils from "./utils";
 import * as color_utils from "./color_utils";
 import * as d3 from 'd3';
 import { createLLM } from "./llm/factory";
-import { MODEL_FAMILIES, getDefaultModelFamily, getDefaultModel, getModelsForFamily } from "./llm/config";
+import { PROVIDERS, getDefaultModelFamily, getDefaultModel, getModelsForFamily } from "./llm/config";
 import { LLM } from "./llm/base";
 import { OpenAILLM } from "./llm/openai";
 import { TokenizeMode } from "./utils";
