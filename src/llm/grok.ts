@@ -10,8 +10,10 @@ export interface GrokModel {
 }
 
 export const GROK_MODELS: GrokModel[] = [
+    { id: "grok-4-fast-reasoning", name: "Grok 4 Fast Reasoning", family: "Grok" },
+    { id: "grok-4-fast-non-reasoning", name: "Grok 4 Fast Non-Reasoning", family: "Grok" },
     { id: "grok-3", name: "Grok 3", family: "Grok" },
-    // { id: "grok-vision-beta", name: "Grok Vision Beta", family: "Grok" },
+    { id: "grok-3-mini", name: "Grok 3 Mini", family: "Grok" },
 ];
 
 export class GrokLLM extends LLM {
