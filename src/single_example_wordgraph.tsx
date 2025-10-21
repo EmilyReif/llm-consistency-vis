@@ -100,8 +100,8 @@ class SingleExampleWordGraph extends React.Component<Props> {
         this.createFontScale(); // Create font scale based on total generations
         this.addBoundingBoxData(nodesData);
 
-        const width = Math.min(window.innerWidth * 0.95, 5000); // 95% of viewport width, max 5000p;x
-        const height = Math.min(window.innerHeight * 0.6, 800); // 70% of viewport height, max 800px
+        const width = Math.min(window.innerWidth , 5000); // 95% of viewport width, max 5000p;x
+        const height = Math.min(window.innerHeight * 0.8, 800); // 70% of viewport height, max 800px
         const svg = d3.select("#graph-holder")
             .html('')
             .attr("width", width)

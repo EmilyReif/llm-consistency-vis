@@ -63,6 +63,9 @@
 
     h1 {
       margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .content-section h2 {
@@ -80,28 +83,107 @@
       margin-top: 40px;
       text-align: center;
     }
+
+    /* Info icon and tooltip styles */
+    .info-icon-container {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .info-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: #666;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: help;
+      font-family: sans-serif;
+    }
+
+    .info-icon:hover {
+      background-color: #333;
+    }
+
+    .info-tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      left: 30px;
+      top: -10px;
+      background-color: #333;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      width: 400px;
+      z-index: 1000;
+      font-size: 12px;
+      line-height: 1.5em;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    .info-tooltip::before {
+      content: "";
+      position: absolute;
+      top: 15px;
+      left: -8px;
+      border-width: 8px;
+      border-style: solid;
+      border-color: transparent #333 transparent transparent;
+    }
+
+    .info-icon-container:hover .info-tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .info-tooltip .authors {
+      color: #ccc;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .info-tooltip p {
+      margin: 8px 0;
+    }
+
+    .info-tooltip p:first-of-type {
+      margin-top: 0;
+    }
+
+    .info-tooltip p:last-of-type {
+      margin-bottom: 0;
+    }
   </style>
 </head>
 
 <body>
 
   <header>
-    <h1>Visualizing LLM outputs</h1>
-    <p class="authors"> Emily Reif, Deniz Nazarova, Jared Hwang, Claire Yang </p>
-    <p>
-      When an LLM returns a response, we’re actually sampling from a probability distribution over many possible
-      outputs. But we usually only see one of those samples—the response that gets returned.
-    </p>
-    <p>
-      If we’re just using the model to get an answer or write some text, that’s fine. But if we want to understand how
-      the model behaves—or build systems that depend on it—we need more than just one response. <b>We need to understand
-      the whole distribution of possible outputs.</b>
-    </p>
-    <!-- <p>
-      However, it's hard to grasp the shape of a distribution by reading dozens or hundreds of individual outputs. So
-      how can we explore this space more effectively? Can graph lattice visualizations help show patterns beyond a
-      single generation?
-    </p> -->
+    <h1>
+      Visualizing LLM outputs
+      <div class="info-icon-container">
+        <div class="info-icon">?</div>
+        <div class="info-tooltip">
+          <span class="authors">Emily Reif, Deniz Nazarova, Jared Hwang, Claire Yang</span>
+          <p>
+            When an LLM returns a response, we're actually sampling from a probability distribution over many possible
+            outputs. But we usually only see one of those samples—the response that gets returned.
+          </p>
+          <p>
+            If we're just using the model to get an answer or write some text, that's fine. But if we want to understand how
+            the model behaves—or build systems that depend on it—we need more than just one response. <b>We need to understand
+            the whole distribution of possible outputs.</b>
+          </p>
+        </div>
+      </div>
+    </h1>
   </header>
 
   <noscript>You need to enable JavaScript to run this app.</noscript>
