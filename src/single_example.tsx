@@ -91,8 +91,8 @@ class SingleExample extends React.Component {
         return (<div className='all-radio-holder'>
             {makeRadioButton('graph')}
             {makeRadioButton('raw outputs')}
-            {/* {makeRadioButton('word tree')}
-            {makeRadioButton('highlights')} */}
+            {makeRadioButton('word tree')}
+            {makeRadioButton('highlights')}
         </div>)
     }
 
@@ -127,7 +127,8 @@ renderOutputsBasic() {
                 return (
                     <div key={`group-${groupIndex}`} className="prompt-output-group" style={{ borderColor: backgroundColor }}>
                         <div className="prompt-output-header"  style={{ backgroundColor: backgroundColor }}>
-                            Prompt {originalIndex + 1}: {promptText} ({group.generations.length} outputs) - {state.prompts[originalIndex]?.modelFamily}/{state.prompts[originalIndex]?.model}
+                            <div className="prompt-text">Prompt {originalIndex + 1}: {promptText}</div>
+                            <div className="prompt-info">{group.generations.length} outputs - {state.prompts[originalIndex]?.modelFamily}/{state.prompts[originalIndex]?.model}</div>
                         </div>
                         <div>
                             {group.generations.map((generation, index) => (

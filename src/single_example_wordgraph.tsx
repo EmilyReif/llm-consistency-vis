@@ -204,7 +204,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
             nodes
                 .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
                 .attr('fill', (d: NodeDatum) => {
-                        return getNodeColor(d, linksData, edgeColors);
+                    return getNodeColor(d, linksData, edgeColors);
                 })
                 .style('opacity', (d: NodeDatum) => {
                     const activeNode = this.selectedNode || this.hoveredNode;
@@ -216,27 +216,32 @@ class SingleExampleWordGraph extends React.Component<Props> {
                 .classed('blur', (d: NodeDatum) => this.selectedNode ? !this.nodeIsInSents(d) : false)
         };
 
-                // Create the simulation.
-                const updateSimulation = () => {
-                    simulation.stop();
-        
-                    const selectedLinks = this.selectedNode ? linksData.filter(d => this.linkIsInSents(d)) : linksData;
-                    const selectedNodes = this.selectedNode ? nodesData.filter(d => this.nodeIsInSents(d)) : nodesData;
-        
-                    simulation
-                        .nodes(selectedNodes)
-                        .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
-                        .force("link", d3.forceLink(selectedLinks)
-                            .id((d: any) => d.word)
-                            .strength(.1))
-                        // .force("y", d3.forceY(height / 2).strength((d: any) => d.count/30)) // Center nodes vertically
-                        .force('y', d3.forceY((d: NodeDatum) => this.getExpectedY(d, height)).strength(0.1))
-        
-                        this.runSimulationToConvergence(simulation, nodesData, update);
-                    }
-                // Create the simulation.
-                const simulation = d3.forceSimulation(nodesData);
-                updateSimulation();
+        // Create the simulation.
+        const updateSimulation = () => {
+            simulation.stop();
+
+            const selectedLinks = this.selectedNode ? linksData.filter(d => this.linkIsInSents(d)) : linksData;
+            const selectedNodes = this.selectedNode ? nodesData.filter(d => this.nodeIsInSents(d)) : nodesData;
+
+            // Set initial Y positions
+            // nodesData.forEach((d: NodeDatum) => {
+            //     d.y = this.getExpectedY(d, height);
+            // });
+
+            simulation
+                .nodes(selectedNodes)
+                .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
+                .force("link", d3.forceLink(selectedLinks)
+                    .id((d: any) => d.word)
+                    .strength(.4))
+            .force("y", d3.forceY(height / 2).strength((d: any) => d.count/20)) // Center nodes vertically
+            .force('y', d3.forceY((d: NodeDatum) => this.getExpectedY(d, height)).strength(0.1))
+
+            this.runSimulationToConvergence(simulation, nodesData, update);
+        }
+        // Create the simulation.
+        const simulation = d3.forceSimulation(nodesData);
+        updateSimulation();
 
         simulation.on("tick", () => update());
         this.runSimulationToConvergence(simulation, nodesData, update);
@@ -263,17 +268,17 @@ class SingleExampleWordGraph extends React.Component<Props> {
             simulation.alpha(1).restart();
             return;
         }
-        
+
         // Store previous positions to detect convergence
         const prevPositions = nodesData.map(d => ({ x: d.x, y: d.y }));
-        
+
         let converged = false;
         let iteration = 0;
-        
+
         while (!converged && iteration < maxIterations) {
             simulation.tick();
             update(); // Manually call update since tick events aren't fired
-            
+
             // Check if positions have converged
             converged = true;
             for (let i = 0; i < nodesData.length; i++) {
@@ -281,21 +286,21 @@ class SingleExampleWordGraph extends React.Component<Props> {
                 const prev = prevPositions[i];
                 const dx = Math.abs(node.x - prev.x);
                 const dy = Math.abs(node.y - prev.y);
-                
+
                 if (dx > convergenceThreshold || dy > convergenceThreshold) {
                     converged = false;
                     break;
                 }
             }
-            
+
             // Update previous positions for next iteration
             nodesData.forEach((d, i) => {
                 prevPositions[i] = { x: d.x, y: d.y };
             });
-            
+
             iteration++;
         }
-        
+
         console.log(`Simulation converged after ${iteration} iterations`);
         // Simulation remains stopped for stable positioning
     }
@@ -336,21 +341,34 @@ class SingleExampleWordGraph extends React.Component<Props> {
         if ((this.selectedNode && !this.nodeIsInSents(d))) {
             return d.x;
         }
-        const parentLefts = parents.flatMap((p: NodeDatum) => {
-            return p.x + this.textLength(p) + padBetweenWords;
+        // Count occurrences of each parent
+        const parentCounts = new Map<NodeDatum, number>();
+        parents.forEach((p: NodeDatum) => {
+            parentCounts.set(p, (parentCounts.get(p) || 0) + 1);
         });
-        return (d3.mean(parentLefts) || d.x);
+        
+        // Find the most frequent parent
+        let mostFrequentParent = parents[0];
+        let maxCount = 0;
+        parentCounts.forEach((count, parent) => {
+            if (count > maxCount) {
+                maxCount = count;
+                mostFrequentParent = parent;
+            }
+        });
+        
+        return mostFrequentParent.x + this.textLength(mostFrequentParent) + padBetweenWords;
     }
 
     private getExpectedY(d: NodeDatum, height: number) {
         const avgSentIndex = d3.min(d.origSentIndices || []) || 0;
         const totalSents = this.props.promptGroups.reduce((acc, g) => acc + g.generations.length, 0);
-        
+
         // Use D3 linear scale for Y positioning
         const yScale = d3.scaleLinear()
             .domain([0, totalSents])
             .range([height * 0.1, height * 0.9]);
-            
+
         return yScale(avgSentIndex);
     }
 

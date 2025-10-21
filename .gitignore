@@ -1,3 +1,6 @@
 node_modules/*
 .DS_Store
 /build
+ipynb_experiments/venv/*
+ipynb_experiments/.ipynb_checkpoints/*
+ipynb_experiments/__pycache__/*

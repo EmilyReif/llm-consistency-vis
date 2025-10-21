@@ -6,7 +6,8 @@ export type TokenizeMode = "space" | "comma" | "sentence";
 
 const tokensToOrigWord: { [key: string]: string } = {};
 const embsDict: { [key: string]: { word: string, prevWords: string[], nextWords: string[], idx: number } } = {};
-const CONTEXT_WINDOW_SIZE = 2; // Number of words on either side to consider
+const CONTEXT_WINDOW_SIZE = 1; // Number of words on either side to consider
+const CLEAN_TEXT = false;
 
 // Common English stopwords to ignore when building context windows
 export const STOPWORDS = new Set([
@@ -52,8 +53,10 @@ export function tokenize(
 
     // wrap into tokenKeys
     let tokens: string[] = chunks.map((chunk, i) => {
+        if (CLEAN_TEXT) {
             chunk = chunk.replace(/[^\w\s\'.!?]|_/g, "").replace(/\s+/g, " ");
             chunk = chunk.toLowerCase().trim();
+        }
 
         let tokenKey = chunk + sentenceIdx + i;
 

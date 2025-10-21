@@ -1,0 +1,7 @@
+sentence-transformers
+datasets
+colorama
+tqdm
+matplotlib
+numpy
+jupyter
