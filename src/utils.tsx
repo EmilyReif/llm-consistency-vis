@@ -1,9 +1,10 @@
-import { NodeDatum, LinkDatum } from './single_example_wordgraph';
+import { NodeDatum, LinkDatum, OrigSentenceInfo } from './single_example_wordgraph';
 import * as d3 from "d3";
 import {getEmbeddings} from './embed'
 
 export type TokenizeMode = "space" | "comma" | "sentence";
 
+// Maps token keys to their original word from the source text
 const tokensToOrigWord: { [key: string]: string } = {};
 const embsDict: { [key: string]: { word: string, prevWords: string[], nextWords: string[], idx: number } } = {};
 const CONTEXT_WINDOW_SIZE = 1; // Number of words on either side to consider
@@ -21,6 +22,11 @@ export const STOPWORDS = new Set([
 function isStopword(word: string): boolean {
     const normalized = word.toLowerCase().replace(/[^\w\s\'.!?]|_/g, "").replace(/\s+/g, " ").trim();
     return STOPWORDS.has(normalized);
+}
+
+/** Strip all whitespace and punctuation from a string. */
+function stripWhitespaceAndPunctuation(str: string): string {
+    return str.replace(/[\s\p{P}]/gu, '');
 }
 
 export function unformat(word: string) {
@@ -53,6 +59,8 @@ export function tokenize(
 
     // wrap into tokenKeys
     let tokens: string[] = chunks.map((chunk, i) => {
+        const originalChunk = chunk; // Store the original before any cleaning
+        
         if (CLEAN_TEXT) {
             chunk = chunk.replace(/[^\w\s\'.!?]|_/g, "").replace(/\s+/g, " ");
             chunk = chunk.toLowerCase().trim();
@@ -95,7 +103,7 @@ export function tokenize(
             idx: i
         };
 
-        tokensToOrigWord[tokenKey] = chunk;
+        tokensToOrigWord[tokenKey] = originalChunk; // Store the original unmodified word
         return tokenKey;
     });
 
@@ -137,9 +145,13 @@ function levenshteinDistance(str1: string, str2: string): number {
 
 /** Convert Levenshtein distance to a similarity score (0 to 1, higher is more similar). */
 function levenshteinSimilarity(str1: string, str2: string): number {
-    if (!str1 || !str2) return 0;
-    const distance = levenshteinDistance(str1, str2);
-    const maxLength = Math.max(str1.length, str2.length);
+    // Strip out all punctuation and whitespace
+    const cleanStr1 = stripWhitespaceAndPunctuation(str1);
+    const cleanStr2 = stripWhitespaceAndPunctuation(str2);
+    
+    if (!cleanStr1 || !cleanStr2) return 0;
+    const distance = levenshteinDistance(cleanStr1, cleanStr2);
+    const maxLength = Math.max(cleanStr1.length, cleanStr2.length);
     return 1 - (distance / maxLength);
 }
 
@@ -248,6 +260,7 @@ export function createGraphDataFromPromptGroups(
                         origSentIndices: [],
                         // @ts-ignore augment at runtime for multi-prompt support
                         origPromptIds: [],
+                        origSentenceInfo: [],
                         isRoot: j === 0,
                         children: [],
                         parents: [],
@@ -258,6 +271,16 @@ export function createGraphDataFromPromptGroups(
                 nodesDict[word].origSentIndices.push(sentIdx);
                 // @ts-ignore optional field present when type extended
                 nodesDict[word].origPromptIds && nodesDict[word].origPromptIds.push(promptId);
+                
+                // Track the original word(s) from the sentence
+                // Get the original word that was tokenized
+                const origWord = unformat(words[j]);
+                nodesDict[word].origSentenceInfo!.push({
+                    sentIdx,
+                    wordIdx: j,
+                    origWords: [origWord]
+                });
+                
                 if (j === 0) {
                     nodesDict[word].isRoot = true;
                 }
@@ -332,6 +355,37 @@ function merge(nodesDict: { [key: string]: NodeDatum }, linksDict: { [key: strin
 
                 if (nodesDict[target].isEnd) {
                     nodesDict[word].isEnd = true;
+                }
+                
+                // Merge the origSentenceInfo: combine consecutive words from the same sentence
+                const sourceInfo = nodesDict[source].origSentenceInfo;
+                const targetInfo = nodesDict[target].origSentenceInfo;
+                
+                if (sourceInfo && targetInfo) {
+                    const mergedInfo: OrigSentenceInfo[] = [];
+                    
+                    // For each source occurrence, find the corresponding target occurrence in the same sentence
+                    sourceInfo.forEach(sInfo => {
+                        // The target should be right after the last word in the source
+                        const expectedTargetIdx = sInfo.wordIdx + sInfo.origWords.length;
+                        const matchingTarget = targetInfo.find(tInfo => 
+                            tInfo.sentIdx === sInfo.sentIdx && tInfo.wordIdx === expectedTargetIdx
+                        );
+                        
+                        if (matchingTarget) {
+                            // Merge the words
+                            mergedInfo.push({
+                                sentIdx: sInfo.sentIdx,
+                                wordIdx: sInfo.wordIdx,
+                                origWords: [...sInfo.origWords, ...matchingTarget.origWords]
+                            });
+                        } else {
+                            // If no matching target, just keep the source
+                            mergedInfo.push(sInfo);
+                        }
+                    });
+                    
+                    nodesDict[word].origSentenceInfo = mergedInfo;
                 }
 
                 // Delete the old nodes.

@@ -17,6 +17,13 @@ interface Props {
 const NUM_WORDS_TO_WRAP = 3;
 const SHOW_DEBUG_ELLIPSES = false;
 
+// Information about how a node appears in a specific sentence
+export interface OrigSentenceInfo {
+    sentIdx: number;
+    wordIdx: number; // position in the tokenized sentence
+    origWords: string[]; // the actual word(s) from the original sentence
+}
+
 // The structure of each node in the graph.
 export interface NodeDatum {
     word: string;
@@ -27,6 +34,8 @@ export interface NodeDatum {
     origSentIndices: number[];
     // Optional: which prompts contributed to this node
     origPromptIds?: string[];
+    // Detailed info about each occurrence in original sentences
+    origSentenceInfo?: OrigSentenceInfo[];
 
     // Parent and child nodes.
     children: NodeDatum[];
@@ -57,6 +66,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
     private hoveredNode: NodeDatum | null = null;
     private selectedNode: NodeDatum | null = null;  // Add this new property
     private fontScale: d3.ScaleLinear<number, number> | null = null;
+    private popupRef: React.RefObject<HTMLDivElement> = React.createRef();
 
     componentDidMount() {
         window.addEventListener('resize', this.handleResize);
@@ -83,7 +93,18 @@ class SingleExampleWordGraph extends React.Component<Props> {
 
     render() {
         // Empty svg element that will be populated with the graph.
-        return <svg id='graph-holder'></svg>;
+        return (
+            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <svg id='graph-holder'></svg>
+                <div ref={this.popupRef} className="node-examples-popup" style={{ display: 'none' }}>
+                    <div className="popup-header">
+                        <div className="popup-title">Examples containing this node:</div>
+                        <button className="popup-close" onClick={() => this.hideHoveredNodeInfo()}>×</button>
+                    </div>
+                    <div className="popup-content"></div>
+                </div>
+            </div>
+        );
     }
 
     async componentDidUpdate() {
@@ -113,6 +134,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
                 if (event.target.tagName === 'svg') {
                     this.selectedNode = null;
                     this.hoveredNode = null;
+                    this.hideHoveredNodeInfo();
                     updateSimulation();
                     update();
                 }
@@ -145,7 +167,6 @@ class SingleExampleWordGraph extends React.Component<Props> {
             .on('mouseover', (event: any, d: NodeDatum) => {
                 if (!this.selectedNode) {  // Only update hover if nothing is selected
                     this.hoveredNode = d;
-                    this.showHoveredNodeInfo();
                     update();
                 }
             })
@@ -163,6 +184,7 @@ class SingleExampleWordGraph extends React.Component<Props> {
                     this.selectedNode = d;
                     this.hoveredNode = null;
                 }
+                this.hideHoveredNodeInfo();
                 updateSimulation();
                 update();
             });
@@ -170,6 +192,31 @@ class SingleExampleWordGraph extends React.Component<Props> {
         nodes.append("text")
             .call(this.wrapText)
             .attr("font-size", (d: any) => this.fontSize(d));
+
+        // Add info icon group (circle with ?)
+        const infoIcon = nodes.append("g")
+            .attr("class", "info-icon")
+            .style("opacity", 0)
+            .style("cursor", "pointer")
+            .on('click', (event: any, d: NodeDatum) => {
+                event.stopPropagation(); // Prevent node click event
+                this.showHoveredNodeInfo(d);
+            });
+
+        infoIcon.append("circle")
+            .attr("r", 8)
+            .attr("fill", "#999")
+            .attr("stroke", "white")
+            .attr("stroke-width", 2);
+
+        infoIcon.append("text")
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle")
+            .attr("font-size", 12)
+            .attr("font-weight", "bold")
+            .attr("fill", "white")
+            .attr("pointer-events", "none")
+            .text("?");
 
         if (SHOW_DEBUG_ELLIPSES) {
             nodes.append("ellipse")
@@ -213,7 +260,18 @@ class SingleExampleWordGraph extends React.Component<Props> {
                     }
                     return this.nodeIsInSents(d) ? 1 : 0.2;
                 })
-                .classed('blur', (d: NodeDatum) => this.selectedNode ? !this.nodeIsInSents(d) : false)
+                .classed('blur', (d: NodeDatum) => this.selectedNode ? !this.nodeIsInSents(d) : false);
+
+            // Update info icon visibility and position
+            nodes.selectAll<SVGGElement, NodeDatum>(".info-icon")
+                .style("opacity", (d: NodeDatum) => {
+                    return (this.hoveredNode === d && !this.selectedNode) ? 1 : 0;
+                })
+                .attr("transform", (d: NodeDatum) => {
+                    const xOffset = this.textLength(d) + 15;
+                    const yOffset = -this.textHeight(d) / 2;
+                    return `translate(${xOffset}, ${yOffset})`;
+                })
         };
 
         // Create the simulation.
@@ -452,9 +510,120 @@ class SingleExampleWordGraph extends React.Component<Props> {
         });
     }
 
-    private showHoveredNodeInfo() {
-        if (!this.hoveredNode) return;
-        const generations = this.hoveredNode.origSentIndices;
+    private showHoveredNodeInfo(node: NodeDatum) {
+        if (!this.popupRef.current) return;
+        
+        // Get all generations that contain this node
+        const sentIndices = node.origSentIndices;
+        const sentenceInfoMap = new Map<number, string[]>();
+        
+        // Create a map of sentIdx to origWords for quick lookup
+        if (node.origSentenceInfo) {
+            node.origSentenceInfo.forEach(info => {
+                if (!sentenceInfoMap.has(info.sentIdx)) {
+                    sentenceInfoMap.set(info.sentIdx, []);
+                }
+                sentenceInfoMap.get(info.sentIdx)!.push(...info.origWords);
+            });
+        }
+        
+        // Calculate total number of generations
+        const totalGenerations = this.props.promptGroups.reduce((acc, group) => acc + group.generations.length, 0);
+        
+        // Flatten all generations from all prompt groups and get the ones matching sentIndices
+        // Note: sentIdx in utils.tsx starts at 0 and increments BEFORE processing each generation
+        let currentSentIdx = 0;
+        const examples: { text: string, sentIdx: number, promptId: string }[] = [];
+        this.props.promptGroups.forEach(group => {
+            group.generations.forEach(generation => {
+                currentSentIdx++; // Increment first to match the logic in utils.tsx
+                if (sentIndices.includes(currentSentIdx)) {
+                    examples.push({ text: generation, sentIdx: currentSentIdx, promptId: group.promptId });
+                }
+            });
+        });
+        
+        // Calculate percentage
+        const percentage = totalGenerations > 0 ? Math.round((examples.length / totalGenerations) * 100) : 0;
+        
+        // Update popup title with percentage
+        const popupTitle = this.popupRef.current.querySelector('.popup-title');
+        if (popupTitle) {
+            popupTitle.textContent = `Examples containing this node: ${examples.length}/${totalGenerations} (${percentage}%)`;
+        }
+        
+        // Update popup content with bold highlighting
+        const popupContent = this.popupRef.current.querySelector('.popup-content');
+        if (popupContent) {
+            popupContent.innerHTML = examples
+                .map(({ text, sentIdx, promptId }) => {
+                    const wordsToHighlight = sentenceInfoMap.get(sentIdx) || [];
+                    // Extract original prompt index from promptId for consistent coloring
+                    const match = promptId.match(/_(\d+)_/);
+                    const originalIndex = match ? match[1] : '0';
+                    const color = color_utils.MILLER_STONE_COLORS[parseInt(originalIndex) % color_utils.MILLER_STONE_COLORS.length];
+                    const highlightedText = this.highlightWordsInText(text, wordsToHighlight, color);
+                    return `<div class="example-item" style="color: ${color};">${highlightedText}</div>`;
+                })
+                .join('');
+        }
+        
+        // Show popup
+        this.popupRef.current.style.display = 'block';
+    }
+    
+    private highlightWordsInText(text: string, wordsToHighlight: string[], color: string): string {
+        if (!wordsToHighlight || wordsToHighlight.length === 0) {
+            return text;
+        }
+        
+        // Convert hex color to rgba with alpha for background
+        const hexToRgba = (hex: string, alpha: number): string => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+        
+        const bgColor = hexToRgba(color, 0.2);
+        
+        // Create a combined pattern from all words to highlight
+        // Sort by length descending to match longer phrases first
+        const sortedWords = [...wordsToHighlight].sort((a, b) => b.length - a.length);
+        
+        // Try to find the exact sequence of words in the text
+        const combinedPhrase = wordsToHighlight.join(' ');
+        
+        // First, try to find the exact combined phrase
+        let highlightedText = text;
+        const phraseIndex = text.toLowerCase().indexOf(combinedPhrase.toLowerCase());
+        
+        if (phraseIndex !== -1) {
+            // Found the exact phrase
+            const beforePhrase = text.substring(0, phraseIndex);
+            const phrase = text.substring(phraseIndex, phraseIndex + combinedPhrase.length);
+            const afterPhrase = text.substring(phraseIndex + combinedPhrase.length);
+            highlightedText = `${beforePhrase}<b style="background-color: ${bgColor};">${phrase}</b>${afterPhrase}`;
+        } else {
+            // Couldn't find exact phrase, try to highlight each word individually
+            // Use a case-insensitive regex that matches word boundaries
+            sortedWords.forEach(word => {
+                if (word.trim()) {
+                    // Escape special regex characters
+                    const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    // Create a regex that matches the word with optional punctuation
+                    const regex = new RegExp(`(${escapedWord})`, 'gi');
+                    highlightedText = highlightedText.replace(regex, `<b style="background-color: ${bgColor};">$1</b>`);
+                }
+            });
+        }
+        
+        return highlightedText;
+    }
+
+    private hideHoveredNodeInfo() {
+        if (!this.popupRef.current) return;
+        this.popupRef.current.style.display = 'none';
     }
 }
 
