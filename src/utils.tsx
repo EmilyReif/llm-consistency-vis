@@ -1,6 +1,6 @@
 import { NodeDatum, LinkDatum, OrigSentenceInfo } from './single_example_wordgraph';
 import * as d3 from "d3";
-import {getEmbeddings} from './embed'
+import { getEmbeddings } from './embed'
 
 export type TokenizeMode = "space" | "comma" | "sentence";
 
@@ -60,7 +60,7 @@ export function tokenize(
     // wrap into tokenKeys
     let tokens: string[] = chunks.map((chunk, i) => {
         const originalChunk = chunk; // Store the original before any cleaning
-        
+
         if (CLEAN_TEXT) {
             chunk = chunk.replace(/[^\w\s\'.!?]|_/g, "").replace(/\s+/g, " ");
             chunk = chunk.toLowerCase().trim();
@@ -71,7 +71,7 @@ export function tokenize(
         // Collect n non-stopword words before and after the current word
         const prevWords: string[] = [];
         const nextWords: string[] = [];
-        
+
         // Collect previous words (skipping stopwords)
         let prevCount = 0;
         let prevOffset = 1;
@@ -79,11 +79,10 @@ export function tokenize(
             const prevWord = chunks[i - prevOffset];
             if (!isStopword(prevWord)) {
                 prevWords.unshift(prevWord);
-                prevCount++;
             }
             prevOffset++;
         }
-        
+
         // Collect next words (skipping stopwords)
         let nextCount = 0;
         let nextOffset = 1;
@@ -114,9 +113,9 @@ export function tokenize(
 function levenshteinDistance(str1: string, str2: string): number {
     if (!str1) return str2 ? str2.length : 0;
     if (!str2) return str1.length;
-    
+
     const matrix: number[][] = [];
-    
+
     // Initialize first column and row
     for (let i = 0; i <= str2.length; i++) {
         matrix[i] = [i];
@@ -124,7 +123,7 @@ function levenshteinDistance(str1: string, str2: string): number {
     for (let j = 0; j <= str1.length; j++) {
         matrix[0][j] = j;
     }
-    
+
     // Fill in the rest of the matrix
     for (let i = 1; i <= str2.length; i++) {
         for (let j = 1; j <= str1.length; j++) {
@@ -139,7 +138,7 @@ function levenshteinDistance(str1: string, str2: string): number {
             }
         }
     }
-    
+
     return matrix[str2.length][str1.length];
 }
 
@@ -148,7 +147,7 @@ function levenshteinSimilarity(str1: string, str2: string): number {
     // Strip out all punctuation and whitespace
     const cleanStr1 = stripWhitespaceAndPunctuation(str1);
     const cleanStr2 = stripWhitespaceAndPunctuation(str2);
-    
+
     if (!cleanStr1 || !cleanStr2) return 0;
     const distance = levenshteinDistance(cleanStr1, cleanStr2);
     const maxLength = Math.max(cleanStr1.length, cleanStr2.length);
@@ -166,54 +165,21 @@ function similarity(a: string, b: string): number {
     // Check if the words themselves are stopwords
     const aIsStopword = isStopword(embA.word);
     const bIsStopword = isStopword(embB.word);
-    
-    // Use Levenshtein similarity for the actual word
-    // If both are stopwords, reduce weight significantly and rely more on context
-    if (embA.word && embB.word) {
-        const wordWeight = (aIsStopword && bIsStopword) ? 0.1 : 0.5;
-        counter += levenshteinSimilarity(embA.word, embB.word) * wordWeight;
-    }
-    
+    const bothStopwords = aIsStopword && bIsStopword;
+
     // Adjust context weights if both words are stopwords (give more weight to context)
-    const prevWeight = (aIsStopword && bIsStopword) ? 0.45 : 0.25;
-    const nextWeight = (aIsStopword && bIsStopword) ? 0.45 : 0.25;
-    
-    // Compare sliding window of previous words
-    if (embA.prevWords.length > 0 && embB.prevWords.length > 0) {
-        let prevSimilarity = 0;
-        const maxLen = Math.max(embA.prevWords.length, embB.prevWords.length);
-        
-        for (let i = 0; i < maxLen; i++) {
-            const wordA = embA.prevWords[i];
-            const wordB = embB.prevWords[i];
-            if (wordA && wordB) {
-                // Weight closer words more heavily (exponential decay)
-                const weight = Math.pow(0.7, maxLen - i - 1);
-                prevSimilarity += levenshteinSimilarity(wordA, wordB) * weight;
-            }
-        }
-        counter += (prevSimilarity / maxLen) * prevWeight;
+    const weight = 0.8;
+    const isStartOrEnd = embA.prevWords.length === 0 || embB.prevWords.length === 0 || embA.nextWords.length === 0 || embB.nextWords.length === 0;
+    if (bothStopwords && !isStartOrEnd) {
+        const similarityPrevWords = levenshteinSimilarity(embA.prevWords.join(' '), embB.prevWords.join(' ')) * weight;
+        const similarityNextWords = levenshteinSimilarity(embA.nextWords.join(' '), embB.nextWords.join(' ')) * weight;
+        counter += Math.max(similarityPrevWords + similarityNextWords);
     }
-    
-    // Compare sliding window of next words
-    if (embA.nextWords.length > 0 && embB.nextWords.length > 0) {
-        let nextSimilarity = 0;
-        const maxLen = Math.max(embA.nextWords.length, embB.nextWords.length);
-        
-        for (let i = 0; i < maxLen; i++) {
-            const wordA = embA.nextWords[i];
-            const wordB = embB.nextWords[i];
-            if (wordA && wordB) {
-                // Weight closer words more heavily (exponential decay)
-                const weight = Math.pow(0.7, i);
-                nextSimilarity += levenshteinSimilarity(wordA, wordB) * weight;
-            }
-        }
-        counter += (nextSimilarity / maxLen) * nextWeight;
+    else {
+        counter += levenshteinSimilarity(embA.word, embB.word) * weight;
     }
-    
     counter -= Math.abs(embA.idx - embB.idx) / 20; // They have similar positions in the sentence.
-    return counter
+    return counter;
 }
 
 /** Create graph data from prompt groups. */
@@ -271,7 +237,7 @@ export function createGraphDataFromPromptGroups(
                 nodesDict[word].origSentIndices.push(sentIdx);
                 // @ts-ignore optional field present when type extended
                 nodesDict[word].origPromptIds && nodesDict[word].origPromptIds.push(promptId);
-                
+
                 // Track the original word(s) from the sentence
                 // Get the original word that was tokenized
                 const origWord = unformat(words[j]);
@@ -280,7 +246,7 @@ export function createGraphDataFromPromptGroups(
                     wordIdx: j,
                     origWords: [origWord]
                 });
-                
+
                 if (j === 0) {
                     nodesDict[word].isRoot = true;
                 }
@@ -288,7 +254,7 @@ export function createGraphDataFromPromptGroups(
                     nodesDict[word].isEnd = true;
                 }
 
-            // Add a link from the previous word.
+                // Add a link from the previous word.
                 if (j > 0) {
                     linksDict[prevWord] = linksDict[prevWord] || {};
                     const entries = linksDict[prevWord][word] || [];
@@ -356,22 +322,22 @@ function merge(nodesDict: { [key: string]: NodeDatum }, linksDict: { [key: strin
                 if (nodesDict[target].isEnd) {
                     nodesDict[word].isEnd = true;
                 }
-                
+
                 // Merge the origSentenceInfo: combine consecutive words from the same sentence
                 const sourceInfo = nodesDict[source].origSentenceInfo;
                 const targetInfo = nodesDict[target].origSentenceInfo;
-                
+
                 if (sourceInfo && targetInfo) {
                     const mergedInfo: OrigSentenceInfo[] = [];
-                    
+
                     // For each source occurrence, find the corresponding target occurrence in the same sentence
                     sourceInfo.forEach(sInfo => {
                         // The target should be right after the last word in the source
                         const expectedTargetIdx = sInfo.wordIdx + sInfo.origWords.length;
-                        const matchingTarget = targetInfo.find(tInfo => 
+                        const matchingTarget = targetInfo.find(tInfo =>
                             tInfo.sentIdx === sInfo.sentIdx && tInfo.wordIdx === expectedTargetIdx
                         );
-                        
+
                         if (matchingTarget) {
                             // Merge the words
                             mergedInfo.push({
@@ -384,7 +350,7 @@ function merge(nodesDict: { [key: string]: NodeDatum }, linksDict: { [key: strin
                             mergedInfo.push(sInfo);
                         }
                     });
-                    
+
                     nodesDict[word].origSentenceInfo = mergedInfo;
                 }
 
