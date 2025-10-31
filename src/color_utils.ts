@@ -23,8 +23,7 @@ export const MILLER_STONE_COLORS = [
  */
 export function getNodeColor(
     node: NodeDatum, 
-    linksData: LinkDatum[], 
-    edgeColors: (originalIndex: string) => string
+    linksData: LinkDatum[]
 ): string {
     // Get all edges connected to this node
     const connectedEdges = linksData.filter(link => 

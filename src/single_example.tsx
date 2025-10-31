@@ -111,6 +111,7 @@ class SingleExample extends React.Component {
         return <SingleExampleWordGraph 
             promptGroups={this.state.promptGroups}
             similarityThreshold={state.similarityThreshold}
+            minOpacityThreshold={state.minOpacityThreshold}
         ></SingleExampleWordGraph>;
     }
 
@@ -172,6 +173,7 @@ renderOutputsBasic(firstOnly: boolean = false) {
         const promptModels = state.prompts.map(p => p.model).join(',');
         const numGenerations = state.numGenerations;
         const similarityThreshold = state.similarityThreshold;
+        const minOpacityThreshold = state.minOpacityThreshold;
         const shuffle = state.shuffle;
         const tokenizeMode = state.tokenizeMode;
         const disabledPrompts = state.disabledPrompts;
@@ -183,6 +185,7 @@ renderOutputsBasic(firstOnly: boolean = false) {
           promptModels,
           numGenerations,
           similarityThreshold,
+          minOpacityThreshold,
           shuffle,
           tokenizeMode,
           disabledPrompts

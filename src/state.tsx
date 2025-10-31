@@ -36,6 +36,7 @@ class State {
     prompts: Prompt[] = [];
     numGenerations: number = DEFAULT_NUM_GENERATIONS;
     similarityThreshold: number = DEFAULT_SIMILARITY_THRESHOLD;
+    minOpacityThreshold: number = 0;
     shuffle: boolean = false;
     tokenizeMode: TokenizeMode = "space";
     generationsCache: { [example: string]: { [temp: number]: { [modelFamily: string]: { [model: string]: string[] } } } } = {};
@@ -168,6 +169,10 @@ class State {
 
     setTokenizeMode = ((value: TokenizeMode) => {
         this.tokenizeMode = value;
+    });
+
+    setMinOpacityThreshold = ((value: number) => {
+        this.minOpacityThreshold = value;
     });
 
     setModelFamily = ((familyId: string) => {

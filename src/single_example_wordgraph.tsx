@@ -13,6 +13,7 @@ interface Props {
     // Prompts (grouped inputs for multi-prompt)
     promptGroups: { promptId: string, generations: string[] }[];
     similarityThreshold: number;
+    minOpacityThreshold: number;
 }
 
 interface State {
@@ -72,6 +73,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private hoveredNode: NodeDatum | null = null;
     private selectedNode: NodeDatum | null = null;  // Add this new property
     private fontScale: d3.ScaleLinear<number, number> | null = null;
+    private opacityScale: d3.ScalePower<number, number> | null = null;
 
     constructor(props: Props) {
         super(props);
@@ -102,6 +104,14 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .domain([1, totalGenerations])
             .range([minFontSize, maxFontSize])
             .clamp(true);
+
+        // Create opacity scale where count maps to opacity from 0 to 1
+        this.opacityScale = d3.scalePow()
+            .exponent(.5)
+            .domain([this.props.minOpacityThreshold - 3, 10])
+            .range([0, 1])
+            .clamp(true)
+            .nice();
     }
 
     render() {
@@ -123,6 +133,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Only rebuild graph if props changed, not if popup state changed
         if (prevProps.promptGroups === this.props.promptGroups && 
             prevProps.similarityThreshold === this.props.similarityThreshold &&
+            prevProps.minOpacityThreshold === this.props.minOpacityThreshold &&
             prevState.popupNode !== this.state.popupNode) {
             // Only popup state changed, don't rebuild graph
             return;
@@ -175,6 +186,63 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             });
 
         svg.call(zoom as any);
+
+        // Add defs section for gradients
+        const defs = svg.append("defs");
+
+        // Create a gradient for each link
+        const gradientId = (d: LinkDatum, i: number) => `gradient-${i}`;
+        
+        // Helper function to create gradient for a link
+        const createGradient = (d: LinkDatum, i: number, isInSents: boolean) => {
+            const grad = defs.append("linearGradient")
+                .attr("id", gradientId(d, i))
+                .attr("gradientUnits", "objectBoundingBox")
+
+            // Get stroke color
+            const strokeColor = edgeColors(d.promptId ? d.promptId.match(/_(\d+)_/)?.[1] || '0' : '0');
+            
+            grad.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", strokeColor)
+            
+            grad.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", strokeColor)
+
+            return grad;
+        };
+        
+        // Initialize gradients with temporary coordinates (will be updated during simulation)
+        linksData.forEach((d: LinkDatum, i: number) => {
+            createGradient(d, i, !!this.linkIsInSents(d));
+        });
+
+        // Helper function to get link endpoints (reusable for paths and gradients)
+        const getLinkEndpoints = (d: LinkDatum) => {
+            const getY = (node: NodeDatum) => {
+                const lineHeight = 0.75;
+                const percentage = [...node.origSentIndices].indexOf(d.sentIdx) / node.origSentIndices.length;
+                const offsetY = (percentage - lineHeight) * this.fontSize(node);
+                return node.y + offsetY;
+            };
+
+            const getXLeftRightCenter = (node: NodeDatum) => {
+                const textLength = this.textLength(node);
+                const leftX = node.x;
+                const rightX = leftX + textLength;
+                const centerX = (leftX + rightX) / 2;
+                return [leftX, rightX, centerX];
+            };
+
+            const [sourceLeftX, sourceRightX, sourceCenterX] = getXLeftRightCenter(d.source);
+            const [targetLeftX, targetRightX, targetCenterX] = getXLeftRightCenter(d.target);
+            const sourceX = d.source?.isRoot ? sourceLeftX : sourceCenterX;
+            const targetX = d.target.isEnd ? targetRightX : targetCenterX;
+            const [y1, y2] = [getY(d.source), getY(d.target)];
+
+            return { sourceX, targetX, y1, y2, sourceRightX, targetLeftX };
+        };
 
         // Draw links.
         const links = g.selectAll(".link")
@@ -254,35 +322,49 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
         const update = () => {
             nodesData.forEach((d: NodeDatum) => d.x = this.getExpectedX(d));
-
-            links.attr("d", (d: any, i) => this.renderPath(d))
-                .attr("stroke", (d: any) => {
-                    // Extract original prompt index from promptId for consistent coloring
-                    // Format: ${prompt.text}_${originalIndex}_${prompt.modelFamily}_${prompt.model}
-                    const match = d.promptId.match(/_(\d+)_/);
-                    const originalIndex = match ? match[1] : '0';
-                    return edgeColors(originalIndex);
+            links.attr("d", (d: LinkDatum) => {
+                const { sourceX, targetX, y1, y2, sourceRightX, targetLeftX } = getLinkEndpoints(d);
+                const points = [
+                    { x: sourceX, y: y1 },
+                    { x: sourceRightX, y: y1 },
+                    { x: targetLeftX, y: y2 },
+                    { x: targetX, y: y2 }
+                ];
+                return d3.line<{ x: number, y: number }>()
+                    .x(d => d.x)
+                    .y(d => d.y)
+                    .curve(d3.curveMonotoneY)(points);
+            })
+                .attr("stroke", (d: LinkDatum, i: number) => {
+                    return `url(#gradient-${i})`;
                 })
                 .attr("stroke-width", (d: any) => {
                     return 2;
                 })
-                .attr("stroke-opacity", (d: any) => {
-                    if (d.source.word === '') return 0;
-                    return this.linkIsInSents(d) ? .5 : 0.2;
-                })
-                .classed('blur', (d: LinkDatum) => this.selectedNode ? !this.linkIsInSents(d) : false)
+                .classed('blur', (d: LinkDatum) => this.selectedNode ? !this.linkIsInSents(d) : false);
+
+            // Update gradient opacity when selection/hover changes
+            links.each((d: LinkDatum, i: number) => {
+                const gradient = defs.select(`#gradient-${i}`);
+                const opacity = (d: NodeDatum) =>  (d.word !== '') && this.opacityScale ? this.opacityScale(d.count) : 0;
+                const multiplier = this.linkIsInSents(d) ? 1 : 0.4;
+                const stops = gradient.selectAll("stop");
+                stops.filter((_, j) => j === 0).attr("stop-opacity", opacity(d.source) * multiplier);
+                stops.filter((_, j) => j === 1).attr("stop-opacity", opacity(d.target) * multiplier);
+            });
 
             nodes
                 .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
                 .attr('fill', (d: NodeDatum) => {
-                    return getNodeColor(d, linksData, edgeColors);
+                    return getNodeColor(d, linksData);
                 })
                 .style('opacity', (d: NodeDatum) => {
                     const activeNode = this.selectedNode || this.hoveredNode;
+                    const baseOpacity = this.opacityScale ? this.opacityScale(d.count) : 1;
                     if (!activeNode) {
-                        return 1;
+                        return baseOpacity;
                     }
-                    return this.nodeIsInSents(d) ? 1 : 0.2;
+                    return this.nodeIsInSents(d) ? baseOpacity*1.5 : baseOpacity ;
                 })
                 .classed('blur', (d: NodeDatum) => this.selectedNode ? !this.nodeIsInSents(d) : false);
 
@@ -454,51 +536,6 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         return yScale(avgSentIndex);
     }
 
-    /**
-     * For a given link, render the path that connects the source and target nodes.
-     * The path is a cubic Bezier curve that starts at the source node, curves towards the target node,
-     * and ends at the target node.
-     */
-    private renderPath(d: LinkDatum) {
-        const getY = (node: NodeDatum) => {
-            const lineHeight = 0.75;
-            // Calculate the offset for this line compared to the other lines in this node.
-            const percentage = [...node.origSentIndices].indexOf(d.sentIdx) / node.origSentIndices.length;
-            const offsetY = (percentage - lineHeight) * this.fontSize(node);
-            return node.y + offsetY;
-        };
-        const [y1, y2] = [getY(d.source), getY(d.target)];
-
-        // Calculate the x positions of the source and target nodes.
-        const getXLeftRightCenter = (node: NodeDatum) => {
-            const textLength = this.textLength(node);
-            const leftX = node.x;
-            const rightX = leftX + textLength;
-            const centerX = (leftX + rightX) / 2;
-            return [leftX, rightX, centerX];
-        };
-        const [sourceLeftX, sourceRightX, sourceCenterX] = getXLeftRightCenter(d.source);
-        const [targetLeftX, targetRightX, targetCenterX] = getXLeftRightCenter(d.target);
-
-        // If the source is a root node, we want to align the line to the left edge of the text.
-        const sourceEnd = d.source?.isRoot ? sourceLeftX : sourceCenterX;
-        // If the target is an end node, we want to align the line to the right edge of the text.
-        const targetEnd = d.target.isEnd ? targetRightX : targetCenterX;
-
-        const points = [
-            { x: sourceEnd, y: y1 },
-            { x: sourceRightX, y: y1 },
-            { x: targetLeftX, y: y2 },
-            { x: targetEnd, y: y2 }
-
-        ];
-        const lineGenerator = d3.line<{ x: number, y: number }>()
-            .x(d => d.x)
-            .y(d => d.y)
-            .curve(d3.curveMonotoneY);
-
-        return lineGenerator(points);
-    }
     private fontSize(d: any) {
         if (!this.fontScale) {
             return 10; // Default font size
