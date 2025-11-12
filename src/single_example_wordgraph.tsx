@@ -17,7 +17,7 @@ interface Props {
 }
 
 interface State {
-    popupNode: NodeDatum | null;
+    popupNodes: NodeDatum[];
     isPopupVisible: boolean;
 }
 
@@ -78,7 +78,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = {
-            popupNode: null,
+            popupNodes: [],
             isPopupVisible: false
         };
     }
@@ -120,10 +120,11 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                 <svg id='graph-holder'></svg>
                 <NodeExamplesPopup
-                    node={this.state.popupNode}
+                    nodes={this.state.popupNodes}
                     promptGroups={this.props.promptGroups}
                     isVisible={this.state.isPopupVisible}
                     onClose={() => this.hidePopup()}
+                    onRemoveNode={this.removePopupNode}
                 />
             </div>
         );
@@ -134,7 +135,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         if (prevProps.promptGroups === this.props.promptGroups && 
             prevProps.similarityThreshold === this.props.similarityThreshold &&
             prevProps.minOpacityThreshold === this.props.minOpacityThreshold &&
-            prevState.popupNode !== this.state.popupNode) {
+            (!utils.arraysAreEqual(prevState.popupNodes, this.state.popupNodes) ||
+            prevState.isPopupVisible !== this.state.isPopupVisible)) {
             // Only popup state changed, don't rebuild graph
             return;
         }
@@ -292,7 +294,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .style("cursor", "pointer")
             .on('click', (event: any, d: NodeDatum) => {
                 event.stopPropagation(); // Prevent node click event
-                this.showPopup(d);
+                this.togglePopupNode(d);
             });
 
         infoIcon.append("circle")
@@ -570,16 +572,36 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         });
     }
 
-    private showPopup(node: NodeDatum) {
-        this.setState({
-            popupNode: node,
-            isPopupVisible: true
+    private togglePopupNode = (node: NodeDatum) => {
+        this.setState(prevState => {
+            const exists = prevState.popupNodes.some(selected => selected === node);
+            const popupNodes = exists
+                ? prevState.popupNodes.filter(selected => selected !== node)
+                : [...prevState.popupNodes, node];
+
+            return {
+                popupNodes,
+                isPopupVisible: popupNodes.length > 0
+            };
+        });
+    }
+
+    private removePopupNode = (node: NodeDatum) => {
+        this.setState(prevState => {
+            const popupNodes = prevState.popupNodes.filter(selected => selected !== node);
+            return {
+                popupNodes,
+                isPopupVisible: popupNodes.length > 0
+            };
         });
     }
 
     private hidePopup() {
+        if (!this.state.isPopupVisible && this.state.popupNodes.length === 0) {
+            return;
+        }
         this.setState({
-            popupNode: null,
+            popupNodes: [],
             isPopupVisible: false
         });
     }
