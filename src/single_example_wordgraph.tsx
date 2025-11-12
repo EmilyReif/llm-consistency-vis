@@ -520,7 +520,6 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 mostFrequentParent = parent;
             }
         });
-        
         return mostFrequentParent.x + this.textLength(mostFrequentParent) + padBetweenWords;
     }
 
