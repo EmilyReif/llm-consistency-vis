@@ -1,6 +1,7 @@
 import React from 'react';
 import * as d3 from 'd3';
 import './node_examples_popup.css';
+import * as utils from './utils';
 import * as color_utils from './color_utils';
 import { NodeDatum } from './single_example_wordgraph';
 
@@ -35,6 +36,7 @@ interface State {
     examples: ExampleItem[];
     matchingCount: number;
     totalGenerations: number;
+    isMaximized: boolean;
 }
 
 class NodeExamplesPopup extends React.Component<Props, State> {
@@ -45,7 +47,8 @@ class NodeExamplesPopup extends React.Component<Props, State> {
         this.state = {
             examples: [],
             matchingCount: 0,
-            totalGenerations: this.calculateTotalGenerations(props.promptGroups)
+            totalGenerations: this.calculateTotalGenerations(props.promptGroups),
+            isMaximized: false
         };
     }
 
@@ -362,53 +365,69 @@ class NodeExamplesPopup extends React.Component<Props, State> {
         return rgb.toString();
     }
 
+    private handleToggleMaximize = () => {
+        this.setState(prevState => {
+            const nextIsMaximized = !prevState.isMaximized;
+            return {
+                isMaximized: nextIsMaximized
+            };
+        });
+    };
+
     render() {
         const { isVisible, onClose, nodes, onRemoveNode } = this.props;
-        const { examples, matchingCount, totalGenerations } = this.state;
+        const { examples, matchingCount, totalGenerations, isMaximized } = this.state;
         const percentage = totalGenerations > 0 ? Math.round((matchingCount / totalGenerations) * 100) : 0;
-
+const nodesHTML  = <div className="selected-nodes">
+{nodes.map((node, idx) => {
+    const color = this.getNodeDisplayColor(node, idx);
+    const backgroundColor = this.withAlpha(color, 0.15);
+    return (
+        <span
+            key={`${node.word}-${idx}`}
+            className="node-chip"
+            style={{
+                borderColor: color,
+                color,
+                backgroundColor
+            }}
+        >
+            <span className="node-chip-label">{utils.unformat(node.word)}</span>
+            <button
+                type="button"
+                className="node-chip-remove"
+                onClick={() => onRemoveNode(node)}
+                aria-label={`Remove ${node.word}`}
+            >
+                ×
+            </button>
+        </span>
+    );
+})}
+</div>;
         return (
             <div
                 ref={this.popupRef}
-                className="node-examples-popup"
+                className={`node-examples-popup${isMaximized ? ' maximized' : ''}`}
                 style={{ display: isVisible ? 'block' : 'none' }}
             >
                 <div className="popup-header">
                     <div className="popup-title">
                         <div className="popup-title-main">
-                            Examples containing these nodes: {matchingCount}/{totalGenerations} ({percentage}%)
+                            Examples containing {nodesHTML}: {matchingCount}/{totalGenerations} ({percentage}%)
                         </div>
-                        {nodes.length > 0 && (
-                            <div className="selected-nodes">
-                                {nodes.map((node, idx) => {
-                                    const color = this.getNodeDisplayColor(node, idx);
-                                    const backgroundColor = this.withAlpha(color, 0.15);
-                                    return (
-                                        <span
-                                            key={`${node.word}-${idx}`}
-                                            className="node-chip"
-                                            style={{
-                                                borderColor: color,
-                                                color,
-                                                backgroundColor
-                                            }}
-                                        >
-                                            <span className="node-chip-label">{node.word}</span>
-                                            <button
-                                                type="button"
-                                                className="node-chip-remove"
-                                                onClick={() => onRemoveNode(node)}
-                                                aria-label={`Remove ${node.word}`}
-                                            >
-                                                ×
-                                            </button>
-                                        </span>
-                                    );
-                                })}
-                            </div>
-                        )}
+                        
                     </div>
-                    <button className="popup-close" onClick={onClose}>×</button>
+                    <div className="popup-actions">
+                        <button
+                            type="button"
+                            className="popup-action-button popup-maximize"
+                            onClick={this.handleToggleMaximize}
+                        >
+                            {isMaximized ? '↙' : '↗'}
+                        </button>
+                        <button className="popup-action-button popup-close" onClick={onClose} aria-label="Close examples panel">×</button>
+                    </div>
                 </div>
                 <div className="popup-content">
                     {matchingCount === 0 ? (
