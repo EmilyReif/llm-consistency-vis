@@ -173,12 +173,12 @@ function similarity(a: string, b: string): number {
     if (bothStopwords && !isStartOrEnd) {
         const similarityPrevWords = levenshteinSimilarity(embA.prevWords.join(' '), embB.prevWords.join(' ')) * weight;
         const similarityNextWords = levenshteinSimilarity(embA.nextWords.join(' '), embB.nextWords.join(' ')) * weight;
-        counter += Math.max(similarityPrevWords + similarityNextWords);
+        counter += Math.min(similarityPrevWords + similarityNextWords);
     }
     else {
         counter += levenshteinSimilarity(embA.word, embB.word) * weight;
     }
-    counter -= Math.abs(embA.idx - embB.idx) / 20; // They have similar positions in the sentence.
+    counter -= Math.abs(embA.idx - embB.idx)/20; // They have similar positions in the sentence.
     return counter;
 }
 

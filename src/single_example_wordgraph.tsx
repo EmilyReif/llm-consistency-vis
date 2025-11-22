@@ -400,8 +400,9 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 .force("link", d3.forceLink(selectedLinks)
                     .id((d: any) => d.word)
                     .strength(.4))
-            .force("y", d3.forceY(height / 2).strength((d: any) => d.count/20)) // Center nodes vertically
-            .force('y', d3.forceY((d: NodeDatum) => this.getExpectedY(d, height)).strength(0.1))
+                    // .strength((d: any) => d3.max([d.source?.count, d.target?.count])/20))
+            .force("y", d3.forceY(height / 2).strength((d: any) => d.count/100)) // Center nodes vertically
+            // .force('y', d3.forceY((d: NodeDatum) => this.getExpectedY(d, height)).strength(0.1))
 
             this.runSimulationToConvergence(simulation, nodesData, update);
         }
@@ -507,22 +508,23 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         if ((this.selectedNode && !this.nodeIsInSents(d))) {
             return d.x;
         }
-        // Count occurrences of each parent
-        const parentCounts = new Map<NodeDatum, number>();
-        parents.forEach((p: NodeDatum) => {
-            parentCounts.set(p, (parentCounts.get(p) || 0) + 1);
-        });
+        return d3.mean(parents.map(p => p.x + this.textLength(p) + padBetweenWords)) || 0;
+        // // Count occurrences of each parent
+        // const parentCounts = new Map<NodeDatum, number>();
+        // parents.forEach((p: NodeDatum) => {
+        //     parentCounts.set(p, (parentCounts.get(p) || 0) + 1);
+        // });
         
-        // Find the most frequent parent
-        let mostFrequentParent = parents[0];
-        let maxCount = 0;
-        parentCounts.forEach((count, parent) => {
-            if (count > maxCount) {
-                maxCount = count;
-                mostFrequentParent = parent;
-            }
-        });
-        return mostFrequentParent.x + this.textLength(mostFrequentParent) + padBetweenWords;
+        // // Find the most frequent parent
+        // let mostFrequentParent = parents[0];
+        // let maxCount = 0;
+        // parentCounts.forEach((count, parent) => {
+        //     if (count > maxCount) {
+        //         maxCount = count;
+        //         mostFrequentParent = parent;
+        //     }
+        // });
+        // return mostFrequentParent.x + this.textLength(mostFrequentParent) + padBetweenWords;
     }
 
     private getExpectedY(d: NodeDatum, height: number) {
