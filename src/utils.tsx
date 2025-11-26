@@ -72,8 +72,23 @@ export async function tokenize(
 
         let tokenKey = word + sentenceIdx + i;
 
-        const prevWord = chunks[i - 1] || '';
-        const nextWord = chunks[i + 1] || '';
+        // Find the previous non-stopword
+        let prevWord = '';
+        for (let j = i - 1; j >= 0; j--) {
+            if (!isStopword(chunks[j])) {
+                prevWord = chunks[j];
+                break;
+            }
+        }
+
+        // Find the next non-stopword
+        let nextWord = '';
+        for (let j = i + 1; j < chunks.length; j++) {
+            if (!isStopword(chunks[j])) {
+                nextWord = chunks[j];
+                break;
+            }
+        }
         
 
         const embEntry: EmbEntry = {
