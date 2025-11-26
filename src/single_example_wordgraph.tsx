@@ -271,14 +271,16 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 }
             })
             .on('click', (event: any, d: NodeDatum) => {
+
                 if (this.selectedNode === d) {  // If clicking the selected node, deselect it
                     this.selectedNode = null;
                     this.hoveredNode = null;
+                    
                 } else {  // Otherwise, select the clicked node
                     this.selectedNode = d;
                     this.hoveredNode = null;
                 }
-                this.hidePopup();
+                this.togglePopupNode(d); // Toggle popup node to update the popup content.
                 updateSimulation();
                 update();
             });
@@ -286,31 +288,6 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         nodes.append("text")
             .call(this.wrapText)
             .attr("font-size", (d: any) => this.fontSize(d));
-
-        // Add info icon group (circle with ?)
-        const infoIcon = nodes.append("g")
-            .attr("class", "info-icon")
-            .style("opacity", 0)
-            .style("cursor", "pointer")
-            .on('click', (event: any, d: NodeDatum) => {
-                event.stopPropagation(); // Prevent node click event
-                this.togglePopupNode(d);
-            });
-
-        infoIcon.append("circle")
-            .attr("r", 8)
-            .attr("fill", "#999")
-            .attr("stroke", "white")
-            .attr("stroke-width", 2);
-
-        infoIcon.append("text")
-            .attr("text-anchor", "middle")
-            .attr("dominant-baseline", "middle")
-            .attr("font-size", 12)
-            .attr("font-weight", "bold")
-            .attr("fill", "white")
-            .attr("pointer-events", "none")
-            .text("?");
 
         if (SHOW_DEBUG_ELLIPSES) {
             nodes.append("ellipse")
@@ -367,6 +344,9 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                         return baseOpacity;
                     }
                     return this.nodeIsInSents(d) ? baseOpacity*1.5 : baseOpacity ;
+                })
+                .style('font-weight', (d: NodeDatum) => {
+                    return this.selectedNode == d ? 'bold' : 'normal';
                 })
                 .classed('blur', (d: NodeDatum) => this.selectedNode ? !this.nodeIsInSents(d) : false);
 
