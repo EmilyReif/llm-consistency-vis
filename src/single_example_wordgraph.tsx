@@ -199,11 +199,11 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Add zoom behavior
         const zoom = d3.zoom()
             .scaleExtent([0.5, 3]) // Allow zoom from 0.5x to 3x
-            .on("zoom", (event) => {
-                g.attr("transform", event.transform);
-            });
+            .on("zoom", (event) => g.attr("transform", event.transform))
 
-        svg.call(zoom as any);
+        svg.call(zoom as any)
+        .on("dblclick.zoom", null);
+
 
         // Add defs section for gradients
         const defs = svg.append("defs");
@@ -293,9 +293,9 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                     this.selectedNodes.add(d);
                     this.hoveredNode = null;
                 }
-                this.togglePopupNode(d); // Toggle popup node to update the popup content.
                 updateSimulation();
                 update();
+                this.togglePopupNode(d); // Toggle popup node to update the popup content.
             });
 
         nodes.append("text")
@@ -311,28 +311,30 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 .attr("fill", "rgba(123, 123, 1, 0.5)")
         }
 
-
         const update = () => {
-            links.attr("d", (d: LinkDatum) => {
-                const { sourceX, targetX, y1, y2, sourceRightX, targetLeftX } = getLinkEndpoints(d);
-                const points = [
-                    { x: sourceX, y: y1 },
-                    { x: sourceRightX, y: y1 },
-                    { x: targetLeftX, y: y2 },
-                    { x: targetX, y: y2 }
-                ];
-                return d3.line<{ x: number, y: number }>()
-                    .x(d => d.x)
-                    .y(d => d.y)
-                    .curve(d3.curveMonotoneY)(points);
-            })
+            const blur = 'blur(2px) opacity(0.2)';
+            links
+                .transition().duration(500).ease(d3.easeSinInOut)
+                .attr("d", (d: LinkDatum) => {
+                    const { sourceX, targetX, y1, y2, sourceRightX, targetLeftX } = getLinkEndpoints(d);
+                    const points = [
+                        { x: sourceX, y: y1 },
+                        { x: sourceRightX, y: y1 },
+                        { x: targetLeftX, y: y2 },
+                        { x: targetX, y: y2 }
+                    ];
+                    return d3.line<{ x: number, y: number }>()
+                        .x(d => d.x)
+                        .y(d => d.y)
+                        .curve(d3.curveMonotoneY)(points);
+                })
                 .attr("stroke", (d: LinkDatum, i: number) => {
                     return `url(#gradient-${i})`;
                 })
                 .attr("stroke-width", (d: any) => {
                     return 2;
                 })
-                .classed('blur', (d: LinkDatum) => this.nodeSelected() ? !this.linkIsInSents(d) : false);
+                .style('filter', (d: LinkDatum) => this.nodeSelected() ? !this.linkIsInSents(d) ? blur : '' : '');
 
             // Update gradient opacity when selection/hover changes
             links.each((d: LinkDatum, i: number) => {
@@ -345,6 +347,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             });
 
             nodes
+                .transition().duration(500).ease(d3.easeSinInOut)
                 .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
                 .attr('fill', (d: NodeDatum) => {
                     return getNodeColor(d, linksData);
@@ -360,7 +363,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 .style('font-weight', (d: NodeDatum) => {
                     return this.selectedNodes.has(d) || this.hoveredNode === d ? 'bold' : 'normal';
                 })
-                .classed('blur', (d: NodeDatum) => this.nodeSelected() ? !this.nodeIsInSelectedSents(d) : false);
+                .style('filter', (d: NodeDatum) => this.nodeSelected() ? !this.nodeIsInSelectedSents(d) ? blur : '' : '');
         };
 
         // Create the simulation.
@@ -378,16 +381,17 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             const selectedNodes = this.nodeSelected() ? nodesData.filter(d => this.nodeIsInSelectedSents(d)) : nodesData;
             this.simulation
                 .nodes(selectedNodes)
+                // .force("collide", d3.forceCollide().radius((d: any) => d.rx + d.ry))
                 .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
                 .force("link", d3.forceLink(selectedLinks)
                     .id((d: any) => d.word)
                     .strength(.4))
                 .force("y", d3.forceY(height / 2).strength((d: any) => d.count / 100)) // Center nodes vertically
-                .force("x", () =>  selectedNodes.forEach((d: NodeDatum) => d.x = this.getExpectedX(d, selectedNodes)))
+                .force("x", () => selectedNodes.forEach((d: NodeDatum) => d.x = this.getExpectedX(d, selectedNodes)))
             this.simulation.on("tick", () => update());
 
-            // this.runSimulationToConvergence();
-            // update();
+            this.runSimulationToConvergence();
+            update();
         }
         // Create the simulation.
         updateSimulation();
@@ -570,13 +574,24 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     }
 }
 
+// Cache for chunkText results
+const chunkTextCache = new Map<string, string[]>();
+
 function chunkText(text: string) {
+    // Check cache first
+    if (chunkTextCache.has(text)) {
+        return chunkTextCache.get(text)!;
+    }
+    
     const words = utils.unformat(text).split(' ');
     // Group words into chunks of maxWords
     const chunks: string[] = [];
     for (let i = 0; i < words.length; i += NUM_WORDS_TO_WRAP) {
         chunks.push(words.slice(i, i + NUM_WORDS_TO_WRAP).join(' '));
     }
+    
+    // Store in cache
+    chunkTextCache.set(text, chunks);
     return chunks;
 }
 

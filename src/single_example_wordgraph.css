@@ -8,6 +8,6 @@ text {
     cursor: default;
 }
 
-.blur {
-    filter: blur(2px) opacity(0.2);
-}
+/* .node, .link {
+    transition: opacity filter 2s ease;
+} */

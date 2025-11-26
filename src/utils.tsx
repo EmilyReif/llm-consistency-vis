@@ -217,6 +217,7 @@ export async function createGraphDataFromPromptGroups(
 ): Promise<{ nodesData: NodeDatum[]; linksData: LinkDatum[] }> {
     const linksDict: { [key: string]: { [key: string]: { sentIdx: number, promptId: string }[] } } = {};
     const nodesDict: { [key: string]: NodeDatum } = {};
+    const currentWords: string[] = []; // for performance reasons so we don't have to call Object.keys(nodesDict) every time
     let sentIdx = 0;
     for (const { promptId, generations } of groups) {
         for (const generation of generations) {
@@ -225,8 +226,7 @@ export async function createGraphDataFromPromptGroups(
             console.log('-')
             const words = await tokenize(generation, sentIdx, tokenizeMode);
             words.forEach((word, j) => {
-                const currentWords = Object.keys(nodesDict);
-                let similarNodes = currentWords.map((existingWord) => [similarity(existingWord, word), existingWord]).sort((a: any, b: any) => b[0] - a[0]) as any;
+                let similarNodes = currentWords.map((existingWord) => [similarity(existingWord, word), existingWord]);
                 similarNodes = similarNodes.filter((pair: any) => {
                     const [similarityScore, similarWord] = pair;
                     const isAboveThreshold = similarityScore > similarityThreshold;
@@ -234,12 +234,15 @@ export async function createGraphDataFromPromptGroups(
                     // const isFromSameSentence = false;
                     return isAboveThreshold && !isFromSameSentence;
                 });
+                similarNodes = similarNodes.sort((a: any, b: any) => b[0] - a[0]) as any;
+
                 const similarNode = similarNodes?.[0]?.[1] || null;
                 if (similarNode && similarNode !== prevWord) {
-                    word = similarNode;
+                    word = similarNode as string;
                 }
 
                 if (!nodesDict[word]) {
+                    currentWords.push(word);
                     nodesDict[word] = {
                         x: 0,
                         y: 0,

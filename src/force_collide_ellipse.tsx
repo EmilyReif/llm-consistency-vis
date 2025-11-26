@@ -35,83 +35,114 @@ export interface EllipseNode {
     function force(alpha: number): void {
       const n = nodes.length;
       const myOuterRepulsion = outerRepulsion * 16;
-  
+
+      // Pre-calculate node properties once per iteration
+      interface NodeProps {
+        w: number;
+        h: number;
+        w2: number;
+        h2: number;
+        wh: number;
+        x: number;
+        y: number;
+        maxRadius: number; // For early exit checks
+      }
+      const nodeProps: NodeProps[] = new Array(n);
+      
       for (let i = 0; i < n; ++i) {
         const node = nodes[i];
-        const my_padding = +padding(node, i, nodes);
-        const my_w = node.rx + my_padding;
-        const my_h = node.ry + my_padding;
-        const my_w2 = my_w * my_w;
-        const my_h2 = my_h * my_h;
-        const my_wh = my_w * my_h;
-        const my_x = node.x + node.vx;
-        const my_y = node.y + node.vy;
-  
-        for (let j = 0; j < n; ++j) {
-          if (j === i) continue;
-  
+        const node_padding = +padding(node, i, nodes);
+        const w = node.rx + node_padding;
+        const h = node.ry + node_padding;
+        nodeProps[i] = {
+          w,
+          h,
+          w2: w * w,
+          h2: h * h,
+          wh: w * h,
+          x: node.x + node.vx,
+          y: node.y + node.vy,
+          maxRadius: Math.max(w, h)
+        };
+      }
+
+      // Check each pair only once (j > i) and apply forces symmetrically
+      for (let i = 0; i < n; ++i) {
+        const node = nodes[i];
+        const props_i = nodeProps[i];
+
+        for (let j = i + 1; j < n; ++j) {
           const other = nodes[j];
-          const other_padding = +padding(other, j, nodes);
-          const other_w = other.rx + other_padding;
-          const other_h = other.ry + other_padding;
-          const other_x = other.x + other.vx;
-          const other_y = other.y + other.vy;
-  
-          let dist_x = my_x - other_x;
-          let dist_y = my_y - other_y;
-  
+          const props_j = nodeProps[j];
+
+          let dist_x = props_i.x - props_j.x;
+          let dist_y = props_i.y - props_j.y;
+
+          // Early exit: if nodes are very far apart, skip expensive calculations
+          // Using squared distance to avoid sqrt
+          const distSquared = dist_x * dist_x + dist_y * dist_y;
+          const maxDistSquared = (props_i.maxRadius + props_j.maxRadius + 100) ** 2;
+          if (distSquared > maxDistSquared) continue;
+
           if (dist_x === 0 && dist_y === 0) {
-            node.vx += Math.random() * 4 - 2;
-            node.vy += Math.random() * 4 - 2;
+            const randomX = Math.random() * 4 - 2;
+            const randomY = Math.random() * 4 - 2;
+            node.vx += randomX;
+            node.vy += randomY;
+            other.vx -= randomX;
+            other.vy -= randomY;
             continue;
           }
-  
+
           let force_ratio: number;
           let dist: number;
           let gap: number;
           let x_component: number;
           let y_component: number;
-  
+
           if (dist_x === 0) {
-            force_ratio = (my_h / my_w + other_h / other_w) / 2;
+            force_ratio = (props_i.h / props_i.w + props_j.h / props_j.w) / 2;
             dist = Math.abs(dist_y);
-            gap = dist - my_h - other_h;
+            gap = dist - props_i.h - props_j.h;
           } else if (dist_y === 0) {
             force_ratio = 1;
             dist = Math.abs(dist_x);
-            gap = dist - my_w - other_w;
+            gap = dist - props_i.w - props_j.w;
           } else {
             const g = dist_y / dist_x;
             const g2 = g * g;
-  
-            const x1 = my_wh / Math.sqrt(my_h2 + g2 * my_w2);
+
+            const x1 = props_i.wh / Math.sqrt(props_i.h2 + g2 * props_i.w2);
             const y1 = g * x1;
             const d1 = Math.sqrt(x1 * x1 + y1 * y1);
-            const force_ratio1 = d1 / my_w;
-  
-            const x2 = (other_w * other_h) / Math.sqrt(other_h * other_h + g2 * other_w * other_w);
+            const force_ratio1 = d1 / props_i.w;
+
+            const x2 = props_j.wh / Math.sqrt(props_j.h2 + g2 * props_j.w2);
             const y2 = g * x2;
             const d2 = Math.sqrt(x2 * x2 + y2 * y2);
-            const force_ratio2 = d2 / other_w;
-  
-            dist = Math.sqrt(dist_x * dist_x + dist_y * dist_y);
+            const force_ratio2 = d2 / props_j.w;
+
+            dist = Math.sqrt(distSquared);
             gap = dist - d2 - d1;
             force_ratio = (force_ratio1 + force_ratio2) / 2;
           }
-  
+
           x_component = dist_x / dist;
           y_component = dist_y / dist;
-  
+
           let repulsion: number;
-  
+
           if (gap < 0) {
             repulsion = Math.min(Math.max(1.0, innerRepulsion * force_ratio * -gap), 5.0);
           } else {
             repulsion = Math.min(20.0, (force_ratio * myOuterRepulsion * alpha) / gap);
           }
-  
+
+          // Apply forces symmetrically (Newton's third law)
           node.vx += repulsion * x_component;
           node.vy += repulsion * y_component;
+          other.vx -= repulsion * x_component;
+          other.vy -= repulsion * y_component;
         }
       }
     }
