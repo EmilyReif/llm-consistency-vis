@@ -12,7 +12,7 @@ import { TokenizeMode } from "./utils";
 
 const DEFAULT_NUM_GENERATIONS = 30;
 const DEFAULT_TEMP = 0.7;
-const DEFAULT_SIMILARITY_THRESHOLD = 0.5;
+const DEFAULT_SIMILARITY_THRESHOLD = 0.7;
 // Opacity for prompt container background colors (0.0 = transparent, 1.0 = opaque)
 const PROMPT_COLOR_OPACITY = 0.3;
 // For some demo, use hardcoded key

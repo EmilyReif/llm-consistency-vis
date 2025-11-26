@@ -11,15 +11,33 @@ interface Props {
 
 class SingleExampleWordtree extends React.Component<Props> {
     trie = new Trie();
-    state = { hoveredToken: '' };
+    state = { hoveredToken: '', trieReady: false };
 
-    render() {
+    async componentDidMount() {
+        await this.initializeTrie();
+    }
+
+    async componentDidUpdate(prevProps: Props) {
+        if (prevProps.generations !== this.props.generations) {
+            await this.initializeTrie();
+        }
+    }
+
+    async initializeTrie() {
         const generations = this.props.generations;
         if (!generations) {
             return;
         }
         this.trie = new Trie(state.tokenizeMode);
-        this.trie.insertSents(generations);
+        await this.trie.insertSents(generations);
+        this.setState({ trieReady: true });
+    }
+
+    render() {
+        const generations = this.props.generations;
+        if (!generations || !this.state.trieReady) {
+            return null;
+        }
         const totalVisHeight = 35*generations.length;
         const heightPerChild = totalVisHeight / this.trie.root.numTotalChildren;
         const minFontSize = 12;
@@ -103,10 +121,6 @@ class SingleExampleWordtree extends React.Component<Props> {
         </svg>;
     }
 
-    async componentDidUpdate() {
-        // this.trie = new Trie();
-        // this.trie.insertSents(this.props.generations);
-    }
 
 
 }

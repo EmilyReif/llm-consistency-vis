@@ -36,8 +36,8 @@ class Trie {
     }
 
     // Inserts a single sentence into the Trie.
-    insert(sent: string) {
-        const words = utils.tokenize(sent, undefined, this.tokenizeMode); // Split the sentence into words.
+    async insert(sent: string) {
+        const words = await utils.tokenize(sent, undefined, this.tokenizeMode); // Split the sentence into words.
         let node = this.root;
 
         for (let word of words) {
@@ -57,9 +57,9 @@ class Trie {
     }
 
     // Inserts multiple sentences into the Trie and updates numTotalChildren.
-    insertSents(sents: string[]) {
+    async insertSents(sents: string[]) {
         for (const sent of sents) {
-            this.insert(sent);
+            await this.insert(sent);
         }
         this.computeNumLeafChildren(); // Compute the number of leaf children for all nodes.
     }

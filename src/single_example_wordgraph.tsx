@@ -154,7 +154,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         };
 
         // Generate graph data from all text
-        const { nodesData, linksData } = utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, state.tokenizeMode);
+        const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, state.tokenizeMode);
         this.createFontScale(); // Create font scale based on total generations
         this.addBoundingBoxData(nodesData);
 
@@ -349,7 +349,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             links.each((d: LinkDatum, i: number) => {
                 const gradient = defs.select(`#gradient-${i}`);
                 const opacity = (d: NodeDatum) =>  (d.word !== '') && this.opacityScale ? this.opacityScale(d.count) : 0;
-                const multiplier = this.linkIsInSents(d) ? 1 : 0.4;
+                const multiplier = this.linkIsInSents(d) ? .6 : 0.3;
                 const stops = gradient.selectAll("stop");
                 stops.filter((_, j) => j === 0).attr("stop-opacity", opacity(d.source) * multiplier);
                 stops.filter((_, j) => j === 1).attr("stop-opacity", opacity(d.target) * multiplier);

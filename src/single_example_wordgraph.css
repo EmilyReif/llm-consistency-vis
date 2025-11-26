@@ -9,5 +9,5 @@ text {
 }
 
 .blur {
-    filter: blur(2px);
+    filter: blur(2px) opacity(0.2);
 }

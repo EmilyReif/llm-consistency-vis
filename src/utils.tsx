@@ -1,14 +1,18 @@
 import { NodeDatum, LinkDatum, OrigSentenceInfo } from './single_example_wordgraph';
 import * as d3 from "d3";
 import { getEmbeddings } from './embed'
+import { cosineSimilarity } from "fast-cosine-similarity";
 
 export type TokenizeMode = "space" | "comma" | "sentence";
 
+// Global flag to use embeddings instead of Levenshtein distance
+const USE_EMBS = true;
+
 // Maps token keys to their original word from the source text
 const tokensToOrigWord: { [key: string]: string } = {};
-const embsDict: { [key: string]: { word: string, prevWords: string[], nextWords: string[], idx: number } } = {};
+export type EmbEntry = { word: string, prevWord: string, nextWord: string, prevWordEmb?: number[], nextWordEmb?: number[], idx: number, embedding?: number[] };
+const embsDict: { [key: string]: EmbEntry } = {};
 const CONTEXT_WINDOW_SIZE = 1; // Number of words on either side to consider
-const CLEAN_TEXT = false;
 
 // Common English stopwords to ignore when building context windows
 export const STOPWORDS = new Set([
@@ -37,11 +41,11 @@ export function arraysAreEqual(a: any[], b: any[]) {
     return a.length === b.length &&
         a.every((element, index) => element === b[index]);
 }
-export function tokenize(
+export async function tokenize(
     sent: string,
     sentenceIdx?: number,
     mode: TokenizeMode = "space"
-): string[] {
+): Promise<string[]> {
     // normalize text
 
     let chunks: string[] = [];
@@ -58,53 +62,47 @@ export function tokenize(
     chunks = chunks.filter(c => c.length > 0);
 
     // wrap into tokenKeys
-    let tokens: string[] = chunks.map((chunk, i) => {
+    let tokens: string[] = [];
+    
+    for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
         const originalChunk = chunk; // Store the original before any cleaning
 
-        if (CLEAN_TEXT) {
-            chunk = chunk.replace(/[^\w\s\'.!?]|_/g, "").replace(/\s+/g, " ");
-            chunk = chunk.toLowerCase().trim();
-        }
+        const word = chunk;
 
-        let tokenKey = chunk + sentenceIdx + i;
+        let tokenKey = word + sentenceIdx + i;
 
-        // Collect n non-stopword words before and after the current word
-        const prevWords: string[] = [];
-        const nextWords: string[] = [];
+        const prevWord = chunks[i - 1] || '';
+        const nextWord = chunks[i + 1] || '';
+        
 
-        // Collect previous words (skipping stopwords)
-        let prevCount = 0;
-        let prevOffset = 1;
-        while (prevCount < CONTEXT_WINDOW_SIZE && i - prevOffset >= 0) {
-            const prevWord = chunks[i - prevOffset];
-            if (!isStopword(prevWord)) {
-                prevWords.unshift(prevWord);
-            }
-            prevOffset++;
-        }
-
-        // Collect next words (skipping stopwords)
-        let nextCount = 0;
-        let nextOffset = 1;
-        while (nextCount < CONTEXT_WINDOW_SIZE && i + nextOffset < chunks.length) {
-            const nextWord = chunks[i + nextOffset];
-            if (!isStopword(nextWord)) {
-                nextWords.push(nextWord);
-                nextCount++;
-            }
-            nextOffset++;
-        }
-
-        embsDict[tokenKey] = {
-            word: chunk,
-            prevWords,
-            nextWords,
+        const embEntry: EmbEntry = {
+            word,
+            prevWord,
+            nextWord,
             idx: i
         };
 
+        // Get embedding if USE_EMBS is enabled
+        if (USE_EMBS) {
+            try {
+                const embedding = await getEmbeddings(word);
+                embEntry.embedding = embedding;
+                const prevWordEmb = await getEmbeddings(prevWord);
+                embEntry.prevWordEmb = prevWordEmb;
+                const nextWordEmb = await getEmbeddings(nextWord);
+                embEntry.nextWordEmb = nextWordEmb;
+            } catch (error) {
+
+                console.warn(`Failed to get embedding for "${word}":`, error);
+                console.log('prevWord', prevWord);
+                console.log('nextWord', nextWord);
+            }
+        }
+        embsDict[tokenKey] = embEntry as EmbEntry;
         tokensToOrigWord[tokenKey] = originalChunk; // Store the original unmodified word
-        return tokenKey;
-    });
+        tokens.push(tokenKey);
+    }
 
     return tokens;
 }
@@ -142,6 +140,10 @@ function levenshteinDistance(str1: string, str2: string): number {
     return matrix[str2.length][str1.length];
 }
 
+function emptyEmbEntry(): EmbEntry {
+    return { word: '', prevWord: '', nextWord: '', idx: 0 };
+}
+
 /** Convert Levenshtein distance to a similarity score (0 to 1, higher is more similar). */
 function levenshteinSimilarity(str1: string, str2: string): number {
     // Strip out all punctuation and whitespace
@@ -158,45 +160,55 @@ function levenshteinSimilarity(str1: string, str2: string): number {
  * TODO: Replace with a real embedding model.
  */
 function similarity(a: string, b: string): number {
-    const embA = embsDict[a] || { word: '', prevWords: [], nextWords: [], idx: 0 };
-    const embB = embsDict[b] || { word: '', prevWords: [], nextWords: [], idx: 0 };
+    const embA = embsDict[a] || emptyEmbEntry();
+    const embB = embsDict[b] || emptyEmbEntry();
     let counter = 0;
 
     // Check if the words themselves are stopwords
-    const aIsStopword = isStopword(embA.word);
-    const bIsStopword = isStopword(embB.word);
-    const bothStopwords = aIsStopword && bIsStopword;
+    const bothStopwords = isStopword(embA.word) && isStopword(embB.word);
 
     // Adjust context weights if both words are stopwords (give more weight to context)
-    const weight = 0.8;
-    const isStartOrEnd = embA.prevWords.length === 0 || embB.prevWords.length === 0 || embA.nextWords.length === 0 || embB.nextWords.length === 0;
+    const isStartOrEnd = !embA.prevWord || !embB.prevWord || !embA.nextWord || !embB.nextWord;
     if (bothStopwords && !isStartOrEnd) {
-        const similarityPrevWords = levenshteinSimilarity(embA.prevWords.join(' '), embB.prevWords.join(' ')) * weight;
-        const similarityNextWords = levenshteinSimilarity(embA.nextWords.join(' '), embB.nextWords.join(' ')) * weight;
-        counter += Math.min(similarityPrevWords + similarityNextWords);
+        if (USE_EMBS) {
+            const similarityPrevWords = cosineSimilarity(embA.prevWordEmb || [], embB.prevWordEmb || []) ;
+            const similarityNextWords = cosineSimilarity(embA.nextWordEmb || [], embB.nextWordEmb || []) ;
+            counter += Math.max(similarityPrevWords + similarityNextWords);
+        }
+        else {
+            const similarityPrevWords = levenshteinSimilarity(embA.prevWord!, embB.prevWord!) ;
+            const similarityNextWords = levenshteinSimilarity(embA.nextWord!, embB.nextWord!) ;
+            counter += Math.max(similarityPrevWords + similarityNextWords);
+        }
     }
     else {
-        counter += levenshteinSimilarity(embA.word, embB.word) * weight;
+        if (USE_EMBS) {
+            counter += cosineSimilarity(embA.embedding || [], embB.embedding || []);
+        }
+        else {
+            counter += levenshteinSimilarity(embA.word, embB.word);
+        }
     }
+    
     counter -= Math.abs(embA.idx - embB.idx)/20; // They have similar positions in the sentence.
     return counter;
 }
 
 /** Create graph data from prompt groups. */
-export function createGraphDataFromPromptGroups(
+export async function createGraphDataFromPromptGroups(
     groups: { promptId: string; generations: string[] }[],
     similarityThreshold: number = 0.5,
     shuffle: boolean = false,
     tokenizeMode: TokenizeMode = "space"
-): { nodesData: NodeDatum[]; linksData: LinkDatum[] } {
+): Promise<{ nodesData: NodeDatum[]; linksData: LinkDatum[] }> {
     const linksDict: { [key: string]: { [key: string]: { sentIdx: number, promptId: string }[] } } = {};
     const nodesDict: { [key: string]: NodeDatum } = {};
     let sentIdx = 0;
-    groups.forEach(({ promptId, generations }) => {
-        generations.forEach((generation) => {
+    for (const { promptId, generations } of groups) {
+        for (const generation of generations) {
             sentIdx++;
             let prevWord = '';
-            const words = tokenize(generation, sentIdx, tokenizeMode);
+            const words = await tokenize(generation, sentIdx, tokenizeMode);
             words.forEach((word, j) => {
                 const currentWords = Object.keys(nodesDict);
                 let similarNodes = currentWords.map((existingWord) => [similarity(existingWord, word), existingWord]).sort((a: any, b: any) => b[0] - a[0]) as any;
@@ -263,8 +275,8 @@ export function createGraphDataFromPromptGroups(
                 }
                 prevWord = word;
             });
-        });
-    });
+        }
+    }
 
     merge(nodesDict as any, linksDict as any);
 
