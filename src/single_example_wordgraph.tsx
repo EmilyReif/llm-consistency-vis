@@ -350,13 +350,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 .style('opacity', (d: NodeDatum) => {
                     const baseOpacity = this.opacityScale ? this.opacityScale(d.count) : 1;
                     const hasSelection = this.nodeSelected();
-                    const hasHover = this.hoveredNode !== null;
-                    
-                    if (!hasSelection && !hasHover) {
+                    if (!hasSelection) {
                         return baseOpacity;
-                    }
-                    if (hasHover) {
-                        return baseOpacity*1.5;
                     }
                     return this.nodeIsInSents(d) ? baseOpacity*1.5 : baseOpacity ;
                 })
