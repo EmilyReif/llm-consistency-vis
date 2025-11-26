@@ -71,7 +71,7 @@ export interface LinkDatum {
 }
 class SingleExampleWordGraph extends React.Component<Props, State> {
     private hoveredNode: NodeDatum | null = null;
-    private selectedNode: NodeDatum | null = null;  // Add this new property
+    private selectedNodes: Set<NodeDatum> = new Set(); 
     private fontScale: d3.ScaleLinear<number, number> | null = null;
     private opacityScale: d3.ScalePower<number, number> | null = null;
 
@@ -85,10 +85,26 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
     componentDidMount() {
         window.addEventListener('resize', this.handleResize);
+        window.addEventListener('keydown', this.handleKeyDown);
     }
 
     componentWillUnmount() {
         window.removeEventListener('resize', this.handleResize);
+        window.removeEventListener('keydown', this.handleKeyDown);
+    }
+
+    private handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') {
+            this.selectedNodes.clear();
+            this.hoveredNode = null;
+            this.hidePopup();
+            // Trigger a re-render by rebuilding the graph
+            this.rebuildGraph();
+        }
+    }
+
+    private nodeSelected(): boolean {
+        return this.selectedNodes.size > 0;
     }
 
     private handleResize = () => {
@@ -169,7 +185,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .on('click', (event: any) => {
                 // Only clear selection if the click was directly on the SVG background
                 if (event.target.tagName === 'svg') {
-                    this.selectedNode = null;
+                    this.selectedNodes.clear();
                     this.hoveredNode = null;
                     this.hidePopup();
                     updateSimulation();
@@ -259,25 +275,19 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .append("g")
             .attr("class", "node")
             .on('mouseover', (event: any, d: NodeDatum) => {
-                if (!this.selectedNode) {  // Only update hover if nothing is selected
                     this.hoveredNode = d;
                     update();
-                }
             })
             .on('mouseout', (event: any, d: NodeDatum) => {
-                if (!this.selectedNode) {  // Only update hover if nothing is selected
                     this.hoveredNode = null;
                     update();
-                }
             })
             .on('click', (event: any, d: NodeDatum) => {
-
-                if (this.selectedNode === d) {  // If clicking the selected node, deselect it
-                    this.selectedNode = null;
+                if (this.selectedNodes.has(d)) {  // If clicking a selected node, deselect it
+                    this.selectedNodes.delete(d);
                     this.hoveredNode = null;
-                    
-                } else {  // Otherwise, select the clicked node
-                    this.selectedNode = d;
+                } else {  // Otherwise, add it to the selection
+                    this.selectedNodes.add(d);
                     this.hoveredNode = null;
                 }
                 this.togglePopupNode(d); // Toggle popup node to update the popup content.
@@ -320,7 +330,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 .attr("stroke-width", (d: any) => {
                     return 2;
                 })
-                .classed('blur', (d: LinkDatum) => this.selectedNode ? !this.linkIsInSents(d) : false);
+                .classed('blur', (d: LinkDatum) => this.nodeSelected() ? !this.linkIsInSents(d) : false);
 
             // Update gradient opacity when selection/hover changes
             links.each((d: LinkDatum, i: number) => {
@@ -338,22 +348,27 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                     return getNodeColor(d, linksData);
                 })
                 .style('opacity', (d: NodeDatum) => {
-                    const activeNode = this.selectedNode || this.hoveredNode;
                     const baseOpacity = this.opacityScale ? this.opacityScale(d.count) : 1;
-                    if (!activeNode) {
+                    const hasSelection = this.nodeSelected();
+                    const hasHover = this.hoveredNode !== null;
+                    
+                    if (!hasSelection && !hasHover) {
                         return baseOpacity;
+                    }
+                    if (hasHover) {
+                        return baseOpacity*1.5;
                     }
                     return this.nodeIsInSents(d) ? baseOpacity*1.5 : baseOpacity ;
                 })
                 .style('font-weight', (d: NodeDatum) => {
-                    return this.selectedNode == d ? 'bold' : 'normal';
+                    return this.selectedNodes.has(d) || this.hoveredNode === d ? 'bold' : 'normal';
                 })
-                .classed('blur', (d: NodeDatum) => this.selectedNode ? !this.nodeIsInSents(d) : false);
+                .classed('blur', (d: NodeDatum) => this.nodeSelected() ? !this.nodeIsInSents(d) : false);
 
             // Update info icon visibility and position
             nodes.selectAll<SVGGElement, NodeDatum>(".info-icon")
                 .style("opacity", (d: NodeDatum) => {
-                    return (this.hoveredNode === d && !this.selectedNode) ? 1 : 0;
+                    return (this.hoveredNode === d && !this.nodeSelected()) ? 1 : 0;
                 })
                 .attr("transform", (d: NodeDatum) => {
                     const xOffset = this.textLength(d) + 15;
@@ -366,8 +381,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         const updateSimulation = () => {
             simulation.stop();
 
-            const selectedLinks = this.selectedNode ? linksData.filter(d => this.linkIsInSents(d)) : linksData;
-            const selectedNodes = this.selectedNode ? nodesData.filter(d => this.nodeIsInSents(d)) : nodesData;
+            const selectedLinks = this.nodeSelected() ? linksData.filter(d => this.linkIsInSents(d)) : linksData;
+            const selectedNodes = this.nodeSelected() ? nodesData.filter(d => this.nodeIsInSents(d)) : nodesData;
 
             // Set initial Y positions
             // nodesData.forEach((d: NodeDatum) => {
@@ -453,14 +468,25 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     }
 
     private linkIsInSents(d: any) {
-        const activeNode = this.selectedNode || this.hoveredNode;
+        if (this.nodeSelected()) {
+            // Check if link is in any of the selected nodes' sentences
+            return Array.from(this.selectedNodes).some(node => node.origSentIndices.includes(d.sentIdx));
+        }
+        const activeNode = this.hoveredNode;
         return activeNode?.origSentIndices.includes(d.sentIdx);
     }
 
     private nodeIsInSents(d: NodeDatum) {
-        const activeNode = this.selectedNode || this.hoveredNode;
-        if (!activeNode) return false;
-        const activeSents = [...activeNode.origSentIndices];
+        if (this.nodeSelected()) {
+            // Check if node shares sentences with any selected node
+            const selectedSents = new Set<number>();
+            Array.from(this.selectedNodes).forEach(node => {
+                node.origSentIndices.forEach(sentIdx => selectedSents.add(sentIdx));
+            });
+            return d.origSentIndices.some(sentIdx => selectedSents.has(sentIdx));
+        }
+        if (!this.hoveredNode) return false;
+        const activeSents = [...this.hoveredNode.origSentIndices];
         const sents = d.origSentIndices;
         const sharedElements = activeSents.filter(e => sents.includes(e));
         return sharedElements.length > 0;
@@ -478,14 +504,14 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private getExpectedX(d: NodeDatum) {
         const padBetweenWords = 50;
         // const padBetweenWords = this.fontSize(d) * 5;
-        const parents = d.parents.filter(p => this.selectedNode ? this.nodeIsInSents(p) : true);
+        const parents = d.parents.filter(p => this.nodeSelected() ? this.nodeIsInSents(p) : true);
         if (d.isRoot && !parents.length) {
             return padBetweenWords;
         }
         if (!parents.length) {
             return d.x;
         }
-        if ((this.selectedNode && !this.nodeIsInSents(d))) {
+        if ((this.nodeSelected() && !this.nodeIsInSents(d))) {
             return d.x;
         }
         return d3.mean(parents.map(p => p.x + this.textLength(p) + padBetweenWords)) || 0;
