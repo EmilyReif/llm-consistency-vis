@@ -71,9 +71,10 @@ export interface LinkDatum {
 }
 class SingleExampleWordGraph extends React.Component<Props, State> {
     private hoveredNode: NodeDatum | null = null;
-    private selectedNodes: Set<NodeDatum> = new Set(); 
+    private selectedNodes: Set<NodeDatum> = new Set();
     private fontScale: d3.ScaleLinear<number, number> | null = null;
     private opacityScale: d3.ScalePower<number, number> | null = null;
+    private simulation: d3.Simulation<NodeDatum, LinkDatum> | null = null;
 
     constructor(props: Props) {
         super(props);
@@ -148,15 +149,15 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
     async componentDidUpdate(prevProps: Props, prevState: State) {
         // Only rebuild graph if props changed, not if popup state changed
-        if (prevProps.promptGroups === this.props.promptGroups && 
+        if (prevProps.promptGroups === this.props.promptGroups &&
             prevProps.similarityThreshold === this.props.similarityThreshold &&
             prevProps.minOpacityThreshold === this.props.minOpacityThreshold &&
             (!utils.arraysAreEqual(prevState.popupNodes, this.state.popupNodes) ||
-            prevState.isPopupVisible !== this.state.isPopupVisible)) {
+                prevState.isPopupVisible !== this.state.isPopupVisible)) {
             // Only popup state changed, don't rebuild graph
             return;
         }
-        
+
         this.rebuildGraph();
     }
 
@@ -173,8 +174,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, state.tokenizeMode);
         this.createFontScale(); // Create font scale based on total generations
         this.addBoundingBoxData(nodesData);
-
-        const width = Math.min(window.innerWidth , 5000); // 95% of viewport width, max 5000p;x
+        const width = Math.min(window.innerWidth, 5000); // 95% of viewport width, max 5000p;x
         const height = Math.min(window.innerHeight * 0.8, 800); // 70% of viewport height, max 800px
         const svg = d3.select("#graph-holder")
             .html('')
@@ -210,7 +210,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
         // Create a gradient for each link
         const gradientId = (d: LinkDatum, i: number) => `gradient-${i}`;
-        
+
         // Helper function to create gradient for a link
         const createGradient = (d: LinkDatum, i: number, isInSents: boolean) => {
             const grad = defs.append("linearGradient")
@@ -219,18 +219,18 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
             // Get stroke color
             const strokeColor = edgeColors(d.promptId ? d.promptId.match(/_(\d+)_/)?.[1] || '0' : '0');
-            
+
             grad.append("stop")
                 .attr("offset", "0%")
                 .attr("stop-color", strokeColor)
-            
+
             grad.append("stop")
                 .attr("offset", "100%")
                 .attr("stop-color", strokeColor)
 
             return grad;
         };
-        
+
         // Initialize gradients with temporary coordinates (will be updated during simulation)
         linksData.forEach((d: LinkDatum, i: number) => {
             createGradient(d, i, !!this.linkIsInSents(d));
@@ -275,14 +275,17 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .append("g")
             .attr("class", "node")
             .on('mouseover', (event: any, d: NodeDatum) => {
-                    this.hoveredNode = d;
-                    update();
+                this.hoveredNode = d;
+                update();
             })
             .on('mouseout', (event: any, d: NodeDatum) => {
-                    this.hoveredNode = null;
-                    update();
+                this.hoveredNode = null;
+                update();
             })
             .on('click', (event: any, d: NodeDatum) => {
+                if (!this.nodeIsInSelectedSents(d)) {
+                    return;
+                }
                 if (this.selectedNodes.has(d)) {  // If clicking a selected node, deselect it
                     this.selectedNodes.delete(d);
                     this.hoveredNode = null;
@@ -310,7 +313,6 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
 
         const update = () => {
-            nodesData.forEach((d: NodeDatum) => d.x = this.getExpectedX(d));
             links.attr("d", (d: LinkDatum) => {
                 const { sourceX, targetX, y1, y2, sourceRightX, targetLeftX } = getLinkEndpoints(d);
                 const points = [
@@ -335,7 +337,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             // Update gradient opacity when selection/hover changes
             links.each((d: LinkDatum, i: number) => {
                 const gradient = defs.select(`#gradient-${i}`);
-                const opacity = (d: NodeDatum) =>  (d.word !== '') && this.opacityScale ? this.opacityScale(d.count) : 0;
+                const opacity = (d: NodeDatum) => (d.word !== '') && this.opacityScale ? this.opacityScale(d.count) : 0;
                 const multiplier = this.linkIsInSents(d) ? .6 : 0.3;
                 const stops = gradient.selectAll("stop");
                 stops.filter((_, j) => j === 0).attr("stop-opacity", opacity(d.source) * multiplier);
@@ -353,55 +355,42 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                     if (!hasSelection) {
                         return baseOpacity;
                     }
-                    return this.nodeIsInSents(d) ? baseOpacity*1.5 : baseOpacity ;
+                    return this.nodeIsInSelectedSents(d) ? baseOpacity * 1.5 : baseOpacity;
                 })
                 .style('font-weight', (d: NodeDatum) => {
                     return this.selectedNodes.has(d) || this.hoveredNode === d ? 'bold' : 'normal';
                 })
-                .classed('blur', (d: NodeDatum) => this.nodeSelected() ? !this.nodeIsInSents(d) : false);
-
-            // Update info icon visibility and position
-            nodes.selectAll<SVGGElement, NodeDatum>(".info-icon")
-                .style("opacity", (d: NodeDatum) => {
-                    return (this.hoveredNode === d && !this.nodeSelected()) ? 1 : 0;
-                })
-                .attr("transform", (d: NodeDatum) => {
-                    const xOffset = this.textLength(d) + 15;
-                    const yOffset = -this.textHeight(d) / 2;
-                    return `translate(${xOffset}, ${yOffset})`;
-                })
+                .classed('blur', (d: NodeDatum) => this.nodeSelected() ? !this.nodeIsInSelectedSents(d) : false);
         };
 
         // Create the simulation.
         const updateSimulation = () => {
-            simulation.stop();
+            if (this.simulation) {
+                this.simulation.stop();
+                this.simulation.force('x', null);
+                this.simulation.force('y', null);
+                this.simulation.force('link', null);
+                this.simulation.force('collide', null);
+            }
+            this.simulation = d3.forceSimulation(nodesData);
 
             const selectedLinks = this.nodeSelected() ? linksData.filter(d => this.linkIsInSents(d)) : linksData;
-            const selectedNodes = this.nodeSelected() ? nodesData.filter(d => this.nodeIsInSents(d)) : nodesData;
-
-            // Set initial Y positions
-            // nodesData.forEach((d: NodeDatum) => {
-            //     d.y = this.getExpectedY(d, height);
-            // });
-
-            simulation
+            const selectedNodes = this.nodeSelected() ? nodesData.filter(d => this.nodeIsInSelectedSents(d)) : nodesData;
+            this.simulation
                 .nodes(selectedNodes)
                 .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
                 .force("link", d3.forceLink(selectedLinks)
                     .id((d: any) => d.word)
                     .strength(.4))
-                    // .strength((d: any) => d3.max([d.source?.count, d.target?.count])/20))
-            .force("y", d3.forceY(height / 2).strength((d: any) => d.count/100)) // Center nodes vertically
-            // .force('y', d3.forceY((d: NodeDatum) => this.getExpectedY(d, height)).strength(0.1))
+                .force("y", d3.forceY(height / 2).strength((d: any) => d.count / 100)) // Center nodes vertically
+                .force("x", () =>  selectedNodes.forEach((d: NodeDatum) => d.x = this.getExpectedX(d, selectedNodes)))
+            this.simulation.on("tick", () => update());
 
-            this.runSimulationToConvergence(simulation, nodesData, update);
+            // this.runSimulationToConvergence();
+            // update();
         }
         // Create the simulation.
-        const simulation = d3.forceSimulation(nodesData);
         updateSimulation();
-
-        simulation.on("tick", () => update());
-        this.runSimulationToConvergence(simulation, nodesData, update);
     }
 
     /**
@@ -413,53 +402,24 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
      * @param maxIterations - Maximum number of iterations (default: 1000)
      */
     private runSimulationToConvergence(
-        simulation: d3.Simulation<NodeDatum, LinkDatum>,
-        nodesData: NodeDatum[],
-        update: () => void,
-        animateSteps: boolean = true,
-        convergenceThreshold: number = 1,
+        epsilon: number = 0.1,
         maxIterations: number = 1000
     ): void {
-        simulation.stop();
-        if (animateSteps) {
-            simulation.alpha(1).restart();
+        if (!this.simulation) {
             return;
         }
-
-        // Store previous positions to detect convergence
-        const prevPositions = nodesData.map(d => ({ x: d.x, y: d.y }));
-
+        this.simulation.stop();
         let converged = false;
         let iteration = 0;
 
         while (!converged && iteration < maxIterations) {
-            simulation.tick();
-            update(); // Manually call update since tick events aren't fired
-
-            // Check if positions have converged
-            converged = true;
-            for (let i = 0; i < nodesData.length; i++) {
-                const node = nodesData[i];
-                const prev = prevPositions[i];
-                const dx = Math.abs(node.x - prev.x);
-                const dy = Math.abs(node.y - prev.y);
-
-                if (dx > convergenceThreshold || dy > convergenceThreshold) {
-                    converged = false;
-                    break;
-                }
-            }
-
-            // Update previous positions for next iteration
-            nodesData.forEach((d, i) => {
-                prevPositions[i] = { x: d.x, y: d.y };
-            });
-
+            this.simulation.tick();
+            converged = this.simulation?.nodes().every(n =>
+                Math.abs(n.vx) < epsilon && Math.abs(n.vy) < epsilon
+            );
             iteration++;
         }
-
         console.log(`Simulation converged after ${iteration} iterations`);
-        // Simulation remains stopped for stable positioning
     }
 
     private linkIsInSents(d: any) {
@@ -471,7 +431,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         return activeNode?.origSentIndices.includes(d.sentIdx);
     }
 
-    private nodeIsInSents(d: NodeDatum) {
+    private nodeIsInSelectedSents(d: NodeDatum) {
         if (this.nodeSelected()) {
             // Check if node shares sentences with any selected node
             const selectedSents = new Set<number>();
@@ -496,17 +456,17 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     }
 
 
-    private getExpectedX(d: NodeDatum) {
+    private getExpectedX(d: NodeDatum, nodesData: NodeDatum[]) {
         const padBetweenWords = 50;
         // const padBetweenWords = this.fontSize(d) * 5;
-        const parents = d.parents.filter(p => this.nodeSelected() ? this.nodeIsInSents(p) : true);
+        const parents = d.parents.filter(p => nodesData.includes(p));
         if (d.isRoot && !parents.length) {
             return padBetweenWords;
         }
         if (!parents.length) {
             return d.x;
         }
-        if ((this.nodeSelected() && !this.nodeIsInSents(d))) {
+        if (!nodesData.includes(d)) {
             return d.x;
         }
         return d3.mean(parents.map(p => p.x + this.textLength(p) + padBetweenWords)) || 0;
@@ -515,7 +475,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // parents.forEach((p: NodeDatum) => {
         //     parentCounts.set(p, (parentCounts.get(p) || 0) + 1);
         // });
-        
+
         // // Find the most frequent parent
         // let mostFrequentParent = parents[0];
         // let maxCount = 0;

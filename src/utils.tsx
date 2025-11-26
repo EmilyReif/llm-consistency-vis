@@ -29,8 +29,8 @@ function isStopword(word: string): boolean {
 }
 
 /** Strip all whitespace and punctuation from a string. */
-function stripWhitespaceAndPunctuation(str: string): string {
-    return str.replace(/[\s\p{P}]/gu, '');
+export function stripWhitespaceAndPunctuation(str: string): string {
+    return str.toLowerCase().replace(/[\s\p{P}]/gu, '');
 }
 
 export function unformat(word: string) {
@@ -89,7 +89,6 @@ export async function tokenize(
                 break;
             }
         }
-        
 
         const embEntry: EmbEntry = {
             word,
@@ -223,6 +222,7 @@ export async function createGraphDataFromPromptGroups(
         for (const generation of generations) {
             sentIdx++;
             let prevWord = '';
+            console.log('-')
             const words = await tokenize(generation, sentIdx, tokenizeMode);
             words.forEach((word, j) => {
                 const currentWords = Object.keys(nodesDict);

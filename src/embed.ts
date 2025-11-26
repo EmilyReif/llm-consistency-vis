@@ -1,6 +1,7 @@
 // embed.ts
 import { pipeline, AutoTokenizer, Tensor } from '@huggingface/transformers';
 import { cosineSimilarity } from "fast-cosine-similarity";
+import { stripWhitespaceAndPunctuation } from './utils';
 
 let extractorCache: any = null;
 const modelId = 'Xenova/all-MiniLM-L6-v2';
@@ -32,6 +33,7 @@ function setCachedEmbedding(input: string, embedding: number[]): void {
 }
 
 export async function getEmbeddings(input: string): Promise<number[]> {
+    input = stripWhitespaceAndPunctuation(input);
     // Check cache first
     const cached = getCachedEmbedding(input);
     if (cached !== null) {
@@ -65,7 +67,6 @@ export async function getEmbeddings(input: string): Promise<number[]> {
     
     // Cache the result
     setCachedEmbedding(input, embedding);
-    
     return embedding;
 }
 
