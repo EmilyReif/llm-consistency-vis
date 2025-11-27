@@ -104,15 +104,15 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                 />
                             </div>
                             <div className="slider-container">
-                                <label>Hide Longtail Outputs: {this.state.minOpacityThreshold.toFixed(1)}</label>
+                                <label>Hide Longtail Outputs</label>
                                 <div className="tooltip">
                                     Controls the minimum opacity for nodes and edges. Higher values hide less frequent outputs (longtail outputs).
                                 </div>
                                 <input
                                     type="range"
                                     min="0"
-                                    max="5"
-                                    step="0.5"
+                                    max="1"
+                                    step="0.1"
                                     value={this.state.minOpacityThreshold}
                                     onChange={(e) => this.handleSliderChange(e, 'minOpacityThreshold')}
                                     onMouseUp={() => state.setMinOpacityThreshold(this.state.minOpacityThreshold)}

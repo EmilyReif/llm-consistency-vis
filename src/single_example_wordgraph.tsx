@@ -75,7 +75,14 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private fontScale: d3.ScaleLinear<number, number> | null = null;
     private opacityScale: d3.ScalePower<number, number> | null = null;
     private simulation: d3.Simulation<NodeDatum, LinkDatum> | null = null;
-
+    private nodesData: NodeDatum[] = [];
+    private linksData: LinkDatum[] = [];
+    private links: d3.Selection<SVGPathElement, LinkDatum, SVGGElement, unknown> | null = null;
+    private nodes: d3.Selection<SVGGElement, NodeDatum, SVGGElement, unknown> | null = null;
+    private defs: d3.Selection<SVGDefsElement, unknown, HTMLElement, any> | null = null;
+    private getLinkEndpoints: ((d: LinkDatum) => { sourceX: number; targetX: number; y1: number; y2: number; sourceRightX: number; targetLeftX: number }) | null = null;
+    private height: number = 0;
+    private width: number = 0;    
     constructor(props: Props) {
         super(props);
         this.state = {
@@ -124,8 +131,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
         // Create opacity scale where count maps to opacity from 0 to 1
         this.opacityScale = d3.scalePow()
-            .exponent(.5)
-            .domain([this.props.minOpacityThreshold - 3, 10])
+            .exponent(.1)
+            .domain([(this.props.minOpacityThreshold - .5)*totalGenerations, totalGenerations])
             .range([0, 1])
             .clamp(true)
             .nice();
@@ -157,6 +164,11 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             // Only popup state changed, don't rebuild graph
             return;
         }
+        if (prevProps.minOpacityThreshold !== this.props.minOpacityThreshold){
+            this.createFontScale();
+            this.update();
+            return;
+        }
 
         this.rebuildGraph();
     }
@@ -172,14 +184,16 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
         // Generate graph data from all text
         const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, state.tokenizeMode);
+        this.nodesData = nodesData;
+        this.linksData = linksData;
         this.createFontScale(); // Create font scale based on total generations
         this.addBoundingBoxData(nodesData);
-        const width = Math.min(window.innerWidth, 5000); // 95% of viewport width, max 5000p;x
-        const height = Math.min(window.innerHeight * 0.8, 800); // 70% of viewport height, max 800px
+        this.width = Math.min(window.innerWidth, 5000); // 95% of viewport width, max 5000p;x
+        this.height = Math.min(window.innerHeight * 0.8, 800); // 70% of viewport height, max 800px
         const svg = d3.select("#graph-holder")
             .html('')
-            .attr("width", width)
-            .attr("height", height)
+            .attr("width", this.width)
+            .attr("height", this.height)
             .style("cursor", "grab") // Change cursor to indicate draggable
             // Add click handler to the SVG background
             .on('click', (event: any) => {
@@ -188,8 +202,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                     this.selectedNodes.clear();
                     this.hoveredNode = null;
                     this.hidePopup();
-                    updateSimulation();
-                    update();
+                    this.updateSimulation();
+                    this.update();
                 }
             });
 
@@ -206,14 +220,14 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
 
         // Add defs section for gradients
-        const defs = svg.append("defs");
+        this.defs = svg.append("defs");
 
         // Create a gradient for each link
         const gradientId = (d: LinkDatum, i: number) => `gradient-${i}`;
 
         // Helper function to create gradient for a link
         const createGradient = (d: LinkDatum, i: number, isInSents: boolean) => {
-            const grad = defs.append("linearGradient")
+            const grad = this.defs!.append("linearGradient")
                 .attr("id", gradientId(d, i))
                 .attr("gradientUnits", "objectBoundingBox")
 
@@ -237,7 +251,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         });
 
         // Helper function to get link endpoints (reusable for paths and gradients)
-        const getLinkEndpoints = (d: LinkDatum) => {
+        this.getLinkEndpoints = (d: LinkDatum) => {
             const getY = (node: NodeDatum) => {
                 const lineHeight = 0.75;
                 const percentage = [...node.origSentIndices].indexOf(d.sentIdx) / node.origSentIndices.length;
@@ -263,24 +277,24 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         };
 
         // Draw links.
-        const links = g.selectAll(".link")
+        this.links = g.selectAll(".link")
             .data(linksData).enter()
             .append('path')
             .attr("class", "link")
             .attr("fill", "none")
 
         // Draw nodes.
-        const nodes = g.selectAll(".node")
+        this.nodes = g.selectAll(".node")
             .data(nodesData).enter()
             .append("g")
             .attr("class", "node")
             .on('mouseover', (event: any, d: NodeDatum) => {
                 this.hoveredNode = d;
-                update();
+                this.update();
             })
             .on('mouseout', (event: any, d: NodeDatum) => {
                 this.hoveredNode = null;
-                update();
+                this.update();
             })
             .on('click', (event: any, d: NodeDatum) => {
                 if (!this.nodeIsInSelectedSents(d)) {
@@ -293,108 +307,110 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                     this.selectedNodes.add(d);
                     this.hoveredNode = null;
                 }
-                updateSimulation();
-                update();
+                this.updateSimulation();
+                this.update();
                 this.togglePopupNode(d); // Toggle popup node to update the popup content.
             });
 
-        nodes.append("text")
+        this.nodes.append("text")
             .call(this.wrapText)
             .attr("font-size", (d: any) => this.fontSize(d));
 
         if (SHOW_DEBUG_ELLIPSES) {
-            nodes.append("ellipse")
-                .attr("cx", d => d.rx)   // x-position of the node
-                // .attr("cy", d => d.ry)   // y-position of the node
-                .attr("rx", d => d.rx)
-                .attr("ry", d => d.ry)
+            this.nodes.append("ellipse")
+                .attr("cx", (d: NodeDatum) => d.rx)   // x-position of the node
+                // .attr("cy", (d: NodeDatum) => d.ry)   // y-position of the node
+                .attr("rx", (d: NodeDatum) => d.rx)
+                .attr("ry", (d: NodeDatum) => d.ry)
                 .attr("fill", "rgba(123, 123, 1, 0.5)")
         }
-
-        const update = () => {
-            const blur = 'blur(2px) opacity(0.2)';
-            links
-                .transition().duration(500).ease(d3.easeSinInOut)
-                .attr("d", (d: LinkDatum) => {
-                    const { sourceX, targetX, y1, y2, sourceRightX, targetLeftX } = getLinkEndpoints(d);
-                    const points = [
-                        { x: sourceX, y: y1 },
-                        { x: sourceRightX, y: y1 },
-                        { x: targetLeftX, y: y2 },
-                        { x: targetX, y: y2 }
-                    ];
-                    return d3.line<{ x: number, y: number }>()
-                        .x(d => d.x)
-                        .y(d => d.y)
-                        .curve(d3.curveMonotoneY)(points);
-                })
-                .attr("stroke", (d: LinkDatum, i: number) => {
-                    return `url(#gradient-${i})`;
-                })
-                .attr("stroke-width", (d: any) => {
-                    return 2;
-                })
-                .style('filter', (d: LinkDatum) => this.nodeSelected() ? !this.linkIsInSents(d) ? blur : '' : '');
-
-            // Update gradient opacity when selection/hover changes
-            links.each((d: LinkDatum, i: number) => {
-                const gradient = defs.select(`#gradient-${i}`);
-                const opacity = (d: NodeDatum) => (d.word !== '') && this.opacityScale ? this.opacityScale(d.count) : 0;
-                const multiplier = this.linkIsInSents(d) ? .6 : 0.3;
-                const stops = gradient.selectAll("stop");
-                stops.filter((_, j) => j === 0).attr("stop-opacity", opacity(d.source) * multiplier);
-                stops.filter((_, j) => j === 1).attr("stop-opacity", opacity(d.target) * multiplier);
-            });
-
-            nodes
-                .transition().duration(500).ease(d3.easeSinInOut)
-                .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
-                .attr('fill', (d: NodeDatum) => {
-                    return getNodeColor(d, linksData);
-                })
-                .style('opacity', (d: NodeDatum) => {
-                    const baseOpacity = this.opacityScale ? this.opacityScale(d.count) : 1;
-                    const hasSelection = this.nodeSelected();
-                    if (!hasSelection) {
-                        return baseOpacity;
-                    }
-                    return this.nodeIsInSelectedSents(d) ? baseOpacity * 1.5 : baseOpacity;
-                })
-                .style('font-weight', (d: NodeDatum) => {
-                    return this.selectedNodes.has(d) || this.hoveredNode === d ? 'bold' : 'normal';
-                })
-                .style('filter', (d: NodeDatum) => this.nodeSelected() ? !this.nodeIsInSelectedSents(d) ? blur : '' : '');
-        };
-
         // Create the simulation.
-        const updateSimulation = () => {
-            if (this.simulation) {
-                this.simulation.stop();
-                this.simulation.force('x', null);
-                this.simulation.force('y', null);
-                this.simulation.force('link', null);
-                this.simulation.force('collide', null);
-            }
-            this.simulation = d3.forceSimulation(nodesData);
-
-            const selectedLinks = this.nodeSelected() ? linksData.filter(d => this.linkIsInSents(d)) : linksData;
-            const selectedNodes = this.nodeSelected() ? nodesData.filter(d => this.nodeIsInSelectedSents(d)) : nodesData;
-            this.simulation
-                .nodes(selectedNodes)
-                // .force("collide", d3.forceCollide().radius((d: any) => d.rx + d.ry))
-                .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
-                .force("link", d3.forceLink(selectedLinks)
-                    .id((d: any) => d.word)
-                    .strength(.4))
-                .force("y", d3.forceY(height / 2).strength((d: any) => d.count / 100)) // Center nodes vertically
-                .force("x", () => selectedNodes.forEach((d: NodeDatum) => d.x = this.getExpectedX(d, selectedNodes)))
-            this.simulation.on("tick", () => update());
-
-            this.runSimulationToConvergence();
-            update();
+        this.updateSimulation();
+    }
+    private update() {
+        if (!this.links || !this.nodes || !this.defs || !this.getLinkEndpoints) {
+            return;
         }
-        // Create the simulation.
-        updateSimulation();
+        const blur = 'blur(2px) opacity(0.2)';
+        this.links
+            .transition().duration(500).ease(d3.easeSinInOut)
+            .attr("d", (d: LinkDatum) => {
+                const { sourceX, targetX, y1, y2, sourceRightX, targetLeftX } = this.getLinkEndpoints!(d);
+                const points = [
+                    { x: sourceX, y: y1 },
+                    { x: sourceRightX, y: y1 },
+                    { x: targetLeftX, y: y2 },
+                    { x: targetX, y: y2 }
+                ];
+                return d3.line<{ x: number, y: number }>()
+                    .x(d => d.x)
+                    .y(d => d.y)
+                    .curve(d3.curveMonotoneY)(points);
+            })
+            .attr("stroke", (d: LinkDatum, i: number) => {
+                return `url(#gradient-${i})`;
+            })
+            .attr("stroke-width", (d: any) => {
+                return 2;
+            })
+            .style('filter', (d: LinkDatum) => this.nodeSelected() ? !this.linkIsInSents(d) ? blur : '' : '');
+
+        // Update gradient opacity when selection/hover changes
+        this.links.each((d: LinkDatum, i: number) => {
+            const gradient = this.defs!.select(`#gradient-${i}`);
+            const opacity = (d: NodeDatum) => (d.word !== '') && this.opacityScale ? this.opacityScale(d.count) : 0;
+            const multiplier = this.linkIsInSents(d) ? .6 : 0.3;
+            const stops = gradient.selectAll("stop");
+            stops.filter((_: any, j: number) => j === 0).attr("stop-opacity", opacity(d.source) * multiplier);
+            stops.filter((_: any, j: number) => j === 1).attr("stop-opacity", opacity(d.target) * multiplier);
+        });
+
+        this.nodes
+            .transition().duration(500).ease(d3.easeSinInOut)
+            .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
+            .attr('fill', (d: NodeDatum) => {
+                return getNodeColor(d, this.linksData);
+            })
+            .style('opacity', (d: NodeDatum) => {
+                const baseOpacity = this.opacityScale ? this.opacityScale(d.count) : 1;
+                const hasSelection = this.nodeSelected();
+                if (!hasSelection) {
+                    return baseOpacity;
+                }
+                return this.nodeIsInSelectedSents(d) ? baseOpacity * 1.5 : baseOpacity;
+            })
+            .style('font-weight', (d: NodeDatum) => {
+                return this.selectedNodes.has(d) || this.hoveredNode === d ? 'bold' : 'normal';
+            })
+            .style('filter', (d: NodeDatum) => this.nodeSelected() ? !this.nodeIsInSelectedSents(d) ? blur : '' : '');
+    };
+
+    // Create the simulation.
+    private updateSimulation() {
+        if (this.simulation) {
+            this.simulation.stop();
+            this.simulation.force('x', null);
+            this.simulation.force('y', null);
+            this.simulation.force('link', null);
+            this.simulation.force('collide', null);
+        }
+        this.simulation = d3.forceSimulation(this.nodesData);
+
+        const selectedLinks = this.nodeSelected() ? this.linksData.filter(d => this.linkIsInSents(d)) : this.linksData;
+        const selectedNodes = this.nodeSelected() ? this.nodesData.filter(d => this.nodeIsInSelectedSents(d)) : this.nodesData;
+        this.simulation
+            .nodes(selectedNodes)
+            // .force("collide", d3.forceCollide().radius((d: any) => d.rx + d.ry))
+            .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
+            .force("link", d3.forceLink(selectedLinks)
+                .id((d: any) => d.word)
+                .strength(.4))
+            .force("y", d3.forceY(this.height / 2).strength((d: any) => d.count / 100)) // Center nodes vertically
+            .force("x", () => selectedNodes.forEach((d: NodeDatum) => d.x = this.getExpectedX(d, selectedNodes)))
+        this.simulation.on("tick", () => this.update());
+
+        this.runSimulationToConvergence();
+        this.update();
     }
 
     /**
