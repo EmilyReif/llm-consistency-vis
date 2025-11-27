@@ -181,7 +181,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             const color = color_utils.MILLER_STONE_COLORS[index % color_utils.MILLER_STONE_COLORS.length];
             return color;
         };
-
+        
         // Generate graph data from all text
         const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, state.tokenizeMode);
         this.nodesData = nodesData;
@@ -325,15 +325,15 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 .attr("fill", "rgba(123, 123, 1, 0.5)")
         }
         // Create the simulation.
-        this.updateSimulation();
+        this.updateSimulation(true);
     }
-    private update() {
+    private update(firstTime: boolean = false) {
         if (!this.links || !this.nodes || !this.defs || !this.getLinkEndpoints) {
             return;
         }
         const blur = 'blur(2px) opacity(0.2)';
         this.links
-            .transition().duration(500).ease(d3.easeSinInOut)
+            .transition().duration(firstTime ? 0 : 500).ease(d3.easeSinInOut)
             .attr("d", (d: LinkDatum) => {
                 const { sourceX, targetX, y1, y2, sourceRightX, targetLeftX } = this.getLinkEndpoints!(d);
                 const points = [
@@ -366,7 +366,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         });
 
         this.nodes
-            .transition().duration(500).ease(d3.easeSinInOut)
+            .transition().duration(firstTime ? 0 : 500).ease(d3.easeSinInOut)
             .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
             .attr('fill', (d: NodeDatum) => {
                 return getNodeColor(d, this.linksData);
@@ -386,7 +386,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     };
 
     // Create the simulation.
-    private updateSimulation() {
+    private updateSimulation(firstTime: boolean = false) {
         if (this.simulation) {
             this.simulation.stop();
             this.simulation.force('x', null);
@@ -410,7 +410,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         this.simulation.on("tick", () => this.update());
 
         this.runSimulationToConvergence();
-        this.update();
+        this.update(firstTime);
     }
 
     /**
@@ -434,7 +434,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
         while (!converged && iteration < maxIterations) {
             this.simulation.tick();
-            converged = this.simulation?.nodes().every(n =>
+            converged = this.simulation.nodes().every(n =>
                 Math.abs(n.vx) < epsilon && Math.abs(n.vy) < epsilon
             );
             iteration++;
