@@ -12,7 +12,6 @@ const USE_EMBS = true;
 const tokensToOrigWord: { [key: string]: string } = {};
 export type EmbEntry = { word: string, prevWord: string, nextWord: string, prevWordEmb?: number[], nextWordEmb?: number[], idx: number, embedding?: number[] };
 const embsDict: { [key: string]: EmbEntry } = {};
-const CONTEXT_WINDOW_SIZE = 1; // Number of words on either side to consider
 
 // Common English stopwords to ignore when building context windows
 export const STOPWORDS = new Set([

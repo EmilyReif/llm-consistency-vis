@@ -5,6 +5,7 @@ import { stripWhitespaceAndPunctuation } from './utils';
 
 let extractorCache: any = null;
 const modelId = 'Xenova/all-MiniLM-L6-v2';
+const REDUCED_EMBEDDING_DIM = 50;
 
 // LRU cache for embeddings with max size of 500
 const EMBEDDING_CACHE_SIZE = 500;
@@ -63,7 +64,9 @@ export async function getEmbeddings(input: string): Promise<number[]> {
         }
     }
     
-    const embedding = sum.map(x => x / tokenEmbeddings.length);
+    let embedding = sum.map(x => x / tokenEmbeddings.length);
+    // console.log('embedding', embedding.length);
+    embedding = embedding.slice(0, REDUCED_EMBEDDING_DIM);
     
     // Cache the result
     setCachedEmbedding(input, embedding);

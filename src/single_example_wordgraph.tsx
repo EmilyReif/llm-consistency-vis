@@ -9,6 +9,8 @@ import { getNodeColor } from './color_utils';
 import { state } from './state';
 import NodeExamplesPopup from './node_examples_popup';
 
+const TRANSITION_DURATION = 300;
+
 interface Props {
     // Prompts (grouped inputs for multi-prompt)
     promptGroups: { promptId: string, generations: string[] }[];
@@ -122,7 +124,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private createFontScale() {
         const totalGenerations = this.props.promptGroups.reduce((acc, group) => acc + group.generations.length, 0);
         const minFontSize = 11;
-        const maxFontSize = 50;
+        const maxFontSize = 30;
 
         this.fontScale = d3.scaleLinear()
             .domain([1, totalGenerations])
@@ -184,6 +186,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         
         // Generate graph data from all text
         const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, state.tokenizeMode);
+        console.log('nodesData', nodesData.length, 'linksData', linksData.length);
         this.nodesData = nodesData;
         this.linksData = linksData;
         this.createFontScale(); // Create font scale based on total generations
@@ -331,9 +334,25 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         if (!this.links || !this.nodes || !this.defs || !this.getLinkEndpoints) {
             return;
         }
-        const blur = 'blur(2px) opacity(0.2)';
+
+        const getBlur = (d: (LinkDatum | NodeDatum)) => {
+            const blurFn = (opacity: number) => `blur(2px) opacity(${opacity})`;
+            const isNode = (d: any): d is NodeDatum => d.word !== undefined;
+            const isInSentsFn = isNode(d) ? (d: NodeDatum) => this.nodeIsInSelectedSents(d) : (d: LinkDatum) => this.linkIsInSents(d);
+            // If nothing is selected or hovered, return no blur.
+            if (!this.nodeSelected() && !this.hoveredNode) return '';
+            const fullBlur = blurFn(.2);
+            const lightBlur = blurFn(.5);
+            if (this.hoveredNode) {
+                return !isInSentsFn(d as any) ? lightBlur : '';
+            }
+            if (this.nodeSelected()) {
+                return !isInSentsFn(d as any) ? fullBlur : '';
+            }
+            return '';
+        }
         this.links
-            .transition().duration(firstTime ? 0 : 500).ease(d3.easeSinInOut)
+            .transition().duration(firstTime ? 0 : TRANSITION_DURATION).ease(d3.easeSinInOut)
             .attr("d", (d: LinkDatum) => {
                 const { sourceX, targetX, y1, y2, sourceRightX, targetLeftX } = this.getLinkEndpoints!(d);
                 const points = [
@@ -353,36 +372,36 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .attr("stroke-width", (d: any) => {
                 return 2;
             })
-            .style('filter', (d: LinkDatum) => this.nodeSelected() ? !this.linkIsInSents(d) ? blur : '' : '');
+            .style('filter', (d: LinkDatum) => getBlur(d));
+
+        // Choose opacity based on 
+        const opacity = (d: NodeDatum) => {
+            if ((d as any).word === '' || !this.opacityScale) return 0;
+           return this.opacityScale(d.count);
+        }
 
         // Update gradient opacity when selection/hover changes
         this.links.each((d: LinkDatum, i: number) => {
             const gradient = this.defs!.select(`#gradient-${i}`);
-            const opacity = (d: NodeDatum) => (d.word !== '') && this.opacityScale ? this.opacityScale(d.count) : 0;
-            const multiplier = this.linkIsInSents(d) ? .6 : 0.3;
+            const multiplier = .2;
             const stops = gradient.selectAll("stop");
             stops.filter((_: any, j: number) => j === 0).attr("stop-opacity", opacity(d.source) * multiplier);
             stops.filter((_: any, j: number) => j === 1).attr("stop-opacity", opacity(d.target) * multiplier);
         });
 
         this.nodes
-            .transition().duration(firstTime ? 0 : 500).ease(d3.easeSinInOut)
+            .transition().duration(firstTime ? 0 : TRANSITION_DURATION).ease(d3.easeSinInOut)
             .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
             .attr('fill', (d: NodeDatum) => {
                 return getNodeColor(d, this.linksData);
             })
             .style('opacity', (d: NodeDatum) => {
-                const baseOpacity = this.opacityScale ? this.opacityScale(d.count) : 1;
-                const hasSelection = this.nodeSelected();
-                if (!hasSelection) {
-                    return baseOpacity;
-                }
-                return this.nodeIsInSelectedSents(d) ? baseOpacity * 1.5 : baseOpacity;
+                return opacity(d);
             })
             .style('font-weight', (d: NodeDatum) => {
                 return this.selectedNodes.has(d) || this.hoveredNode === d ? 'bold' : 'normal';
             })
-            .style('filter', (d: NodeDatum) => this.nodeSelected() ? !this.nodeIsInSelectedSents(d) ? blur : '' : '');
+            .style('filter', (d: NodeDatum) => getBlur(d));
     };
 
     // Create the simulation.
