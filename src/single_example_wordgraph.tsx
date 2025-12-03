@@ -84,7 +84,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private defs: d3.Selection<SVGDefsElement, unknown, HTMLElement, any> | null = null;
     private getLinkEndpoints: ((d: LinkDatum) => { sourceX: number; targetX: number; y1: number; y2: number; sourceRightX: number; targetLeftX: number }) | null = null;
     private height: number = 0;
-    private width: number = 0;    
+    private width: number = 0;
     constructor(props: Props) {
         super(props);
         this.state = {
@@ -134,7 +134,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Create opacity scale where count maps to opacity from 0 to 1
         this.opacityScale = d3.scalePow()
             .exponent(.1)
-            .domain([(this.props.minOpacityThreshold - .5)*totalGenerations, totalGenerations])
+            .domain([(this.props.minOpacityThreshold - .5) * totalGenerations, totalGenerations])
             .range([0, 1])
             .clamp(true)
             .nice();
@@ -144,6 +144,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Empty svg element that will be populated with the graph.
         return (
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <span id='loader' className="loader"></span>
                 <svg id='graph-holder'></svg>
                 <NodeExamplesPopup
                     nodes={this.state.popupNodes}
@@ -166,7 +167,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             // Only popup state changed, don't rebuild graph
             return;
         }
-        if (prevProps.minOpacityThreshold !== this.props.minOpacityThreshold){
+        if (prevProps.minOpacityThreshold !== this.props.minOpacityThreshold) {
             this.createFontScale();
             this.update();
             return;
@@ -175,7 +176,27 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         this.rebuildGraph();
     }
 
+    private toggleLoading(isLoading = false) {
+        d3.select("#graph-holder").classed('hidden', isLoading);
+        d3.select("#loader").classed('hidden', !isLoading);
+    }
+
     private async rebuildGraph() {
+        this.toggleLoading(true);
+        setTimeout(async () => {
+            // REbuild the graph.
+            await this.rebuildGraphContent();
+
+            // Create the simulation.
+            this.updateSimulation(true);
+            this.toggleLoading(false);
+        }, 0);
+    }
+
+    private async rebuildGraphContent() {
+        // Generate graph data from all text
+        const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, state.tokenizeMode);
+
         // Create color scale that matches the state's color assignment
         // Use the same logic as state.getPromptColor() for consistency
         const edgeColors = (originalIndex: string) => {
@@ -183,9 +204,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             const color = color_utils.MILLER_STONE_COLORS[index % color_utils.MILLER_STONE_COLORS.length];
             return color;
         };
-        
-        // Generate graph data from all text
-        const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, state.tokenizeMode);
+
         console.log('nodesData', nodesData.length, 'linksData', linksData.length);
         this.nodesData = nodesData;
         this.linksData = linksData;
@@ -219,7 +238,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .on("zoom", (event) => g.attr("transform", event.transform))
 
         svg.call(zoom as any)
-        .on("dblclick.zoom", null);
+            .on("dblclick.zoom", null);
 
 
         // Add defs section for gradients
@@ -327,8 +346,6 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 .attr("ry", (d: NodeDatum) => d.ry)
                 .attr("fill", "rgba(123, 123, 1, 0.5)")
         }
-        // Create the simulation.
-        this.updateSimulation(true);
     }
     private update(firstTime: boolean = false) {
         if (!this.links || !this.nodes || !this.defs || !this.getLinkEndpoints) {
@@ -377,7 +394,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Choose opacity based on 
         const opacity = (d: NodeDatum) => {
             if ((d as any).word === '' || !this.opacityScale) return 0;
-           return this.opacityScale(d.count);
+            return this.opacityScale(d.count);
         }
 
         // Update gradient opacity when selection/hover changes
@@ -598,14 +615,14 @@ function chunkText(text: string) {
     if (chunkTextCache.has(text)) {
         return chunkTextCache.get(text)!;
     }
-    
+
     const words = utils.unformat(text).split(' ');
     // Group words into chunks of maxWords
     const chunks: string[] = [];
     for (let i = 0; i < words.length; i += NUM_WORDS_TO_WRAP) {
         chunks.push(words.slice(i, i + NUM_WORDS_TO_WRAP).join(' '));
     }
-    
+
     // Store in cache
     chunkTextCache.set(text, chunks);
     return chunks;
