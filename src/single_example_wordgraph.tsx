@@ -505,9 +505,6 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         if (!parents.length) {
             return d.x;
         }
-        if (!nodesData.includes(d)) {
-            return d.x;
-        }
         return d3.mean(parents.map(p => p.x + this.textLength(p) + padBetweenWords)) || 0;
         // // Count occurrences of each parent
         // const parentCounts = new Map<NodeDatum, number>();

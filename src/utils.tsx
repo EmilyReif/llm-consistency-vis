@@ -23,13 +23,14 @@ export const STOPWORDS = new Set([
 ]);
 
 function isStopword(word: string): boolean {
-    const normalized = word.toLowerCase().replace(/[^\w\s\'.!?]|_/g, "").replace(/\s+/g, " ").trim();
+    const normalized = stripWhitespaceAndPunctuation(word);
     return STOPWORDS.has(normalized);
 }
 
 /** Strip all whitespace and punctuation from a string. */
 export function stripWhitespaceAndPunctuation(str: string): string {
-    return str.toLowerCase().replace(/[\s\p{P}]/gu, '');
+    return str.toLowerCase().replace(/[^\w\s\'.!?]|_/g, "").replace(/\s+/g, " ").trim();
+    // return str.toLowerCase().replace(/[\s\p{P}]/gu, '');
 }
 
 export function unformat(word: string) {
@@ -179,20 +180,25 @@ function similarity(a: string, b: string): number {
 
     // Check if the words themselves are stopwords
     const bothStopwords = isStopword(embA.word) && isStopword(embB.word);
+    const stopwordWeight = .5;
 
     // Adjust context weights if both words are stopwords (give more weight to context)
     const isStartOrEnd = !embA.prevWord || !embB.prevWord || !embA.nextWord || !embB.nextWord;
-    if (bothStopwords && !isStartOrEnd) {
+    const areSameWord = stripWhitespaceAndPunctuation(embA.word) === stripWhitespaceAndPunctuation(embB.word);
+    if (bothStopwords && !isStartOrEnd && areSameWord) {
         if (USE_EMBS) {
             const similarityPrevWords = cosineSimilarity(embA.prevWordEmb || [], embB.prevWordEmb || []) ;
             const similarityNextWords = cosineSimilarity(embA.nextWordEmb || [], embB.nextWordEmb || []) ;
-            counter += Math.max(similarityPrevWords + similarityNextWords);
+            counter += Math.min(similarityPrevWords + similarityNextWords) * stopwordWeight;
         }
         else {
             const similarityPrevWords = levenshteinSimilarity(embA.prevWord!, embB.prevWord!) ;
             const similarityNextWords = levenshteinSimilarity(embA.nextWord!, embB.nextWord!) ;
-            counter += Math.max(similarityPrevWords + similarityNextWords);
+            counter += Math.min(similarityPrevWords + similarityNextWords) * stopwordWeight;
         }
+    }
+    else if (bothStopwords && !areSameWord) {
+        counter += 0;
     }
     else {
         if (USE_EMBS) {
@@ -203,8 +209,81 @@ function similarity(a: string, b: string): number {
         }
     }
     
-    counter -= Math.abs(embA.idx - embB.idx)/20; // They have similar positions in the sentence.
+    const diffInIdx = Math.abs(embA.idx - embB.idx)
+    counter -= diffInIdx*diffInIdx/100; // They have similar positions in the sentence.
     return counter;
+}
+
+
+function blankNode(word: string): NodeDatum {
+   return  {
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        rx: 0,
+        ry: 0,
+        count: 0,
+        word,
+        origWordIndices: [],
+        origSentIndices: [],
+        // @ts-ignore augment at runtime for multi-prompt support
+        origPromptIds: [],
+        origSentenceInfo: [],
+        children: [],
+        parents: [],
+    };
+}
+
+function updateNode (node: NodeDatum, wordIdx: number, sentIdx: number, words: string[], promptId: string){
+    node.count += 1;
+    const origWord = words[wordIdx];
+    node.origWordIndices.push(wordIdx);
+    node.origSentIndices.push(sentIdx);
+    // @ts-ignore optional field present when type extended
+    node.origPromptIds && node.origPromptIds.push(promptId);
+    
+    // Track the original word(s) from the sentence
+    // Get the original word that was tokenized
+    node.origSentenceInfo!.push({
+        sentIdx,
+        wordIdx,
+        origWords: [unformat(origWord)]
+    });
+
+    if (wordIdx === 0) {
+        node.isRoot = true;
+    }
+    if (wordIdx === words.length - 1) {
+        node.isEnd = true;
+    }
+    return node
+}
+
+function addLinks(nodesDict: any, linksDict: any, word: string, prevWord: string, sentIdx: number, promptId: string){
+    if (!prevWord) {
+        return;
+    }
+    nodesDict[word].parents.push(nodesDict[prevWord]);
+    nodesDict[prevWord].children.push(nodesDict[word]);
+
+    linksDict[prevWord] = linksDict[prevWord] || {};
+    const entries = linksDict[prevWord][word] || [];
+    entries.push({ sentIdx, promptId });
+    linksDict[prevWord][word] = entries;
+}
+
+const isInParentChain = (possibleParent: string, node: string, nodesDict: { [key: string]: NodeDatum }): boolean => {
+    if (possibleParent == node) {
+        return true;
+    }
+    const potentialParents = nodesDict[possibleParent].children;
+    for (const parent of potentialParents) {
+        if (isInParentChain(parent.word, node, nodesDict)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /** Create graph data from prompt groups. */
@@ -214,86 +293,44 @@ export async function createGraphDataFromPromptGroups(
     shuffle: boolean = false,
     tokenizeMode: TokenizeMode = "space"
 ): Promise<{ nodesData: NodeDatum[]; linksData: LinkDatum[] }> {
+
+
     const linksDict: { [key: string]: { [key: string]: { sentIdx: number, promptId: string }[] } } = {};
     const nodesDict: { [key: string]: NodeDatum } = {};
-    const currentWords: string[] = []; // for performance reasons so we don't have to call Object.keys(nodesDict) every time
     let sentIdx = 0;
     for (const { promptId, generations } of groups) {
         for (const generation of generations) {
             sentIdx++;
             let prevWord = '';
-            console.log('-')
             const words = await tokenize(generation, sentIdx, tokenizeMode);
             words.forEach((word, j) => {
-                let similarNodes = currentWords.map((existingWord) => [similarity(existingWord, word), existingWord]);
-                similarNodes = similarNodes.filter((pair: any) => {
-                    const [similarityScore, similarWord] = pair;
-                    const isAboveThreshold = similarityScore > similarityThreshold;
-                    const isFromSameSentence = nodesDict[similarWord]?.origSentIndices.includes(sentIdx);
-                    // const isFromSameSentence = false;
-                    return isAboveThreshold && !isFromSameSentence;
-                });
+                let similarNodes = Object.keys(nodesDict).map((existingWord: any) => {
+                    const sameSentence = nodesDict[existingWord]?.origSentIndices.includes(sentIdx);
+                    if (sameSentence) return ;
+                    const similarityScore = similarity(existingWord, word);
+                    if (similarityScore < similarityThreshold) return;
+                    return [similarityScore, existingWord];
+                }).filter((node: any) => node !== undefined);
                 similarNodes = similarNodes.sort((a: any, b: any) => b[0] - a[0]) as any;
-
                 const similarNode = similarNodes?.[0]?.[1] || null;
-                if (similarNode && similarNode !== prevWord) {
+                if (similarNode) {
                     word = similarNode as string;
-                }
-
-                if (!nodesDict[word]) {
-                    currentWords.push(word);
-                    nodesDict[word] = {
-                        x: 0,
-                        y: 0,
-                        vx: 0,
-                        vy: 0,
-                        rx: 0,
-                        ry: 0,
-                        count: 0,
-                        word,
-                        origWordIndices: [],
-                        origSentIndices: [],
-                        // @ts-ignore augment at runtime for multi-prompt support
-                        origPromptIds: [],
-                        origSentenceInfo: [],
-                        isRoot: j === 0,
-                        children: [],
-                        parents: [],
-                    };
+                } else {
+                    nodesDict[word] = blankNode(word);
                 };
-                nodesDict[word].count += 1;
-                nodesDict[word].origWordIndices.push(j);
-                nodesDict[word].origSentIndices.push(sentIdx);
-                // @ts-ignore optional field present when type extended
-                nodesDict[word].origPromptIds && nodesDict[word].origPromptIds.push(promptId);
 
-                // Track the original word(s) from the sentence
-                // Get the original word that was tokenized
-                const origWord = unformat(words[j]);
-                nodesDict[word].origSentenceInfo!.push({
-                    sentIdx,
-                    wordIdx: j,
-                    origWords: [origWord]
-                });
-
-                if (j === 0) {
-                    nodesDict[word].isRoot = true;
-                }
-                if (j === words.length - 1) {
-                    nodesDict[word].isEnd = true;
-                }
-
-                // Add a link from the previous word.
-                if (j > 0) {
-                    linksDict[prevWord] = linksDict[prevWord] || {};
-                    const entries = linksDict[prevWord][word] || [];
-                    entries.push({ sentIdx, promptId });
-                    linksDict[prevWord][word] = entries;
-                }
+                nodesDict[word] = updateNode(nodesDict[word], j, sentIdx, words, promptId);
+                addLinks(nodesDict, linksDict, word, prevWord, sentIdx, promptId);
                 prevWord = word;
             });
         }
     }
+
+    // clear parents and children of nodes.
+    Object.values(nodesDict).forEach(node => {
+        node.parents = [];
+        node.children = [];
+    });
 
     merge(nodesDict as any, linksDict as any);
 
