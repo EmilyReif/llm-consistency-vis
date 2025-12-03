@@ -2,6 +2,7 @@ import { NodeDatum, LinkDatum, OrigSentenceInfo } from './single_example_wordgra
 import * as d3 from "d3";
 import { getEmbeddings } from './embed'
 import { cosineSimilarity } from "fast-cosine-similarity";
+import { ReachabilityChecker } from './reachability';
 
 export type TokenizeMode = "space" | "comma" | "sentence";
 
@@ -297,6 +298,8 @@ export async function createGraphDataFromPromptGroups(
 
     const linksDict: { [key: string]: { [key: string]: { sentIdx: number, promptId: string }[] } } = {};
     const nodesDict: { [key: string]: NodeDatum } = {};
+    const reachabilityChecker = new ReachabilityChecker();
+    
     let sentIdx = 0;
     for (const { promptId, generations } of groups) {
         for (const generation of generations) {
@@ -309,6 +312,12 @@ export async function createGraphDataFromPromptGroups(
                     if (sameSentence) return ;
                     const similarityScore = similarity(existingWord, word);
                     if (similarityScore < similarityThreshold) return;
+                    
+                    // Check if merging would create a cycle
+                    if (prevWord && reachabilityChecker.wouldCreateCycleThroughIncomingEdge(existingWord, prevWord)) {
+                        return;
+                    }
+                    
                     return [similarityScore, existingWord];
                 }).filter((node: any) => node !== undefined);
                 similarNodes = similarNodes.sort((a: any, b: any) => b[0] - a[0]) as any;
@@ -317,9 +326,13 @@ export async function createGraphDataFromPromptGroups(
                     word = similarNode as string;
                 } else {
                     nodesDict[word] = blankNode(word);
+                    reachabilityChecker.initNode(word);
                 };
 
                 nodesDict[word] = updateNode(nodesDict[word], j, sentIdx, words, promptId);
+                if (prevWord) {
+                    reachabilityChecker.addEdge(prevWord, word);
+                }
                 addLinks(nodesDict, linksDict, word, prevWord, sentIdx, promptId);
                 prevWord = word;
             });
