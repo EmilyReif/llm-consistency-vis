@@ -30,7 +30,7 @@ function isStopword(word: string): boolean {
 
 /** Strip all whitespace and punctuation from a string. */
 export function stripWhitespaceAndPunctuation(str: string): string {
-    return str.toLowerCase().replace(/[^\w\s\'.!?]|_/g, "").replace(/\s+/g, " ").trim();
+    return str.toLowerCase().replace(/[^\w\s'.!?]|_/g, "").replace(/\s+/g, " ").trim();
     // return str.toLowerCase().replace(/[\s\p{P}]/gu, '');
 }
 
@@ -274,19 +274,6 @@ function addLinks(nodesDict: any, linksDict: any, word: string, prevWord: string
     const entries = linksDict[prevWord][word] || [];
     entries.push({ sentIdx, promptId });
     linksDict[prevWord][word] = entries;
-}
-
-const isInParentChain = (possibleParent: string, node: string, nodesDict: { [key: string]: NodeDatum }): boolean => {
-    if (possibleParent == node) {
-        return true;
-    }
-    const potentialParents = nodesDict[possibleParent].children;
-    for (const parent of potentialParents) {
-        if (isInParentChain(parent.word, node, nodesDict)) {
-            return true;
-        }
-    }
-    return false;
 }
 
 /** Create graph data from prompt groups. */

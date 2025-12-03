@@ -1,10 +1,9 @@
 import { makeAutoObservable, action } from "mobx";
 import { examples } from "./cached_examples";
-import * as utils from "./utils";
 import * as color_utils from "./color_utils";
 import * as d3 from 'd3';
 import { createLLM } from "./llm/factory";
-import { PROVIDERS, getDefaultModelFamily, getDefaultModel, getModelsForFamily } from "./llm/config";
+import { getDefaultModelFamily, getDefaultModel } from "./llm/config";
 import { LLM } from "./llm/base";
 import { OpenAILLM } from "./llm/openai";
 import { TokenizeMode } from "./utils";
@@ -16,8 +15,6 @@ const DEFAULT_SIMILARITY_THRESHOLD = 0.7;
 const DEFAULT_SPREAD = 0.5;
 // Opacity for prompt container background colors (0.0 = transparent, 1.0 = opaque)
 const PROMPT_COLOR_OPACITY = 0.3;
-// For some demo, use hardcoded key
-const OPENAI_API_KEY = null;
 
 
 // MILLER_STONE_COLORS color scale for prompt containers with reduced opacity

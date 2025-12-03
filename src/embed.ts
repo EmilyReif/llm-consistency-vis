@@ -1,6 +1,5 @@
 // embed.ts
-import { pipeline, AutoTokenizer, Tensor } from '@huggingface/transformers';
-import { cosineSimilarity } from "fast-cosine-similarity";
+import { pipeline, Tensor } from '@huggingface/transformers';
 import { stripWhitespaceAndPunctuation } from './utils';
 
 let extractorCache: any = null;
