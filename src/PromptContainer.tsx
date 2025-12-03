@@ -2,6 +2,8 @@ import React from "react";
 import { state } from "./state";
 import { examples } from "./cached_examples";
 import { PROVIDERS, getModelsForFamily } from "./llm/config";
+import Box from '@mui/material/Box';
+import Slider from '@mui/material/Slider';
 
 interface PromptContainerProps {
     promptIndex: number;
@@ -75,15 +77,20 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                         onSubmit={(val: string) => onUpdateText(promptIndex, val)}
                     />
                         <div className="slider-container">
-                            <label>Temp: {prompt.temp}</label>
-                            <input
-                                type="range"
-                                min="0"
-                                max="1"
-                                step="0.1"
-                                value={prompt.temp}
-                                onChange={(e) => onUpdateTemp(promptIndex, parseFloat((e.target as HTMLInputElement).value))}
-                            />
+                            <label>Temperature: {prompt.temp}</label>
+                            <Box sx={{ width: 150 }}>
+                                <Slider
+                                    size="small"
+                                    min={0}
+                                    max={1}
+                                    step={0.1}
+                                    value={prompt.temp}
+                                    onChange={(e, value) => onUpdateTemp(promptIndex, value as number)}
+                                    valueLabelDisplay="auto"
+                                    aria-label="Temperature"
+                                    disabled={isDisabled}
+                                />
+                            </Box>
                         </div>
                         <div className="dropdown-container">
                             <label>Model Family:</label>

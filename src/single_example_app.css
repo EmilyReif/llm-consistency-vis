@@ -22,10 +22,11 @@
     align-items: center;
 }
 
-.slider-container {
+.slider-container, .dropdown-container {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    /* align-items: center; */
+    /* gap: 8px; */
     font-size: 0.9em;
     position: relative;
 }
@@ -43,7 +44,7 @@
     border-radius: 6px;
     position: absolute;
     z-index: 1;
-    bottom: 125%;
+    top: 125%;
     left: 50%;
     transform: translateX(-50%);
     width: 200px;
@@ -55,15 +56,15 @@
 .slider-container .tooltip::after {
     content: "";
     position: absolute;
-    top: 100%;
+    bottom: 100%;
     left: 50%;
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: #333 transparent transparent transparent;
+    border-color: transparent transparent #333 transparent;
 }
 
-.slider-container:hover .tooltip {
+.slider-container label:hover + .tooltip {
     visibility: visible;
     opacity: 1;
 }
@@ -72,12 +73,6 @@
     width: 100px;
 }
 
-.dropdown-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
-}
 
 .dropdown-container label {
     font-weight: normal;
@@ -97,7 +92,8 @@
     position: relative;
     display: flex;
     align-items: center;
-    width: 500px;  /* keeps input + dropdown at fixed width */
+    width: 500px; 
+    flex: 1;
 }
 
 .input-field {
@@ -305,8 +301,6 @@
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
-    position: absolute;
-    right: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -350,8 +344,6 @@
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s;
-    position: absolute;
-    right: 30px;
     display: flex;
     align-items: center;
     justify-content: center;

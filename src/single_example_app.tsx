@@ -8,8 +8,11 @@ import './single_example_app.css'
 import './loading.css'
 import { examples } from "./cached_examples";
 import { TokenizeMode } from "./utils";
+import Box from '@mui/material/Box';
+import Slider from '@mui/material/Slider';
 
 const DEFAULT_TEXT = Object.keys(examples)[0];
+const SLIDER_WIDTH = 150;
 
 interface SingleExampleAppState {
     selectedExample: string;
@@ -34,8 +37,8 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         tokenizeMode: state.tokenizeMode,
     };
 
-    handleSliderChange = (event: any, param: string) => {
-        (this.state as any)[param] = parseFloat(event.target.value);
+    handleSliderChange = (value: number, param: string) => {
+        (this.state as any)[param] = value;
         this.setState({} as any);
     };
 
@@ -76,64 +79,80 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                     <div className="controls-row">
                     <label><b>Global Controls</b></label>
                             <div className="slider-container">
-                                <label>Number of Generations: {this.state.numGenerations}</label>
+                                <label>Samples: {this.state.numGenerations}</label>
                                 <div className="tooltip">
                                     Number of Generations controls how many different responses the LLM will generate for the same prompt. More generations help visualize the diversity of possible responses.
                                 </div>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="50"
-                                    step="1"
-                                    value={this.state.numGenerations}
-                                    onChange={(e) => this.handleSliderChange(e, 'numGenerations')}
-                                    onMouseUp={() => state.setNumGenerations(this.state.numGenerations)}
-                                />
+                                <Box sx={{ width: SLIDER_WIDTH }}>
+                                    <Slider
+                                        size="small"
+                                        min={1}
+                                        max={50}
+                                        step={1}
+                                        value={this.state.numGenerations}
+                                        onChange={(e, value) => this.handleSliderChange(value as number, 'numGenerations')}
+                                        onChangeCommitted={() => state.setNumGenerations(this.state.numGenerations)}
+                                        valueLabelDisplay="auto"
+                                        aria-label="Number of Generations"
+                                    />
+                                </Box>
                             </div>
                             <div className="slider-container">
                                 <label>Merging coefficient</label>
                                 <div className="tooltip">
                                     Controls how similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
                                 </div>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="1"
-                                    step="0.1"
-                                    value={this.state.similarityThreshold}
-                                    onChange={(e) => this.handleSliderChange(e, 'similarityThreshold')}
-                                    onMouseUp={() => state.setSimilarityThreshold(this.state.similarityThreshold)}
-                                />
+                                <Box sx={{ width: SLIDER_WIDTH }}>
+                                    <Slider
+                                        size="small"
+                                        min={0}
+                                        max={1}
+                                        step={0.1}
+                                        value={this.state.similarityThreshold}
+                                        onChange={(e, value) => this.handleSliderChange(value as number, 'similarityThreshold')}
+                                        onChangeCommitted={() => state.setSimilarityThreshold(this.state.similarityThreshold)}
+                                        valueLabelDisplay="auto"
+                                        aria-label="Merging coefficient"
+                                    />
+                                </Box>
                             </div>
                             <div className="slider-container">
                                 <label>Hide Rare Outputs</label>
                                 <div className="tooltip">
                                 Adjust how strongly rare outputs are faded. Higher values hide nodes and edges that appear infrequently across outputs.
                                 </div>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="1"
-                                    step="0.1"
-                                    value={this.state.minOpacityThreshold}
-                                    onChange={(e) => this.handleSliderChange(e, 'minOpacityThreshold')}
-                                    onMouseUp={() => state.setMinOpacityThreshold(this.state.minOpacityThreshold)}
-                                />
+                                <Box sx={{ width: SLIDER_WIDTH }}>
+                                    <Slider
+                                        size="small"
+                                        min={0}
+                                        max={1}
+                                        step={0.1}
+                                        value={this.state.minOpacityThreshold}
+                                        onChange={(e, value) => this.handleSliderChange(value as number, 'minOpacityThreshold')}
+                                        onChangeCommitted={() => state.setMinOpacityThreshold(this.state.minOpacityThreshold)}
+                                        valueLabelDisplay="off"
+                                        aria-label="Hide Rare Outputs"
+                                    />
+                                </Box>
                             </div>
                             <div className="slider-container">
                                 <label>Graph spread</label>
                                 <div className="tooltip">
-                                    Controls how spread out the graph is. Lower values make the graph more compact, higher values make it more spread out.
+                                    Controls how spread out the graph is. Higher values means every output is rendered more like standard LTR text, lower values means the graph is more compact.
                                 </div>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="1"
-                                    step="0.1"
-                                    value={this.state.spread}
-                                    onChange={(e) => this.handleSliderChange(e, 'spread')}
-                                    onMouseUp={() => state.setSpread(this.state.spread)}
-                                />
+                                <Box sx={{ width: SLIDER_WIDTH }}>
+                                    <Slider
+                                        size="small"
+                                        min={0}
+                                        max={1}
+                                        step={0.1}
+                                        value={this.state.spread}
+                                        onChange={(e, value) => this.handleSliderChange(value as number, 'spread')}
+                                        onChangeCommitted={() => state.setSpread(this.state.spread)}
+                                        valueLabelDisplay="off"
+                                        aria-label="Graph spread"
+                                    />
+                                </Box>
                             </div>
                             {/* <div className="slider-container">
                                 <label>
