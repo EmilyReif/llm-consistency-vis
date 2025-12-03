@@ -16,6 +16,7 @@ interface Props {
     promptGroups: { promptId: string, generations: string[] }[];
     similarityThreshold: number;
     minOpacityThreshold: number;
+    spread: number;
 }
 
 interface State {
@@ -52,6 +53,9 @@ export interface NodeDatum {
 
     isEnd?: boolean;
     isRoot?: boolean;
+
+    fontSize: number;
+    textLength: number;
 
     // Used by force simulation.
     x: number;
@@ -133,11 +137,14 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
         // Create opacity scale where count maps to opacity from 0 to 1
         this.opacityScale = d3.scalePow()
-            .exponent(.1)
-            .domain([(this.props.minOpacityThreshold - .5) * totalGenerations, totalGenerations])
+            .exponent(.5)
+            .domain([(this.props.minOpacityThreshold - .3) * totalGenerations/2, totalGenerations/2])
             .range([0, 1])
             .clamp(true)
             .nice();
+
+        this.nodesData.forEach((node) => node.fontSize = this.fontSize(node));
+        this.nodesData.forEach((node) => node.textLength = this.textLength(node));
     }
 
     render() {
@@ -162,6 +169,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         if (prevProps.promptGroups === this.props.promptGroups &&
             prevProps.similarityThreshold === this.props.similarityThreshold &&
             prevProps.minOpacityThreshold === this.props.minOpacityThreshold &&
+            prevProps.spread === this.props.spread &&
             (!utils.arraysAreEqual(prevState.popupNodes, this.state.popupNodes) ||
                 prevState.isPopupVisible !== this.state.isPopupVisible)) {
             // Only popup state changed, don't rebuild graph
@@ -170,6 +178,10 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         if (prevProps.minOpacityThreshold !== this.props.minOpacityThreshold) {
             this.createFontScale();
             this.update();
+            return;
+        }
+        if (prevProps.spread !== this.props.spread) {
+            this.updateSimulation();
             return;
         }
 
@@ -277,14 +289,13 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             const getY = (node: NodeDatum) => {
                 const lineHeight = 0.75;
                 const percentage = [...node.origSentIndices].indexOf(d.sentIdx) / node.origSentIndices.length;
-                const offsetY = (percentage - lineHeight) * this.fontSize(node);
+                const offsetY = (percentage - lineHeight) * node.fontSize;
                 return node.y + offsetY;
             };
 
             const getXLeftRightCenter = (node: NodeDatum) => {
-                const textLength = this.textLength(node);
                 const leftX = node.x;
-                const rightX = leftX + textLength;
+                const rightX = leftX + node.textLength;
                 const centerX = (leftX + rightX) / 2;
                 return [leftX, rightX, centerX];
             };
@@ -336,7 +347,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
         this.nodes.append("text")
             .call(this.wrapText)
-            .attr("font-size", (d: any) => this.fontSize(d));
+            .attr("font-size", (d: any) => d.fontSize);
 
         if (SHOW_DEBUG_ELLIPSES) {
             this.nodes.append("ellipse")
@@ -506,7 +517,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     /** Add a bounding box rectangle to each node (for collision calculation) */
     private addBoundingBoxData(nodes: NodeDatum[]) {
         nodes.forEach((node) => {
-            node.rx = this.textLength(node) / 2;
+            node.rx = node.textLength / 2;
             node.ry = this.textHeight(node) / 2;
         });
     }
@@ -522,7 +533,16 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         if (!parents.length) {
             return d.x;
         }
-        return d3.mean(parents.map(p => p.x + this.textLength(p) + padBetweenWords)) || 0;
+        // console.log('spread:', this.props.spread);
+        const parentLefts = parents.map(p => p.x + p.textLength + padBetweenWords);
+        const min = d3.min(parentLefts) || 0;
+        const max = d3.max(parentLefts) || 0;
+        const mean = d3.mean(parentLefts) || 0;
+        const scale = d3.scaleLinear()
+            .domain([0, 0.5, 1])
+            .range([min, mean, max]); 
+
+        return scale(this.props.spread);
     }
 
     private getExpectedY(d: NodeDatum, height: number) {
@@ -546,13 +566,13 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
     private textLength(d: any) {
         const chunkLengths = chunkText(d.word).map(chunk => {
-            return chunk.length * this.fontSize(d) * 0.6; // Adjusted
+            return chunk.length * d.fontSize * 0.6; // Adjusted
         });
         return d3.max(chunkLengths) || 0;
     }
 
     private textHeight(d: any) {
-        return chunkText(d.word).length * this.fontSize(d);
+        return chunkText(d.word).length * d.fontSize;
     }
 
 

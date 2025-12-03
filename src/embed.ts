@@ -65,7 +65,6 @@ export async function getEmbeddings(input: string): Promise<number[]> {
     }
     
     let embedding = sum.map(x => x / tokenEmbeddings.length);
-    // console.log('embedding', embedding.length);
     embedding = embedding.slice(0, REDUCED_EMBEDDING_DIM);
     
     // Cache the result

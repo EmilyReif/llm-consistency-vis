@@ -17,6 +17,7 @@ interface SingleExampleAppState {
     numGenerations: number;
     similarityThreshold: number;
     minOpacityThreshold: number;
+    spread: number;
     shuffle: boolean;
     tokenizeMode: TokenizeMode;
 }
@@ -28,6 +29,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         numGenerations: state.numGenerations,
         similarityThreshold: state.similarityThreshold,
         minOpacityThreshold: state.minOpacityThreshold,
+        spread: state.spread,
         shuffle: state.shuffle,
         tokenizeMode: state.tokenizeMode,
     };
@@ -74,7 +76,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                     <div className="controls-row">
                     <label><b>Global Controls</b></label>
                             <div className="slider-container">
-                                <label>Num Gen: {this.state.numGenerations}</label>
+                                <label>Number of Generations: {this.state.numGenerations}</label>
                                 <div className="tooltip">
                                     Number of Generations controls how many different responses the LLM will generate for the same prompt. More generations help visualize the diversity of possible responses.
                                 </div>
@@ -89,9 +91,9 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                 />
                             </div>
                             <div className="slider-container">
-                                <label>Similarity Threshold: {this.state.similarityThreshold.toFixed(1)}</label>
+                                <label>Merging coefficient</label>
                                 <div className="tooltip">
-                                    Similarity Threshold controls how similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
+                                    Controls how similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
                                 </div>
                                 <input
                                     type="range"
@@ -104,9 +106,9 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                 />
                             </div>
                             <div className="slider-container">
-                                <label>Hide Longtail Outputs</label>
+                                <label>Hide Rare Outputs</label>
                                 <div className="tooltip">
-                                    Controls the minimum opacity for nodes and edges. Higher values hide less frequent outputs (longtail outputs).
+                                Adjust how strongly rare outputs are faded. Higher values hide nodes and edges that appear infrequently across outputs.
                                 </div>
                                 <input
                                     type="range"
@@ -119,6 +121,21 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                 />
                             </div>
                             <div className="slider-container">
+                                <label>Graph spread</label>
+                                <div className="tooltip">
+                                    Controls how spread out the graph is. Lower values make the graph more compact, higher values make it more spread out.
+                                </div>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.1"
+                                    value={this.state.spread}
+                                    onChange={(e) => this.handleSliderChange(e, 'spread')}
+                                    onMouseUp={() => state.setSpread(this.state.spread)}
+                                />
+                            </div>
+                            {/* <div className="slider-container">
                                 <label>
                                     <input
                                         type="checkbox"
@@ -131,7 +148,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                 <div className="tooltip">
                                     When enabled, shuffles the origSentIndices to randomize the visual ordering of sentence connections in the graph.
                                 </div>
-                            </div>
+                            </div> */}
                             <div className="dropdown-container">
                                 <label>Tokenize Mode:</label>
                                 <select

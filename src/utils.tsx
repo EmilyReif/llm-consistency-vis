@@ -224,6 +224,8 @@ function blankNode(word: string): NodeDatum {
         vy: 0,
         rx: 0,
         ry: 0,
+        fontSize: 0,
+        textLength: 0,
         count: 0,
         word,
         origWordIndices: [],

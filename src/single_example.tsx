@@ -112,6 +112,7 @@ class SingleExample extends React.Component {
             promptGroups={this.state.promptGroups}
             similarityThreshold={state.similarityThreshold}
             minOpacityThreshold={state.minOpacityThreshold}
+            spread={state.spread}
         ></SingleExampleWordGraph>;
     }
 
