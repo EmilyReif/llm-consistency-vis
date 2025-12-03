@@ -496,7 +496,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
 
     private getExpectedX(d: NodeDatum, nodesData: NodeDatum[]) {
-        const padBetweenWords = 50;
+        const padBetweenWords = 30;
         // const padBetweenWords = this.fontSize(d) * 5;
         const parents = d.parents.filter(p => nodesData.includes(p));
         if (d.isRoot && !parents.length) {
@@ -506,22 +506,6 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             return d.x;
         }
         return d3.mean(parents.map(p => p.x + this.textLength(p) + padBetweenWords)) || 0;
-        // // Count occurrences of each parent
-        // const parentCounts = new Map<NodeDatum, number>();
-        // parents.forEach((p: NodeDatum) => {
-        //     parentCounts.set(p, (parentCounts.get(p) || 0) + 1);
-        // });
-
-        // // Find the most frequent parent
-        // let mostFrequentParent = parents[0];
-        // let maxCount = 0;
-        // parentCounts.forEach((count, parent) => {
-        //     if (count > maxCount) {
-        //         maxCount = count;
-        //         mostFrequentParent = parent;
-        //     }
-        // });
-        // return mostFrequentParent.x + this.textLength(mostFrequentParent) + padBetweenWords;
     }
 
     private getExpectedY(d: NodeDatum, height: number) {
