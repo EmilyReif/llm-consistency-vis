@@ -1,17 +1,15 @@
 {
   "files": {
     "main.css": "/llm-consistency-vis/static/css/main.6fb6ddd0.css",
-    "main.js": "/llm-consistency-vis/static/js/main.141b3dab.js",
-    "static/js/141.91a2e190.chunk.js": "/llm-consistency-vis/static/js/141.91a2e190.chunk.js",
+    "main.js": "/llm-consistency-vis/static/js/main.b28f8a9a.js",
     "static/media/ort-wasm-simd-threaded.jsep.wasm": "/llm-consistency-vis/static/media/ort-wasm-simd-threaded.jsep.666d0398a1e13e9c0c1d.wasm",
     "static/media/ort.bundle.min.mjs": "/llm-consistency-vis/static/media/ort.bundle.min.e9b190b6e2b022d973ff.mjs",
     "index.html": "/llm-consistency-vis/index.html",
     "main.6fb6ddd0.css.map": "/llm-consistency-vis/static/css/main.6fb6ddd0.css.map",
-    "main.141b3dab.js.map": "/llm-consistency-vis/static/js/main.141b3dab.js.map",
-    "141.91a2e190.chunk.js.map": "/llm-consistency-vis/static/js/141.91a2e190.chunk.js.map"
+    "main.b28f8a9a.js.map": "/llm-consistency-vis/static/js/main.b28f8a9a.js.map"
   },
   "entrypoints": [
     "static/css/main.6fb6ddd0.css",
-    "static/js/main.141b3dab.js"
+    "static/js/main.b28f8a9a.js"
   ]
 }
