@@ -1,5 +1,5 @@
 // embed.ts
-import { pipeline, Tensor } from '@huggingface/transformers';
+import { pipeline, Tensor } from '@xenova/transformers';
 import { stripWhitespaceAndPunctuation } from './utils';
 
 let extractorCache: any = null;
@@ -45,6 +45,7 @@ export async function getEmbeddings(input: string): Promise<number[]> {
         extractorCache = await pipeline('feature-extraction', modelId);
     }
 
+
     // Get embeddings from extractor
     const outputs = await extractorCache([input], {
         normalize: true,
@@ -69,23 +70,4 @@ export async function getEmbeddings(input: string): Promise<number[]> {
     // Cache the result
     setCachedEmbedding(input, embedding);
     return embedding;
-}
-
-// Get [layer][token][embedding_dim] from the output
-export function getEmbeddingsForLayer(
-    allLayers: Tensor[],
-    layerIndex: number,
-): number[][] {
-    const layerTensor = allLayers[layerIndex];
-    const [numTokens, hiddenSize] = layerTensor.dims;
-    const embeddingsForLayer = []
-    for (let tokenIndex = 0; tokenIndex < numTokens; tokenIndex++) {
-        const start = (tokenIndex * hiddenSize);
-        const end = start + hiddenSize;
-        const embeddingForToken = Array.from(layerTensor.data.slice(start, end)) as number[];
-        embeddingsForLayer.push(embeddingForToken)
-    }
-
-
-    return embeddingsForLayer;
 }
