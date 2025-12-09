@@ -378,33 +378,34 @@ class NodeExamplesPopup extends React.Component<Props, State> {
         const { isVisible, onClose, nodes, onRemoveNode } = this.props;
         const { examples, matchingCount, totalGenerations, isMaximized } = this.state;
         const percentage = totalGenerations > 0 ? Math.round((matchingCount / totalGenerations) * 100) : 0;
-const nodesHTML  = <div className="selected-nodes">
-{nodes.map((node, idx) => {
-    const color = this.getNodeDisplayColor(node, idx);
-    const backgroundColor = this.withAlpha(color, 0.15);
-    return (
-        <span
-            key={`${node.word}-${idx}`}
-            className="node-chip"
-            style={{
-                borderColor: color,
-                color,
-                backgroundColor
-            }}
-        >
-            <span className="node-chip-label">{utils.unformat(node.word)}</span>
-            <button
-                type="button"
-                className="node-chip-remove"
-                onClick={() => onRemoveNode(node)}
-                aria-label={`Remove ${node.word}`}
-            >
-                ×
-            </button>
-        </span>
-    );
-})}
-</div>;
+        const nodesHTML = <div className="selected-nodes">
+            {nodes.map((node, idx) => {
+                const color = this.getNodeDisplayColor(node, idx);
+                const backgroundColor = this.withAlpha(color, 0.15);
+                return (<>
+                    <span
+                        key={`${node.word}-${idx}`}
+                        className="node-chip"
+                        style={{
+                            borderColor: color,
+                            color,
+                            backgroundColor
+                        }}
+                    >
+                        <span className="node-chip-label">{utils.unformat(node.word)}</span>
+                        <button
+                            type="button"
+                            className="node-chip-remove"
+                            onClick={() => onRemoveNode(node)}
+                            aria-label={`Remove ${node.word}`}
+                        >
+                            ×
+                        </button>
+                    </span>
+                    {idx < nodes.length - 1 && <span>or </span>}
+                </>);
+            })}
+        </div>;
         return (
             <div
                 ref={this.popupRef}
@@ -416,7 +417,7 @@ const nodesHTML  = <div className="selected-nodes">
                         <div className="popup-title-main">
                             Examples containing {nodesHTML}: {matchingCount}/{totalGenerations} ({percentage}%)
                         </div>
-                        
+
                     </div>
                     <div className="popup-actions">
                         <button

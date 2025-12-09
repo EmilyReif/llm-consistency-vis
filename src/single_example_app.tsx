@@ -58,7 +58,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         state.updatePromptTempAt(0, this.state.temperature);
         state.setNumGenerations(this.state.numGenerations);
         state.updatePromptTextAt(0, finalPrompt);
-        
+
     };
 
 
@@ -77,84 +77,69 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
             <div className='single-input-holder'>
                 <div className='controls'>
                     <div className="controls-row">
-                    <label><b>Global Controls</b></label>
-                            <div className="slider-container">
-                                <label>Samples: {this.state.numGenerations}</label>
-                                <div className="tooltip">
-                                    Number of Generations controls how many different responses the LLM will generate for the same prompt. More generations help visualize the diversity of possible responses.
-                                </div>
-                                <Box sx={{ width: SLIDER_WIDTH }}>
-                                    <Slider
-                                        size="small"
-                                        min={1}
-                                        max={50}
-                                        step={1}
-                                        value={this.state.numGenerations}
-                                        onChange={(e, value) => this.handleSliderChange(value as number, 'numGenerations')}
-                                        onChangeCommitted={() => state.setNumGenerations(this.state.numGenerations)}
-                                        valueLabelDisplay="auto"
-                                        aria-label="Number of Generations"
-                                    />
-                                </Box>
+                        <label><b>Global Controls</b></label>
+                        <div className="slider-container">
+                            <label>Samples: {this.state.numGenerations}</label>
+                            <div className="tooltip">
+                                Number of Generations controls how many different responses the LLM will generate for the same prompt. More generations help visualize the diversity of possible responses.
                             </div>
-                            <div className="slider-container">
-                                <label>Merging coefficient</label>
-                                <div className="tooltip">
-                                    Controls how similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
-                                </div>
-                                <Box sx={{ width: SLIDER_WIDTH }}>
-                                    <Slider
-                                        size="small"
-                                        min={0}
-                                        max={1}
-                                        step={0.1}
-                                        value={this.state.similarityThreshold}
-                                        onChange={(e, value) => this.handleSliderChange(value as number, 'similarityThreshold')}
-                                        onChangeCommitted={() => state.setSimilarityThreshold(this.state.similarityThreshold)}
-                                        valueLabelDisplay="auto"
-                                        aria-label="Merging coefficient"
-                                    />
-                                </Box>
+                            <Box sx={{ width: SLIDER_WIDTH }}>
+                                <Slider
+                                    size="small"
+                                    min={1}
+                                    max={50}
+                                    step={1}
+                                    value={this.state.numGenerations}
+                                    onChange={(e, value) => this.handleSliderChange(value as number, 'numGenerations')}
+                                    onChangeCommitted={() => state.setNumGenerations(this.state.numGenerations)}
+                                    valueLabelDisplay="auto"
+                                    aria-label="Number of Generations"
+                                />
+                            </Box>
+                        </div>
+
+                        <div className="slider-container">
+                            <label>Graph spread</label>
+                            <div className="tooltip">
+                                Controls how spread out the graph is. Higher values means every output is rendered more like standard LTR text, lower values means the graph is more compact.
                             </div>
-                            <div className="slider-container">
-                                <label>Hide Rare Outputs</label>
-                                <div className="tooltip">
+                            <Box sx={{ width: SLIDER_WIDTH }}>
+                                <Slider
+                                    size="small"
+                                    min={0}
+                                    max={1}
+                                    step={0.1}
+                                    value={this.state.spread}
+                                    onChange={(e, value) => this.handleSliderChange(value as number, 'spread')}
+                                    onChangeCommitted={() => state.setSpread(this.state.spread)}
+                                    valueLabelDisplay="off"
+                                    aria-label="Graph spread"
+                                />
+                            </Box>
+                        </div>
+
+
+                        <div className="slider-container">
+                            <label>Hide Rare Outputs</label>
+                            <div className="tooltip">
                                 Adjust how strongly rare outputs are faded. Higher values hide nodes and edges that appear infrequently across outputs.
-                                </div>
-                                <Box sx={{ width: SLIDER_WIDTH }}>
-                                    <Slider
-                                        size="small"
-                                        min={0}
-                                        max={1}
-                                        step={0.1}
-                                        value={this.state.minOpacityThreshold}
-                                        onChange={(e, value) => this.handleSliderChange(value as number, 'minOpacityThreshold')}
-                                        onChangeCommitted={() => state.setMinOpacityThreshold(this.state.minOpacityThreshold)}
-                                        valueLabelDisplay="off"
-                                        aria-label="Hide Rare Outputs"
-                                    />
-                                </Box>
                             </div>
-                            <div className="slider-container">
-                                <label>Graph spread</label>
-                                <div className="tooltip">
-                                    Controls how spread out the graph is. Higher values means every output is rendered more like standard LTR text, lower values means the graph is more compact.
-                                </div>
-                                <Box sx={{ width: SLIDER_WIDTH }}>
-                                    <Slider
-                                        size="small"
-                                        min={0}
-                                        max={1}
-                                        step={0.1}
-                                        value={this.state.spread}
-                                        onChange={(e, value) => this.handleSliderChange(value as number, 'spread')}
-                                        onChangeCommitted={() => state.setSpread(this.state.spread)}
-                                        valueLabelDisplay="off"
-                                        aria-label="Graph spread"
-                                    />
-                                </Box>
-                            </div>
-                            {/* <div className="slider-container">
+                            <Box sx={{ width: SLIDER_WIDTH }}>
+                                <Slider
+                                    size="small"
+                                    min={0}
+                                    max={1}
+                                    step={0.1}
+                                    value={this.state.minOpacityThreshold}
+                                    onChange={(e, value) => this.handleSliderChange(value as number, 'minOpacityThreshold')}
+                                    onChangeCommitted={() => state.setMinOpacityThreshold(this.state.minOpacityThreshold)}
+                                    valueLabelDisplay="off"
+                                    aria-label="Hide Rare Outputs"
+                                />
+                            </Box>
+                        </div>
+                        
+                        {/* <div className="slider-container">
                                 <label>
                                     <input
                                         type="checkbox"
@@ -168,20 +153,41 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                     When enabled, shuffles the origSentIndices to randomize the visual ordering of sentence connections in the graph.
                                 </div>
                             </div> */}
-                            <div className="dropdown-container">
-                                <label>Tokenize Mode:</label>
-                                <select
-                                    value={this.state.tokenizeMode}
-                                    onChange={(e) => {
-                                        this.handleDropdownChange(e, 'tokenizeMode');
-                                        state.setTokenizeMode(e.target.value as TokenizeMode);
-                                    }}
-                                >
-                                    <option value="space">Space</option>
-                                    <option value="comma">Comma</option>
-                                    <option value="sentence">Sentence</option>
-                                </select>
+
+                        <div className="slider-container">
+                            <label>Merging coefficient</label>
+                            <div className="tooltip">
+                                Controls how similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
                             </div>
+                            <Box sx={{ width: SLIDER_WIDTH }}>
+                                <Slider
+                                    size="small"
+                                    min={0}
+                                    max={1}
+                                    step={0.1}
+                                    value={this.state.similarityThreshold}
+                                    onChange={(e, value) => this.handleSliderChange(value as number, 'similarityThreshold')}
+                                    onChangeCommitted={() => state.setSimilarityThreshold(this.state.similarityThreshold)}
+                                    valueLabelDisplay="auto"
+                                    aria-label="Merging coefficient"
+                                />
+                            </Box>
+                        </div>
+
+                        <div className="dropdown-container">
+                            <label>Tokenize Mode:</label>
+                            <select
+                                value={this.state.tokenizeMode}
+                                onChange={(e) => {
+                                    this.handleDropdownChange(e, 'tokenizeMode');
+                                    state.setTokenizeMode(e.target.value as TokenizeMode);
+                                }}
+                            >
+                                <option value="space">Space</option>
+                                <option value="comma">Comma</option>
+                                <option value="sentence">Sentence</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 {state.prompts.map((p, idx) => (
@@ -199,7 +205,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         totalPrompts={state.prompts.length}
                     />
                 ))}
-                
+
                 <div className="add-prompt-container" onClick={() => state.addPrompt('')}>
                     <div className="controls-row" style={{ width: 'fit-content' }}>
                         <div className='input-header'>

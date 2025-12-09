@@ -17,6 +17,7 @@ interface Props {
     similarityThreshold: number;
     minOpacityThreshold: number;
     spread: number;
+    tokenizeMode: utils.TokenizeMode;
 }
 
 interface State {
@@ -138,7 +139,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Create opacity scale where count maps to opacity from 0 to 1
         this.opacityScale = d3.scalePow()
             .exponent(.5)
-            .domain([(this.props.minOpacityThreshold - .3) * totalGenerations/2, totalGenerations/2])
+            .domain([(this.props.minOpacityThreshold - .3) * totalGenerations / 2, totalGenerations / 2])
             .range([0, 1])
             .clamp(true)
             .nice();
@@ -164,17 +165,14 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         );
     }
 
-    async componentDidUpdate(prevProps: Props, prevState: State) {
-        // Only rebuild graph if props changed, not if popup state changed
-        if (prevProps.promptGroups === this.props.promptGroups &&
-            prevProps.similarityThreshold === this.props.similarityThreshold &&
-            prevProps.minOpacityThreshold === this.props.minOpacityThreshold &&
-            prevProps.spread === this.props.spread &&
-            (!utils.arraysAreEqual(prevState.popupNodes, this.state.popupNodes) ||
-                prevState.isPopupVisible !== this.state.isPopupVisible)) {
-            // Only popup state changed, don't rebuild graph
-            return;
+
+    async componentDidUpdate(prevProps: Props) {
+        const tokenizeModeChanged = prevProps.tokenizeMode !== this.props.tokenizeMode;
+        const similarityThresholdChanged = prevProps.similarityThreshold !== this.props.similarityThreshold;
+        if (similarityThresholdChanged || tokenizeModeChanged || !utils.objectsAreEqual(prevProps.promptGroups, this.props.promptGroups)) {
+            this.rebuildGraph();
         }
+
         if (prevProps.minOpacityThreshold !== this.props.minOpacityThreshold) {
             this.createFontScale();
             this.update();
@@ -184,8 +182,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             this.updateSimulation();
             return;
         }
+        this.update();
 
-        this.rebuildGraph();
     }
 
     private toggleLoading(isLoading = false) {
@@ -207,7 +205,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
     private async rebuildGraphContent() {
         // Generate graph data from all text
-        const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, state.tokenizeMode);
+        const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, this.props.tokenizeMode);
 
         // Create color scale that matches the state's color assignment
         // Use the same logic as state.getPromptColor() for consistency
@@ -233,11 +231,13 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .on('click', (event: any) => {
                 // Only clear selection if the click was directly on the SVG background
                 if (event.target.tagName === 'svg') {
-                    this.selectedNodes.clear();
-                    this.hoveredNode = null;
-                    this.hidePopup();
-                    this.updateSimulation();
-                    this.update();
+                    if (this.nodeSelected() || this.hoveredNode) {
+                        this.selectedNodes.clear();
+                        this.hoveredNode = null;
+                        this.hidePopup();
+                        this.updateSimulation();
+                        this.update();
+                    }
                 }
             });
 
@@ -533,14 +533,13 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         if (!parents.length) {
             return d.x;
         }
-        // console.log('spread:', this.props.spread);
         const parentLefts = parents.map(p => p.x + p.textLength + padBetweenWords);
         const min = d3.min(parentLefts) || 0;
         const max = d3.max(parentLefts) || 0;
         const mean = d3.mean(parentLefts) || 0;
         const scale = d3.scaleLinear()
             .domain([0, 0.5, 1])
-            .range([min, mean, max]); 
+            .range([min, mean, max]);
 
         return scale(this.props.spread);
     }

@@ -9,7 +9,7 @@ import { reaction } from 'mobx';
 
 
 class SingleExample extends React.Component {
-    state = {visType: 'graph', promptGroups: [] as { promptId: string, generations: string[] }[] };
+    state = {visType: 'graph' as 'graph' | 'raw outputs' | 'first output' | 'word tree' | 'highlights', promptGroups: [] as { promptId: string, generations: string[] }[] };
     disposer?: () => void;
 
     private getPromptGroupKey(prompt: any, originalIndex: number): string {
@@ -113,6 +113,7 @@ class SingleExample extends React.Component {
             similarityThreshold={state.similarityThreshold}
             minOpacityThreshold={state.minOpacityThreshold}
             spread={state.spread}
+            tokenizeMode={state.tokenizeMode}
         ></SingleExampleWordGraph>;
     }
 
