@@ -382,9 +382,8 @@ class NodeExamplesPopup extends React.Component<Props, State> {
             {nodes.map((node, idx) => {
                 const color = this.getNodeDisplayColor(node, idx);
                 const backgroundColor = this.withAlpha(color, 0.15);
-                return (<>
+                return (<React.Fragment key={`${node.word}-${idx}`}>
                     <span
-                        key={`${node.word}-${idx}`}
                         className="node-chip"
                         style={{
                             borderColor: color,
@@ -403,7 +402,7 @@ class NodeExamplesPopup extends React.Component<Props, State> {
                         </button>
                     </span>
                     {idx < nodes.length - 1 && <span>or </span>}
-                </>);
+                </React.Fragment>);
             })}
         </div>;
         return (

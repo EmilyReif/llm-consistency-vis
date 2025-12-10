@@ -6,7 +6,7 @@ import { createLLM } from "./llm/factory";
 import { getDefaultModelFamily, getDefaultModel } from "./llm/config";
 import { LLM } from "./llm/base";
 import { OpenAILLM } from "./llm/openai";
-import { TokenizeMode } from "./utils";
+import { TokenizeMode, parseUrlParam } from "./utils";
 
 
 const DEFAULT_NUM_GENERATIONS = 30;
@@ -38,6 +38,7 @@ class State {
     spread: number = DEFAULT_SPREAD;
     shuffle: boolean = false;
     tokenizeMode: TokenizeMode = "space";
+    isUserStudy: boolean = false;
     generationsCache: { [example: string]: { [temp: number]: { [modelFamily: string]: { [model: string]: string[] } } } } = {};
     // Track which prompts are disabled
     disabledPrompts: number[] = [];
@@ -57,6 +58,9 @@ class State {
 
     constructor() {
         makeAutoObservable(this);
+
+        // Parse URL parameters
+        this.isUserStudy = parseUrlParam('is_user_study') === 'true';
 
         // Initialize the cache with the examples using the default temperature and model
         const temp = DEFAULT_TEMP;

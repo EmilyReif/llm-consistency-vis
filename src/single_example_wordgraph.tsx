@@ -99,6 +99,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     }
 
     componentDidMount() {
+        this.rebuildGraph();
         window.addEventListener('resize', this.handleResize);
         window.addEventListener('keydown', this.handleKeyDown);
     }
@@ -194,7 +195,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private async rebuildGraph() {
         this.toggleLoading(true);
         setTimeout(async () => {
-            // REbuild the graph.
+            // Rebuild the graph.
             await this.rebuildGraphContent();
 
             // Create the simulation.
@@ -215,7 +216,6 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             return color;
         };
 
-        console.log('nodesData', nodesData.length, 'linksData', linksData.length);
         this.nodesData = nodesData;
         this.linksData = linksData;
         this.createFontScale(); // Create font scale based on total generations

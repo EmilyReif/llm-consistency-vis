@@ -81,7 +81,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         <div className="slider-container">
                             <label>Samples: {this.state.numGenerations}</label>
                             <div className="tooltip">
-                                Number of Generations controls how many different responses the LLM will generate for the same prompt. More generations help visualize the diversity of possible responses.
+                                How many different responses the LLM will generate for each prompt. More generations help visualize the diversity of possible responses.
                             </div>
                             <Box sx={{ width: SLIDER_WIDTH }}>
                                 <Slider
@@ -101,7 +101,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         <div className="slider-container">
                             <label>Graph spread</label>
                             <div className="tooltip">
-                                Controls how spread out the graph is. Higher values means every output is rendered more like standard LTR text, lower values means the graph is more compact.
+                                How spread out the graph is. Higher values means every output is rendered more like standard LTR text, lower values means the graph is more compact.
                             </div>
                             <Box sx={{ width: SLIDER_WIDTH }}>
                                 <Slider
@@ -122,7 +122,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         <div className="slider-container">
                             <label>Hide Rare Outputs</label>
                             <div className="tooltip">
-                                Adjust how strongly rare outputs are faded. Higher values hide nodes and edges that appear infrequently across outputs.
+                                How strongly rare outputs are faded. Higher values hide nodes and edges that appear infrequently across outputs.
                             </div>
                             <Box sx={{ width: SLIDER_WIDTH }}>
                                 <Slider
@@ -138,7 +138,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                 />
                             </Box>
                         </div>
-                        
+
                         {/* <div className="slider-container">
                                 <label>
                                     <input
@@ -155,9 +155,9 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                             </div> */}
 
                         <div className="slider-container">
-                            <label>Merging coefficient</label>
+                            <label>Token merging threshold</label>
                             <div className="tooltip">
-                                Controls how similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
+                                How similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
                             </div>
                             <Box sx={{ width: SLIDER_WIDTH }}>
                                 <Slider

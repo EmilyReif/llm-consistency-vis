@@ -115,8 +115,6 @@ export async function tokenize(
             } catch (error) {
 
                 console.warn(`Failed to get embedding for "${word}":`, error);
-                console.log('prevWord', prevWord);
-                console.log('nextWord', nextWord);
             }
         }
         embsDict[tokenKey] = embEntry as EmbEntry;
@@ -351,7 +349,7 @@ export async function createGraphDataFromPromptGroups(
                 targetNode.origSentIndices = d3.shuffle(targetNode.origSentIndices);
             }
             if (!nodesDict[target]) {
-                console.log('target not found', target);
+                console.error('target not found', target);
             }
             return [...entries].map(({ sentIdx, promptId }) => {
                 sourceNode?.children?.push(targetNode);
