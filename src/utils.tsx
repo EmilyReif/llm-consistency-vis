@@ -219,6 +219,19 @@ function similarity(a: string, b: string): number {
 }
 
 
+/**
+ * Derives origSentIndices from origSentenceInfo.
+ * This extracts unique sentence indices for efficient lookups.
+ */
+function deriveOrigSentIndices(node: NodeDatum): void {
+    if (node.origSentenceInfo && node.origSentenceInfo.length > 0) {
+        // Extract unique sentence indices from origSentenceInfo
+        node.origSentIndices = [...new Set(node.origSentenceInfo.map(info => info.sentIdx))];
+    } else {
+        node.origSentIndices = [];
+    }
+}
+
 function blankNode(word: string): NodeDatum {
    return  {
         x: 0,
@@ -231,7 +244,6 @@ function blankNode(word: string): NodeDatum {
         textLength: 0,
         count: 0,
         word,
-        origWordIndices: [],
         origSentIndices: [],
         // @ts-ignore augment at runtime for multi-prompt support
         origPromptIds: [],
@@ -244,8 +256,6 @@ function blankNode(word: string): NodeDatum {
 function updateNode (node: NodeDatum, wordIdx: number, sentIdx: number, words: string[], promptId: string){
     node.count += 1;
     const origWord = words[wordIdx];
-    node.origWordIndices.push(wordIdx);
-    node.origSentIndices.push(sentIdx);
     // @ts-ignore optional field present when type extended
     node.origPromptIds && node.origPromptIds.push(promptId);
     
@@ -292,7 +302,7 @@ export async function createGraphDataFromPromptGroups(
     const nodesDict: { [key: string]: NodeDatum } = {};
     const reachabilityChecker = new ReachabilityChecker();
     
-    let sentIdx = 0;
+    let sentIdx = -1;
     for (const { promptId, generations } of groups) {
         for (const generation of generations) {
             sentIdx++;
@@ -338,6 +348,11 @@ export async function createGraphDataFromPromptGroups(
     });
 
     merge(nodesDict as any, linksDict as any);
+
+    // Derive origSentIndices from origSentenceInfo for all nodes after parsing/merging
+    Object.values(nodesDict).forEach(node => {
+        deriveOrigSentIndices(node);
+    });
 
     const nodesData = Object.values(nodesDict);
     const linksData: LinkDatum[] = Object.entries(linksDict).flatMap(([source, targets]) => {
@@ -423,6 +438,8 @@ function merge(nodesDict: { [key: string]: NodeDatum }, linksDict: { [key: strin
                     });
 
                     nodesDict[word].origSentenceInfo = mergedInfo;
+                    // Derive origSentIndices from the merged origSentenceInfo
+                    deriveOrigSentIndices(nodesDict[word]);
                 }
 
                 // Delete the old nodes.

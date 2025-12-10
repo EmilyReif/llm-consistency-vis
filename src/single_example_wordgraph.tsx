@@ -41,11 +41,13 @@ export interface NodeDatum {
 
     // Number of times the word appears overall.
     count: number;
-    origWordIndices: number[];
+    // Derived from origSentenceInfo: unique sentence indices where this word appears
+    // (maintained separately for efficient lookups)
     origSentIndices: number[];
     // Optional: which prompts contributed to this node
     origPromptIds?: string[];
     // Detailed info about each occurrence in original sentences
+    // origSentIndices is derived from this data after parsing
     origSentenceInfo?: OrigSentenceInfo[];
 
     // Parent and child nodes.
@@ -447,11 +449,11 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         const selectedNodes = this.nodeSelected() ? this.nodesData.filter(d => this.nodeIsInSelectedSents(d)) : this.nodesData;
         this.simulation
             .nodes(selectedNodes)
-            // .force("collide", d3.forceCollide().radius((d: any) => d.rx + d.ry))
             .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
             .force("link", d3.forceLink(selectedLinks)
                 .id((d: any) => d.word)
                 .strength(.4))
+            // .force('y', () => selectedNodes.forEach((d: NodeDatum) => d.origSentIndices.includes(0) && (d.y = this.height /2)))
             .force("y", d3.forceY(this.height / 2).strength((d: any) => d.count / 100)) // Center nodes vertically
             .force("x", () => selectedNodes.forEach((d: NodeDatum) => d.x = this.getExpectedX(d, selectedNodes)))
         this.simulation.on("tick", () => this.update());
