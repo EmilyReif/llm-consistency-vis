@@ -64,62 +64,69 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                 }}
             >
                 <div className="controls-row">
-                    <div className="expand-caret" onClick={this.toggleExpanded}>
-                        <span className={`material-icons ${expanded ? 'expanded' : ''}`}>
-                            {expanded ? 'expand_less' : 'expand_more'}
-                        </span>
-                    </div>
+                    {!state.isUserStudy && (
+                        <div className="expand-caret" onClick={this.toggleExpanded}>
+                            <span className={`material-icons ${expanded ? 'expanded' : ''}`}>
+                                {expanded ? 'expand_less' : 'expand_more'}
+                            </span>
+                        </div>
+                    )}
                     <div className='input-header'>Prompt {promptIndex + 1}</div>
                     <EditableDropdown
                         key={'prompt-' + promptIndex + '-' + (prompt.text || '')}
                         value={prompt.text || ''}
                         options={Object.keys(examples)}
                         onSubmit={(val: string) => onUpdateText(promptIndex, val)}
+                        readOnly={state.isUserStudy}
                     />
-                        <div className="slider-container">
-                            <label>Temperature: {prompt.temp}</label>
-                            <Box sx={{ width: 150 }}>
-                                <Slider
-                                    size="small"
-                                    min={0}
-                                    max={1}
-                                    step={0.1}
-                                    value={prompt.temp}
-                                    onChange={(e, value) => onUpdateTemp(promptIndex, value as number)}
-                                    valueLabelDisplay="auto"
-                                    aria-label="Temperature"
-                                    disabled={isDisabled}
-                                />
-                            </Box>
-                        </div>
-                        <div className="dropdown-container">
-                            <label>Model Family:</label>
-                            <select
-                                value={prompt.modelFamily}
-                                onChange={(e) => onUpdateModelFamily(promptIndex, e.target.value)}
-                                disabled={isDisabled}
-                            >
-                                {PROVIDERS.map(provider => (
-                                    <option key={provider.id} value={provider.id}>
-                                        {provider.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="dropdown-container">
-                            <label>Model:</label>
-                            <select
-                                value={prompt.model}
-                                onChange={(e) => onUpdateModel(promptIndex, e.target.value)}
-                                disabled={isDisabled}
-                            >
-                                {getModelsForFamily(prompt.modelFamily).map(model => (
-                                    <option key={model.id} value={model.id}>
-                                        {model.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {!state.isUserStudy && (
+                            <>
+                                <div className="slider-container">
+                                    <label>Temperature: {prompt.temp}</label>
+                                    <Box sx={{ width: 150 }}>
+                                        <Slider
+                                            size="small"
+                                            min={0}
+                                            max={1}
+                                            step={0.1}
+                                            value={prompt.temp}
+                                            onChange={(e, value) => onUpdateTemp(promptIndex, value as number)}
+                                            valueLabelDisplay="auto"
+                                            aria-label="Temperature"
+                                            disabled={isDisabled}
+                                        />
+                                    </Box>
+                                </div>
+                                <div className="dropdown-container">
+                                    <label>Model Family:</label>
+                                    <select
+                                        value={prompt.modelFamily}
+                                        onChange={(e) => onUpdateModelFamily(promptIndex, e.target.value)}
+                                        disabled={isDisabled}
+                                    >
+                                        {PROVIDERS.map(provider => (
+                                            <option key={provider.id} value={provider.id}>
+                                                {provider.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="dropdown-container">
+                                    <label>Model:</label>
+                                    <select
+                                        value={prompt.model}
+                                        onChange={(e) => onUpdateModel(promptIndex, e.target.value)}
+                                        disabled={isDisabled}
+                                    >
+                                        {getModelsForFamily(prompt.modelFamily).map(model => (
+                                            <option key={model.id} value={model.id}>
+                                                {model.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </>
+                        )}
                     {totalPrompts > 1 && (
                         <>
                             <button
@@ -141,7 +148,7 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                         </>
                     )}
                 </div>
-                {expanded && (
+                {expanded && !state.isUserStudy && (
                     <div className="generate-similar-container">
                         <div className='controls-row'>
                             <button
@@ -252,10 +259,21 @@ class EditableDropdown extends React.Component<any, any> {
     dropdownRef = React.createRef<HTMLDivElement>();
 
     handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (this.props.readOnly) {
+            return; // Don't allow typing when readOnly is true
+        }
         this.setState({ value: e.target.value });
     };
 
     handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (this.props.readOnly) {
+            // When readOnly, only allow opening dropdown, not submitting custom text
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                this.setState({ open: true });
+            }
+            return;
+        }
         if (e.key === "Enter") {
             this.props.onSubmit?.(this.state.value);
             this.setState({ open: false });
@@ -269,7 +287,7 @@ class EditableDropdown extends React.Component<any, any> {
     };
 
     render() {
-        const { options } = this.props;
+        const { options, readOnly } = this.props;
         const { open, value } = this.state;
 
         return (
@@ -278,10 +296,11 @@ class EditableDropdown extends React.Component<any, any> {
                     type="text"
                     className="input-field"
                     value={value}
-                    placeholder="Enter or select a prompt"
+                    placeholder={readOnly ? "Select a prompt" : "Enter or select a prompt"}
                     onChange={this.handleInputChange}
                     onFocus={() => this.setState({ open: true })}
                     onKeyDown={this.handleInputKeyDown}
+                    readOnly={readOnly}
                 />
                 {open && (
                     <ul className="dropdown-list">
@@ -296,9 +315,11 @@ class EditableDropdown extends React.Component<any, any> {
                         ))}
                     </ul>
                 )}
-                <span className="enter-hint">
-                    <span className="material-icons">keyboard_return</span> Enter
-                </span>
+                {!readOnly && (
+                    <span className="enter-hint">
+                        <span className="material-icons">keyboard_return</span> Enter
+                    </span>
+                )}
             </div>
         );
     }

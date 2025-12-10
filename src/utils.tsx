@@ -313,7 +313,7 @@ export async function createGraphDataFromPromptGroups(
                     const sameSentence = nodesDict[existingWord]?.origSentIndices.includes(sentIdx);
                     if (sameSentence) return ;
                     const similarityScore = similarity(existingWord, word);
-                    if (similarityScore < similarityThreshold) return;
+                    if (similarityScore + .01 < similarityThreshold) return;
                     
                     // Check if merging would create a cycle
                     if (prevWord && reachabilityChecker.wouldCreateCycleThroughIncomingEdge(existingWord, prevWord)) {

@@ -96,8 +96,8 @@ class SingleExample extends React.Component {
             {makeRadioButton('graph')}
             {makeRadioButton('raw outputs')}
             {makeRadioButton('first output')}
-            {makeRadioButton('word tree')}
-            {makeRadioButton('highlights')}
+            {!state.isUserStudy && makeRadioButton('word tree')}
+            {!state.isUserStudy && makeRadioButton('highlights')}
         </div>)
     }
 
@@ -165,7 +165,21 @@ renderOutputsBasic(firstOnly: boolean = false) {
             generations={firstGenerations}
         ></SingleExampleHighlights>;
     }
+  componentDidUpdate(prevProps: any, prevState: any) {
+    // If user study mode and current visType is hidden, switch to graph
+    if (state.isUserStudy && (this.state.visType === 'word tree' || this.state.visType === 'highlights')) {
+      if (prevState.visType !== 'graph') {
+        this.setState({ visType: 'graph' });
+      }
+    }
+  }
+
   componentDidMount() {
+    // If user study mode and current visType is hidden, switch to graph
+    if (state.isUserStudy && (this.state.visType === 'word tree' || this.state.visType === 'highlights')) {
+      this.setState({ visType: 'graph' });
+    }
+
     // react to changes in observable MobX state
     this.disposer = reaction(
       () => {

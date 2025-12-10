@@ -205,7 +205,6 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         totalPrompts={state.prompts.length}
                     />
                 ))}
-
                 <div className="add-prompt-container" onClick={() => state.addPrompt('')}>
                     <div className="controls-row" style={{ width: 'fit-content' }}>
                         <div className='input-header'>
