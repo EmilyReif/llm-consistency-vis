@@ -76,8 +76,26 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         return (
             <div className='single-input-holder'>
                 <div className='controls'>
+                        <h1 className="controls-title">
+                            Visualizing LLM outputs
+                            <div className="info-icon-container">
+                                <div className="info-icon">?</div>
+                                <div className="info-tooltip">
+                                    <span className="authors">Emily Reif, Deniz Nazarova, Jared Hwang, Claire Yang</span>
+                                    <p>
+                                        When an LLM returns a response, we're actually sampling from a probability distribution over many possible
+                                        outputs. But we usually only see one of those samples—the response that gets returned.
+                                    </p>
+                                    <p>
+                                        If we're just using the model to get an answer or write some text, that's fine. But if we want to understand how
+                                        the model behaves—or build systems that depend on it—we need more than just one response. <b>We need to understand
+                                        the whole distribution of possible outputs.</b>
+                                    </p>
+                                </div>
+                            </div>
+                        </h1>
                     <div className="controls-row">
-                        <label><b>Global Controls</b></label>
+                        {/* <label><b>Global Controls</b></label> */}
                         <div className="slider-container">
                             <label>Samples: {this.state.numGenerations}</label>
                             <div className="tooltip">

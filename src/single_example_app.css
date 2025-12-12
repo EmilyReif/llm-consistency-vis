@@ -8,7 +8,7 @@
 .controls {
     border-bottom: 1px solid #ddd;
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
     gap: 15px;
     padding: 8px 15px;
     border-radius: 8px;
@@ -363,4 +363,91 @@
 /* Adjust delete button position when toggle button is present */
 .compare-prompt-container .delete-prompt-button {
     right: 4px;
+}
+
+/* Info icon and tooltip styles */
+.controls-title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2em;
+}
+
+.info-icon-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.info-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #666;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: help;
+    font-family: sans-serif;
+}
+
+.info-icon:hover {
+    background-color: #333;
+}
+
+.info-tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    left: 30px;
+    top: -10px;
+    background-color: #333;
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    width: 400px;
+    z-index: 1000;
+    font-size: 12px;
+    line-height: 1.5em;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.info-tooltip::before {
+    content: "";
+    position: absolute;
+    top: 15px;
+    left: -8px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent #333 transparent transparent;
+}
+
+.info-icon-container:hover .info-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.info-tooltip .authors {
+    color: #ccc;
+    margin-bottom: 10px;
+    display: block;
+    font-size: smaller;
+    font-style: italic;
+}
+
+.info-tooltip p {
+    margin: 8px 0;
+}
+
+.info-tooltip p:first-of-type {
+    margin-top: 0;
+}
+
+.info-tooltip p:last-of-type {
+    margin-bottom: 0;
 }
