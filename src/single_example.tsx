@@ -6,6 +6,7 @@ import SingleExampleWordtree from './single_example_wordtree';
 import SingleExampleHighlights from "./single_example_highlights";
 import SingleExampleWordGraph from "./single_example_wordgraph";
 import { reaction } from 'mobx';
+import { telemetry } from "./telemetry";
 
 
 class SingleExample extends React.Component {
@@ -77,7 +78,9 @@ class SingleExample extends React.Component {
         const makeRadioButton = (label: string) => {
             const handleClick = (e: any) => {
                 const visType = e.target.value;
-                this.setState(state => ({ ...state, visType }))
+                this.setState(state => ({ ...state, visType }));
+                // Log telemetry for visualization type change
+                telemetry.logVisTypeChange(visType);
             }
             return (
                 <div className='radio-holder'>

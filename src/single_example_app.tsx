@@ -10,6 +10,7 @@ import { examples } from "./cached_examples";
 import { TokenizeMode } from "./utils";
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
+import { telemetry, submitSession } from "./telemetry";
 
 const DEFAULT_TEXT = Object.keys(examples)[0];
 const SLIDER_WIDTH = 150;
@@ -40,6 +41,8 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
     handleSliderChange = (value: number, param: string) => {
         (this.state as any)[param] = value;
         this.setState({} as any);
+        // Log telemetry for slider changes
+        telemetry.logSliderChange(param, value);
     };
 
     handleCheckboxChange = (event: any, param: string) => {
@@ -50,6 +53,8 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
     handleDropdownChange = (event: any, param: string) => {
         (this.state as any)[param] = event.target.value;
         this.setState({} as any);
+        // Log telemetry for dropdown changes
+        telemetry.logDropdownChange(param, event.target.value);
     };
 
     handleSubmit = (prompt?: string) => {
@@ -223,7 +228,9 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         totalPrompts={state.prompts.length}
                     />
                 ))}
-                <div className="add-prompt-container" onClick={() => state.addPrompt('')}>
+                <div className="add-prompt-container" onClick={() => {
+                    state.addPrompt('');
+                }}>
                     <div className="controls-row" style={{ width: 'fit-content' }}>
                         <div className='input-header'>
                             <span className="material-icons">add</span>
@@ -231,7 +238,30 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                     </div>
                 </div>
                 {state.loading ? this.renderLoading() : <SingleExample />}
+                {state.isUserStudy && this.renderSubmitButton()}
             </div>
+        );
+    }
+
+    handleSubmitFinalOrder = async () => {
+        // Get the current prompts in order (full text only)
+        const finalAnswers = state.prompts.map(p => p.text);
+        const success = await submitSession(finalAnswers);
+        // if (success) {
+        //     alert('Thank you! Your responses have been submitted.');
+        // } else {
+        //     alert('There was an error submitting your responses. Please try again.');
+        // }
+    }
+
+    renderSubmitButton() {
+        return (
+            <button
+                className="submit-button"
+                onClick={this.handleSubmitFinalOrder}
+            >
+                Submit Final Order
+            </button>
         );
     }
 

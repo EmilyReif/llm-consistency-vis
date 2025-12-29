@@ -8,6 +8,7 @@ import { ellipseForce } from "./force_collide_ellipse";
 import { getNodeColor } from './color_utils';
 import { state } from './state';
 import NodeExamplesPopup from './node_examples_popup';
+import { telemetry } from "./telemetry";
 
 const TRANSITION_DURATION = 300;
 
@@ -92,6 +93,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private getLinkEndpoints: ((d: LinkDatum) => { sourceX: number; targetX: number; y1: number; y2: number; sourceRightX: number; targetLeftX: number }) | null = null;
     private height: number = 0;
     private width: number = 0;
+    private lastTransform: { k: number; x: number; y: number } | null = null;
+    private zoomThrottleTimer: number | null = null;
     constructor(props: Props) {
         super(props);
         this.state = {
@@ -109,6 +112,11 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     componentWillUnmount() {
         window.removeEventListener('resize', this.handleResize);
         window.removeEventListener('keydown', this.handleKeyDown);
+        // Clean up throttle timer
+        if (this.zoomThrottleTimer !== null) {
+            clearTimeout(this.zoomThrottleTimer);
+            this.zoomThrottleTimer = null;
+        }
     }
 
     private handleKeyDown = (event: KeyboardEvent) => {
@@ -249,7 +257,39 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Add zoom behavior
         const zoom = d3.zoom()
             .scaleExtent([0.5, 3]) // Allow zoom from 0.5x to 3x
-            .on("zoom", (event) => g.attr("transform", event.transform))
+            .on("zoom", (event) => {
+                g.attr("transform", event.transform);
+                
+                // Log telemetry for pan/zoom with throttling
+                const transform = event.transform;
+                const currentScale = transform.k;
+                const currentX = transform.x;
+                const currentY = transform.y;
+                
+                if (this.lastTransform) {
+                    const scaleChanged = Math.abs(currentScale - this.lastTransform.k) > 0.01;
+                    const panChanged = Math.abs(currentX - this.lastTransform.x) > 1 || Math.abs(currentY - this.lastTransform.y) > 1;
+                    
+                    // Clear existing throttle timer
+                    if (this.zoomThrottleTimer !== null) {
+                        clearTimeout(this.zoomThrottleTimer);
+                    }
+                    
+                    // Throttle logging to avoid excessive events
+                    this.zoomThrottleTimer = window.setTimeout(() => {
+                        if (scaleChanged) {
+                            // Log zoom event
+                            telemetry.logGraphZoom(currentScale, currentX, currentY);
+                        } else if (panChanged) {
+                            // Log pan event (only if scale didn't change)
+                            telemetry.logGraphPan(currentX, currentY);
+                        }
+                        this.zoomThrottleTimer = null;
+                    }, 100); // Throttle to once per 100ms
+                }
+                
+                this.lastTransform = { k: currentScale, x: currentX, y: currentY };
+            });
 
         svg.call(zoom as any)
             .on("dblclick.zoom", null);
@@ -345,6 +385,11 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 this.updateSimulation();
                 this.update();
                 this.togglePopupNode(d); // Toggle popup node to update the popup content.
+                // Log telemetry for node click
+                telemetry.logNodeClick(d.word, {
+                    count: d.count,
+                    origSentIndices: d.origSentIndices,
+                });
             });
 
         this.nodes.append("text")

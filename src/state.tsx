@@ -7,6 +7,7 @@ import { getDefaultModelFamily, getDefaultModel } from "./llm/config";
 import { LLM } from "./llm/base";
 import { OpenAILLM } from "./llm/openai";
 import { TokenizeMode, parseUrlParam } from "./utils";
+import { telemetry } from "./telemetry";
 
 
 const DEFAULT_NUM_GENERATIONS = 30;
@@ -90,12 +91,15 @@ class State {
         const defaultTemp = last?.temp ?? DEFAULT_TEMP;
         const defaultModelFamily = last?.modelFamily ?? this.selectedModelFamily;
         const defaultModel = last?.model ?? this.selectedModel;
+        const newIndex = this.prompts.length;
         this.prompts = [...this.prompts, { 
             text: defaultText, 
             temp: defaultTemp, 
             modelFamily: defaultModelFamily, 
             model: defaultModel 
         }];
+        // Log telemetry for adding a prompt
+        telemetry.logPromptAdd(newIndex, defaultText);
     });
 
     updatePromptTextAt = ((index: number, value: string) => {

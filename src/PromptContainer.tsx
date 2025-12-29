@@ -4,6 +4,7 @@ import { examples } from "./cached_examples";
 import { PROVIDERS, getModelsForFamily } from "./llm/config";
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
+import { telemetry } from "./telemetry";
 
 interface PromptContainerProps {
     promptIndex: number;
@@ -32,6 +33,9 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
     handleGenerateSimilar = async () => {
         const similarityText = (document.querySelector(`.similarity-input-${this.props.promptIndex}`) as HTMLInputElement)?.value || '';
         this.setState({ generatingSimilar: true, similarPrompts: [] });
+        
+        // Log telemetry for generate similar
+        telemetry.logGenerateSimilar(this.props.promptIndex, similarityText);
 
         try {
             const similarPrompts = await state.generateSimilarPrompts(this.props.prompt.text, similarityText, this.props.prompt.temp);
@@ -44,6 +48,9 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
 
     handlePromptSelect = (prompt: string) => {
         state.addPrompt(prompt);
+        // Log telemetry for prompt selection from similar prompts
+        const newIndex = state.prompts.length - 1;
+        telemetry.logPromptSelect(newIndex, prompt, 'similar_prompts');
     };
 
     render() {
@@ -76,8 +83,12 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                         key={'prompt-' + promptIndex + '-' + (prompt.text || '')}
                         value={prompt.text || ''}
                         options={Object.keys(examples)}
-                        onSubmit={(val: string) => onUpdateText(promptIndex, val)}
+                        onSubmit={(val: string) => {
+                            onUpdateText(promptIndex, val);
+                            telemetry.logPromptEdit(promptIndex, val);
+                        }}
                         readOnly={state.isUserStudy}
+                        promptIndex={promptIndex}
                     />
                         {!state.isUserStudy && (
                             <>
@@ -90,7 +101,10 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                             max={1}
                                             step={0.1}
                                             value={prompt.temp}
-                                            onChange={(e, value) => onUpdateTemp(promptIndex, value as number)}
+                                            onChange={(e, value) => {
+                                                onUpdateTemp(promptIndex, value as number);
+                                                telemetry.logSliderChange('temperature', value as number, promptIndex);
+                                            }}
                                             valueLabelDisplay="auto"
                                             aria-label="Temperature"
                                             disabled={isDisabled}
@@ -101,7 +115,10 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                     <label>Model Family:</label>
                                     <select
                                         value={prompt.modelFamily}
-                                        onChange={(e) => onUpdateModelFamily(promptIndex, e.target.value)}
+                                        onChange={(e) => {
+                                            onUpdateModelFamily(promptIndex, e.target.value);
+                                            telemetry.logDropdownChange('modelFamily', e.target.value, promptIndex);
+                                        }}
                                         disabled={isDisabled}
                                     >
                                         {PROVIDERS.map(provider => (
@@ -115,7 +132,10 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                     <label>Model:</label>
                                     <select
                                         value={prompt.model}
-                                        onChange={(e) => onUpdateModel(promptIndex, e.target.value)}
+                                        onChange={(e) => {
+                                            onUpdateModel(promptIndex, e.target.value);
+                                            telemetry.logDropdownChange('model', e.target.value, promptIndex);
+                                        }}
                                         disabled={isDisabled}
                                     >
                                         {getModelsForFamily(prompt.modelFamily).map(model => (
@@ -131,7 +151,10 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                         <>
                             <button
                                 className="toggle-disabled-button"
-                                onClick={() => onToggleDisabled(promptIndex)}
+                                onClick={() => {
+                                    onToggleDisabled(promptIndex);
+                                    telemetry.logPromptToggleDisabled(promptIndex, !isDisabled);
+                                }}
                                 title={isDisabled ? "Enable this prompt" : "Disable this prompt"}
                             >
                                 <span className="material-icons">
@@ -140,7 +163,10 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                             </button>
                             <button
                                 className="delete-prompt-button"
-                                onClick={() => onDelete(promptIndex)}
+                                onClick={() => {
+                                    telemetry.logPromptDelete(promptIndex);
+                                    onDelete(promptIndex);
+                                }}
                                 title="Delete this prompt"
                             >
                                 <span className="material-icons">close</span>
@@ -277,12 +303,20 @@ class EditableDropdown extends React.Component<any, any> {
         if (e.key === "Enter") {
             this.props.onSubmit?.(this.state.value);
             this.setState({ open: false });
+            // Log telemetry for prompt edit (when typing and pressing Enter)
+            if (this.props.promptIndex !== undefined && !this.props.readOnly) {
+                telemetry.logPromptEdit(this.props.promptIndex, this.state.value);
+            }
         }
     };
 
     handleSelect = (option: string) => {
         this.setState({ value: option, open: false }, () => {
             this.props.onSubmit?.(option);
+            // Log telemetry for prompt selection from dropdown
+            if (this.props.promptIndex !== undefined) {
+                telemetry.logPromptSelect(this.props.promptIndex, option, 'dropdown');
+            }
         });
     };
 
