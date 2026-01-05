@@ -9,21 +9,28 @@ import { getNodeColor } from './color_utils';
 import { state } from './state';
 import NodeExamplesPopup from './node_examples_popup';
 import { telemetry } from "./telemetry";
+import Box from '@mui/material/Box';
+import Slider from '@mui/material/Slider';
+import { TokenizeMode } from "./utils";
 
 const TRANSITION_DURATION = 300;
+const SLIDER_WIDTH = 150;
+const DEFAULT_SIMILARITY_THRESHOLD = 0.7;
+const DEFAULT_MIN_OPACITY_THRESHOLD = 0;
+const DEFAULT_SPREAD = 0.5;
 
 interface Props {
     // Prompts (grouped inputs for multi-prompt)
     promptGroups: { promptId: string, generations: string[] }[];
-    similarityThreshold: number;
-    minOpacityThreshold: number;
-    spread: number;
-    tokenizeMode: utils.TokenizeMode;
 }
 
 interface State {
     popupNodes: NodeDatum[];
     isPopupVisible: boolean;
+    similarityThreshold: number;
+    minOpacityThreshold: number;
+    spread: number;
+    tokenizeMode: TokenizeMode;
 }
 
 const NUM_WORDS_TO_WRAP = 3;
@@ -99,7 +106,11 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         super(props);
         this.state = {
             popupNodes: [],
-            isPopupVisible: false
+            isPopupVisible: false,
+            similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
+            minOpacityThreshold: DEFAULT_MIN_OPACITY_THRESHOLD,
+            spread: DEFAULT_SPREAD,
+            tokenizeMode: state.tokenizeMode,
         };
     }
 
@@ -150,7 +161,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Create opacity scale where count maps to opacity from 0 to 1
         this.opacityScale = d3.scalePow()
             .exponent(.5)
-            .domain([(this.props.minOpacityThreshold - .3) * totalGenerations / 2, totalGenerations / 2])
+            .domain([(this.state.minOpacityThreshold - .3) * totalGenerations / 2, totalGenerations / 2])
             .range([0, 1])
             .clamp(true)
             .nice();
@@ -165,6 +176,90 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                 <span id='loader' className="loader"></span>
                 <svg id='graph-holder'></svg>
+                <div className="graph-controls-overlay">
+                    <div className="slider-container">
+                        <label>Graph spread</label>
+                        <div className="tooltip">
+                            How spread out the graph is. Higher values means every output is rendered more like standard LTR text, lower values means the graph is more compact.
+                        </div>
+                        <Box sx={{ width: SLIDER_WIDTH }}>
+                            <Slider
+                                size="small"
+                                min={0}
+                                max={1}
+                                step={0.1}
+                                value={this.state.spread}
+                                onChange={(e, value) => {
+                                    this.setState({ spread: value as number });
+                                    telemetry.logSliderChange('spread', value as number);
+                                }}
+                                valueLabelDisplay="off"
+                                aria-label="Graph spread"
+                            />
+                        </Box>
+                    </div>
+
+                    <div className="slider-container">
+                        <label>Hide Rare Outputs</label>
+                        <div className="tooltip">
+                            How strongly rare outputs are faded. Higher values hide nodes and edges that appear infrequently across outputs.
+                        </div>
+                        <Box sx={{ width: SLIDER_WIDTH }}>
+                            <Slider
+                                size="small"
+                                min={0}
+                                max={1}
+                                step={0.1}
+                                value={this.state.minOpacityThreshold}
+                                onChange={(e, value) => {
+                                    this.setState({ minOpacityThreshold: value as number });
+                                    telemetry.logSliderChange('minOpacityThreshold', value as number);
+                                }}
+                                valueLabelDisplay="off"
+                                aria-label="Hide Rare Outputs"
+                            />
+                        </Box>
+                    </div>
+
+                    <div className="slider-container">
+                        <label>Token merging threshold</label>
+                        <div className="tooltip">
+                            How similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
+                        </div>
+                        <Box sx={{ width: SLIDER_WIDTH }}>
+                            <Slider
+                                size="small"
+                                min={0}
+                                max={1}
+                                step={0.1}
+                                value={this.state.similarityThreshold}
+                                onChange={(e, value) => {
+                                    this.setState({ similarityThreshold: value as number });
+                                    telemetry.logSliderChange('similarityThreshold', value as number);
+                                }}
+                                valueLabelDisplay="auto"
+                                aria-label="Merging coefficient"
+                            />
+                        </Box>
+                    </div>
+
+                    <div className="dropdown-container">
+                        <label>Tokenize Mode:</label>
+                        <select
+                            value={this.state.tokenizeMode}
+                            onChange={(e) => {
+                                const newMode = e.target.value as TokenizeMode;
+                                this.setState({ tokenizeMode: newMode });
+                                state.setTokenizeMode(newMode);
+                                telemetry.logDropdownChange('tokenizeMode', newMode);
+                            }}
+                        >
+                            <option value="space">Space</option>
+                            <option value="comma">Comma</option>
+                            <option value="sentence">Sentence</option>
+                        </select>
+                    </div>
+                </div>
                 <NodeExamplesPopup
                     nodes={this.state.popupNodes}
                     promptGroups={this.props.promptGroups}
@@ -177,19 +272,26 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     }
 
 
-    async componentDidUpdate(prevProps: Props) {
-        const tokenizeModeChanged = prevProps.tokenizeMode !== this.props.tokenizeMode;
-        const similarityThresholdChanged = prevProps.similarityThreshold !== this.props.similarityThreshold;
+    async componentDidUpdate(prevProps: Props, prevState: State) {
+        // Sync tokenizeMode with global state if it changed externally
+        if (state.tokenizeMode !== this.state.tokenizeMode && state.tokenizeMode !== prevState.tokenizeMode) {
+            this.setState({ tokenizeMode: state.tokenizeMode });
+            // Return early to let the state update trigger another update cycle
+            return;
+        }
+
+        const tokenizeModeChanged = prevState.tokenizeMode !== this.state.tokenizeMode;
+        const similarityThresholdChanged = prevState.similarityThreshold !== this.state.similarityThreshold;
         if (similarityThresholdChanged || tokenizeModeChanged || !utils.objectsAreEqual(prevProps.promptGroups, this.props.promptGroups)) {
             this.rebuildGraph();
         }
 
-        if (prevProps.minOpacityThreshold !== this.props.minOpacityThreshold) {
+        if (prevState.minOpacityThreshold !== this.state.minOpacityThreshold) {
             this.createFontScale();
             this.update();
             return;
         }
-        if (prevProps.spread !== this.props.spread) {
+        if (prevState.spread !== this.state.spread) {
             this.updateSimulation();
             return;
         }
@@ -216,7 +318,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
     private async rebuildGraphContent() {
         // Generate graph data from all text
-        const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.props.similarityThreshold, state.shuffle, this.props.tokenizeMode);
+        const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.state.similarityThreshold, state.shuffle, this.state.tokenizeMode);
 
         // Create color scale that matches the state's color assignment
         // Use the same logic as state.getPromptColor() for consistency
@@ -588,7 +690,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .domain([0, 0.5, 1])
             .range([min, mean, max]);
 
-        return scale(this.props.spread);
+        return scale(this.state.spread);
     }
 
     private getExpectedY(d: NodeDatum, height: number) {

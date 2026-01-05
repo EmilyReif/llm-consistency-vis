@@ -19,11 +19,7 @@ interface SingleExampleAppState {
     selectedExample: string;
     temperature: number;
     numGenerations: number;
-    similarityThreshold: number;
-    minOpacityThreshold: number;
-    spread: number;
     shuffle: boolean;
-    tokenizeMode: TokenizeMode;
 }
 
 class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
@@ -31,11 +27,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         selectedExample: DEFAULT_TEXT,
         temperature: state.prompts[0]?.temp ?? 0.7,
         numGenerations: state.numGenerations,
-        similarityThreshold: state.similarityThreshold,
-        minOpacityThreshold: state.minOpacityThreshold,
-        spread: state.spread,
         shuffle: state.shuffle,
-        tokenizeMode: state.tokenizeMode,
     };
 
     handleSliderChange = (value: number, param: string) => {
@@ -121,47 +113,6 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                             </Box>
                         </div>
 
-                        <div className="slider-container">
-                            <label>Graph spread</label>
-                            <div className="tooltip">
-                                How spread out the graph is. Higher values means every output is rendered more like standard LTR text, lower values means the graph is more compact.
-                            </div>
-                            <Box sx={{ width: SLIDER_WIDTH }}>
-                                <Slider
-                                    size="small"
-                                    min={0}
-                                    max={1}
-                                    step={0.1}
-                                    value={this.state.spread}
-                                    onChange={(e, value) => this.handleSliderChange(value as number, 'spread')}
-                                    onChangeCommitted={() => state.setSpread(this.state.spread)}
-                                    valueLabelDisplay="off"
-                                    aria-label="Graph spread"
-                                />
-                            </Box>
-                        </div>
-
-
-                        <div className="slider-container">
-                            <label>Hide Rare Outputs</label>
-                            <div className="tooltip">
-                                How strongly rare outputs are faded. Higher values hide nodes and edges that appear infrequently across outputs.
-                            </div>
-                            <Box sx={{ width: SLIDER_WIDTH }}>
-                                <Slider
-                                    size="small"
-                                    min={0}
-                                    max={1}
-                                    step={0.1}
-                                    value={this.state.minOpacityThreshold}
-                                    onChange={(e, value) => this.handleSliderChange(value as number, 'minOpacityThreshold')}
-                                    onChangeCommitted={() => state.setMinOpacityThreshold(this.state.minOpacityThreshold)}
-                                    valueLabelDisplay="off"
-                                    aria-label="Hide Rare Outputs"
-                                />
-                            </Box>
-                        </div>
-
                         {/* <div className="slider-container">
                                 <label>
                                     <input
@@ -176,41 +127,6 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                     When enabled, shuffles the origSentIndices to randomize the visual ordering of sentence connections in the graph.
                                 </div>
                             </div> */}
-
-                        <div className="slider-container">
-                            <label>Token merging threshold</label>
-                            <div className="tooltip">
-                                How similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
-                            </div>
-                            <Box sx={{ width: SLIDER_WIDTH }}>
-                                <Slider
-                                    size="small"
-                                    min={0}
-                                    max={1}
-                                    step={0.1}
-                                    value={this.state.similarityThreshold}
-                                    onChange={(e, value) => this.handleSliderChange(value as number, 'similarityThreshold')}
-                                    onChangeCommitted={() => state.setSimilarityThreshold(this.state.similarityThreshold)}
-                                    valueLabelDisplay="auto"
-                                    aria-label="Merging coefficient"
-                                />
-                            </Box>
-                        </div>
-
-                        <div className="dropdown-container">
-                            <label>Tokenize Mode:</label>
-                            <select
-                                value={this.state.tokenizeMode}
-                                onChange={(e) => {
-                                    this.handleDropdownChange(e, 'tokenizeMode');
-                                    state.setTokenizeMode(e.target.value as TokenizeMode);
-                                }}
-                            >
-                                <option value="space">Space</option>
-                                <option value="comma">Comma</option>
-                                <option value="sentence">Sentence</option>
-                            </select>
-                        </div>
                     </div>
                 </div>
                 {state.prompts.map((p, idx) => (

@@ -12,8 +12,6 @@ import { telemetry } from "./telemetry";
 
 const DEFAULT_NUM_GENERATIONS = 30;
 const DEFAULT_TEMP = 0.7;
-const DEFAULT_SIMILARITY_THRESHOLD = 0.7;
-const DEFAULT_SPREAD = 0.5;
 // Opacity for prompt container background colors (0.0 = transparent, 1.0 = opaque)
 const PROMPT_COLOR_OPACITY = 0.3;
 
@@ -34,9 +32,6 @@ class State {
     // Unified prompt list; no special first prompt
     prompts: Prompt[] = [];
     numGenerations: number = DEFAULT_NUM_GENERATIONS;
-    similarityThreshold: number = DEFAULT_SIMILARITY_THRESHOLD;
-    minOpacityThreshold: number = 0;
-    spread: number = DEFAULT_SPREAD;
     shuffle: boolean = false;
     tokenizeMode: TokenizeMode = "space";
     isUserStudy: boolean = false;
@@ -166,24 +161,12 @@ class State {
         this.numGenerations = value;
     });
 
-    setSimilarityThreshold = ((value: number) => {
-        this.similarityThreshold = value;
-    });
-
     setShuffle = ((value: boolean) => {
         this.shuffle = value;
     });
 
     setTokenizeMode = ((value: TokenizeMode) => {
         this.tokenizeMode = value;
-    });
-
-    setMinOpacityThreshold = ((value: number) => {
-        this.minOpacityThreshold = value;
-    });
-
-    setSpread = ((value: number) => {
-        this.spread = value;
     });
 
     setModelFamily = ((familyId: string) => {
