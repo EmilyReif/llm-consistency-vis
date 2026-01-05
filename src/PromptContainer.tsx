@@ -59,6 +59,7 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
 
         // Get semi-transparent background color from D3 color scheme
         const backgroundColor = state.getPromptColor(promptIndex);
+        const promptLabel = totalPrompts === 1 ? 'Prompt' : `Prompt ${promptIndex + 1}`;
 
         return (
             <div
@@ -78,7 +79,7 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                             </span>
                         </div>
                     )}
-                    <div className='input-header'>Prompt {promptIndex + 1}</div>
+                    <div className='input-header'>{promptLabel}</div>
                     <EditableDropdown
                         key={'prompt-' + promptIndex + '-' + (prompt.text || '')}
                         value={prompt.text || ''}

@@ -7,11 +7,6 @@
     width: 500px;
 }
 
-.inout {
-    font-size: smaller;
-    padding: 1em;
-}
-
 .outputs {
     display: flex;
     flex-direction: column;
@@ -95,4 +90,41 @@ input[type="radio"]+label {
 
 .output-item:last-child {
     border-bottom: none;
+}
+
+/* Section labels (Inputs/Outputs) */
+.section-label {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding: 0 15px;
+    color: #333;
+}
+
+/* Section label with selector on same line */
+.section-label-with-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+    padding: 0 15px;
+}
+
+.section-label-text {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+}
+
+.section-label-with-selector select {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    font-size: 0.9em;
+    font-family: monospace;
+    min-width: 150px;
+    cursor: pointer;
 }
