@@ -7,10 +7,24 @@ import SingleExampleHighlights from "./single_example_highlights";
 import SingleExampleWordGraph from "./single_example_wordgraph";
 import { reaction } from 'mobx';
 import { telemetry } from "./telemetry";
+import { parseUrlParam } from "./utils";
 
 
 class SingleExample extends React.Component {
-    state = {visType: 'graph' as 'graph' | 'raw outputs' | 'first output' | 'word tree' | 'highlights', promptGroups: [] as { promptId: string, generations: string[] }[] };
+    state = {
+        visType: (() => {
+            const urlParam = parseUrlParam('vis_type') || parseUrlParam('visualization');
+            if (urlParam) {
+                const validTypes: ('graph' | 'raw outputs' | 'first output' | 'word tree' | 'highlights')[] = 
+                    ['graph', 'raw outputs', 'first output', 'word tree', 'highlights'];
+                if (validTypes.includes(urlParam as any)) {
+                    return urlParam as 'graph' | 'raw outputs' | 'first output' | 'word tree' | 'highlights';
+                }
+            }
+            return 'graph' as 'graph' | 'raw outputs' | 'first output' | 'word tree' | 'highlights';
+        })(),
+        promptGroups: [] as { promptId: string, generations: string[] }[]
+    };
     disposer?: () => void;
 
     private getPromptGroupKey(prompt: any, originalIndex: number): string {
@@ -76,19 +90,21 @@ class SingleExample extends React.Component {
         return (<div>
             <div className="section-label-with-selector">
                 <span className="section-label-text">LLM Generations:</span>
-                <select
-                    id="vis-type-select"
-                    value={this.state.visType}
-                    onChange={(e) => {
-                        const visType = e.target.value as 'graph' | 'raw outputs' | 'first output' | 'word tree' | 'highlights';
-                        this.setState({ visType });
-                        telemetry.logVisTypeChange(visType);
-                    }}
-                >
-                    {visualizationOptions.map(option => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                    ))}
-                </select>
+                {!state.isUserStudy && (
+                    <select
+                        id="vis-type-select"
+                        value={this.state.visType}
+                        onChange={(e) => {
+                            const visType = e.target.value as 'graph' | 'raw outputs' | 'first output' | 'word tree' | 'highlights';
+                            this.setState({ visType });
+                            telemetry.logVisTypeChange(visType);
+                        }}
+                    >
+                        {visualizationOptions.map(option => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                    </select>
+                )}
             </div>
             {/* <div className="instruction-text">
                 {instructionText}

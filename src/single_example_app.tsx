@@ -91,27 +91,30 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                 </div>
                             </div>
                         </h1>
-                    <div className="controls-row">
-                        {/* <label><b>Global Controls</b></label> */}
-                        <div className="slider-container">
-                            <label>Samples: {this.state.numGenerations}</label>
-                            <div className="tooltip">
-                                How many different responses the LLM will generate for each prompt. More generations help visualize the diversity of possible responses.
+                    {!state.isUserStudy && (
+                        <div className="controls-row">
+                            {/* <label><b>Global Controls</b></label> */}
+                            <div className="slider-container">
+                                <label>Samples: {this.state.numGenerations}</label>
+                                <div className="tooltip">
+                                    How many different responses the LLM will generate for each prompt. More generations help visualize the diversity of possible responses.
+                                </div>
+                                <Box sx={{ width: SLIDER_WIDTH }}>
+                                    <Slider
+                                        size="small"
+                                        min={1}
+                                        max={50}
+                                        step={1}
+                                        value={this.state.numGenerations}
+                                        onChange={(e, value) => this.handleSliderChange(value as number, 'numGenerations')}
+                                        onChangeCommitted={() => state.setNumGenerations(this.state.numGenerations)}
+                                        valueLabelDisplay="auto"
+                                        aria-label="Number of Generations"
+                                    />
+                                </Box>
                             </div>
-                            <Box sx={{ width: SLIDER_WIDTH }}>
-                                <Slider
-                                    size="small"
-                                    min={1}
-                                    max={50}
-                                    step={1}
-                                    value={this.state.numGenerations}
-                                    onChange={(e, value) => this.handleSliderChange(value as number, 'numGenerations')}
-                                    onChangeCommitted={() => state.setNumGenerations(this.state.numGenerations)}
-                                    valueLabelDisplay="auto"
-                                    aria-label="Number of Generations"
-                                />
-                            </Box>
                         </div>
+                    )}
 
                         {/* <div className="slider-container">
                                 <label>
@@ -127,7 +130,6 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                     When enabled, shuffles the origSentIndices to randomize the visual ordering of sentence connections in the graph.
                                 </div>
                             </div> */}
-                    </div>
                 </div>
                 {state.prompts.map((p, idx) => (
                     <PromptContainer
