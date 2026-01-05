@@ -228,10 +228,18 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         totalPrompts={state.prompts.length}
                     />
                 ))}
-                <div className="add-prompt-container" onClick={() => {
-                    state.addPrompt('');
-                }}>
+                <div 
+                    className="add-prompt-container" 
+                    onClick={() => {
+                        state.addPrompt('');
+                    }}
+                    style={{
+                        backgroundColor: state.getPromptColor(state.prompts.length),
+                        borderColor: state.getPromptColor(state.prompts.length),
+                    }}
+                >
                     <div className="controls-row" style={{ width: 'fit-content' }}>
+                    Compare to another prompt
                         <div className='input-header'>
                             <span className="material-icons">add</span>
                         </div>
@@ -260,7 +268,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                 className="submit-button"
                 onClick={this.handleSubmitFinalOrder}
             >
-                Submit Final Order
+                Submit
             </button>
         );
     }

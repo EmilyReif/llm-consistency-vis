@@ -279,7 +279,8 @@
 }
 
 .add-prompt-container:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+    opacity: 0.8;
+    filter: brightness(0.95);
 }
 
 .add-prompt-container .material-icons {
