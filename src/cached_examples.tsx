@@ -4,6 +4,7 @@ import { examplesQalign } from "./cached_data/qalign";
 import { exampleOlmoTrace } from "./cached_data/examples_olmo_trace";
 import { examplesUserStudyMonsters } from "./cached_data/examples_user_study_monsters";
 import { examplesUserStudyPlaces } from "./cached_data/examples_user_study_places";
+import { examplesPresidents } from "./cached_data/presidents";
 import { parseUrlParam } from "./utils";
 
 const datasetMap: { [key: string]: { [key: string]: string[] } } = {
@@ -13,6 +14,7 @@ const datasetMap: { [key: string]: { [key: string]: string[] } } = {
     'olmo_trace': exampleOlmoTrace,
     'user_study_monsters': examplesUserStudyMonsters,
     'user_study_places': examplesUserStudyPlaces,
+    'presidents': examplesPresidents,
 };
 
 const datasetParam = parseUrlParam('dataset') || 'examples';

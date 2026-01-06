@@ -52,6 +52,13 @@ export function getOrCreateSession(): StudySession {
   return newSession;
 }
 
+// Set participant ID (for user study)
+export function setParticipantId(participantId: string): void {
+  const session = getOrCreateSession();
+  session.participantId = participantId;
+  saveSession(session);
+}
+
 // Save session to localStorage
 function saveSession(session: StudySession): void {
   try {
