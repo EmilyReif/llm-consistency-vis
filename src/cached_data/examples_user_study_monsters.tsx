@@ -1,4 +1,4 @@
-export const examplesUserStudy: { [key: string]: string[]; } =
+export const examplesUserStudyMonsters: { [key: string]: string[]; } =
 {'I am working on a game where players act as a human child who falls into a magical underground world full of monsters and the goal is to find a way back to the surface. Come up with a type of monster and briefly describe its backstory.': ['The Luminoid is a gentle, bioluminescent creature that once thrived on the surface but retreated underground centuries ago after humans began extinguishing their glowing habitats.',
     'The Luminoct, a bioluminescent bat-like creature, was once a guardian of the surface light, but after being banished underground for a failed rebellion, it now guides lost souls in the darkness.',
     'The Lumigloom is a bioluminescent creature that guides lost souls with its glowing patterns, once a guardian of the surface world banished underground for accidentally leading humans astray.',
