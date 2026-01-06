@@ -1,5 +1,7 @@
 // Telemetry system for logging user interactions
 
+import { state } from './state';
+
 const STORAGE_KEY = 'llm_consistency_study_session';
 const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzjSK-bJaYB15HqtNBDNK9kjoDdJS9LDmkxMkoK22ij_kzsdGqtu5B58HIisn-qo5Ls/exec';
 // const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwBecSgj0Sk7qCi0DO_k1uHQVaOJa04PJv-XMftUUc/dev';
@@ -42,7 +44,7 @@ export function getOrCreateSession(): StudySession {
   // Create new session
   const newSession: StudySession = {
     participantId: generateParticipantId(),
-    interfaceVersion: '1.0', // You can update this as needed
+    interfaceVersion: state.visType,
     startedAt: Date.now(),
     telemetry: [],
     submitted: false,

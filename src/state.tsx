@@ -35,6 +35,7 @@ class State {
     shuffle: boolean = false;
     tokenizeMode: TokenizeMode = "space";
     isUserStudy: boolean = false;
+    visType: 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' = 'graph';
     generationsCache: { [example: string]: { [temp: number]: { [modelFamily: string]: { [model: string]: string[] } } } } = {};
     // Track which prompts are disabled
     disabledPrompts: number[] = [];
@@ -57,6 +58,16 @@ class State {
 
         // Parse URL parameters
         this.isUserStudy = parseUrlParam('is_user_study') === 'true';
+        
+        // Initialize visType from URL parameter
+        const urlParam = parseUrlParam('vis_type');
+        if (urlParam) {
+            const validTypes: ('graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights')[] = 
+                ['graph', 'raw_outputs', 'first_output', 'word_tree', 'highlights'];
+            if (validTypes.includes(urlParam as any)) {
+                this.visType = urlParam as 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights';
+            }
+        }
 
         // Initialize the cache with the examples using the default temperature and model
         const temp = DEFAULT_TEMP;
@@ -177,6 +188,10 @@ class State {
 
     setModel = ((modelId: string) => {
         this.selectedModel = modelId;
+    });
+
+    setVisType = ((visType: 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights') => {
+        this.visType = visType;
     });
 
     private getLLMInstance(modelFamily: string, model: string): LLM {

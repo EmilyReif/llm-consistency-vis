@@ -7,22 +7,10 @@ import SingleExampleHighlights from "./single_example_highlights";
 import SingleExampleWordGraph from "./single_example_wordgraph";
 import { reaction } from 'mobx';
 import { telemetry } from "./telemetry";
-import { parseUrlParam } from "./utils";
 
 
 class SingleExample extends React.Component {
     state = {
-        visType: (() => {
-            const urlParam = parseUrlParam('vis_type');
-            if (urlParam) {
-                const validTypes: ('graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights')[] = 
-                    ['graph', 'raw_outputs', 'first_output', 'word_tree', 'highlights'];
-                if (validTypes.includes(urlParam as any)) {
-                    return urlParam as 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights';
-                }
-            }
-            return 'graph' as 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights';
-        })(),
         promptGroups: [] as { promptId: string, generations: string[] }[]
     };
     disposer?: () => void;
@@ -51,7 +39,7 @@ class SingleExample extends React.Component {
 
         let vis;
         let instructionText = '';
-        switch (this.state.visType) {
+        switch (state.visType) {
             case 'word_tree':
                 vis = this.renderOutputsWordTree();
                 instructionText = `Hover over a word to highlight it across all generated sentences. 
@@ -93,10 +81,10 @@ class SingleExample extends React.Component {
                 {!state.isUserStudy && (
                     <select
                         id="vis-type-select"
-                        value={this.state.visType}
+                        value={state.visType}
                         onChange={(e) => {
                             const visType = e.target.value as 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights';
-                            this.setState({ visType });
+                            state.setVisType(visType);
                             telemetry.logVisTypeChange(visType);
                         }}
                     >
@@ -176,17 +164,15 @@ renderOutputsBasic(firstOnly: boolean = false) {
     }
   componentDidUpdate(prevProps: any, prevState: any) {
     // If user study mode and current visType is hidden, switch to graph
-    if (state.isUserStudy && (this.state.visType === 'word_tree' || this.state.visType === 'highlights')) {
-      if (prevState.visType !== 'graph') {
-        this.setState({ visType: 'graph' });
-      }
+    if (state.isUserStudy && (state.visType === 'word_tree' || state.visType === 'highlights')) {
+      state.setVisType('graph');
     }
   }
 
   componentDidMount() {
     // If user study mode and current visType is hidden, switch to graph
-    if (state.isUserStudy && (this.state.visType === 'word_tree' || this.state.visType === 'highlights')) {
-      this.setState({ visType: 'graph' });
+    if (state.isUserStudy && (state.visType === 'word_tree' || state.visType === 'highlights')) {
+      state.setVisType('graph');
     }
 
     // react to changes in observable MobX state
