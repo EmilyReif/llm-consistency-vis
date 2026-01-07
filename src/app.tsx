@@ -1,37 +1,16 @@
 import './app.css';
 import SingleExampleApp from './single_example_app';
 import { telemetry, getOrCreateSession } from './telemetry';
-import { useEffect, useState } from 'react';
-import { UserIdPrompt } from './user_id_prompt';
-import { state } from './state';
+import { useEffect } from 'react';
 
 function App() {
-  const [ready, setReady] = useState(false);
-
   useEffect(() => {
-    if (!state.isUserStudy) {
-      // If not a user study, initialize immediately
-      getOrCreateSession();
-      telemetry.logPageLoad();
-      setReady(true);
-    }
-  }, []);
-
-  const handleUserIdSet = () => {
+    // Initialize session and log page load immediately
     getOrCreateSession();
     telemetry.logPageLoad();
-    setReady(true);
-  };
+  }, []);
 
-  return (
-    <>
-      <UserIdPrompt 
-        isUserStudy={state.isUserStudy} 
-        onUserIdSet={handleUserIdSet}
-      />
-      {(!state.isUserStudy || ready) && <SingleExampleApp></SingleExampleApp>}
-    </>
-  );
+  return <SingleExampleApp></SingleExampleApp>;
 }
 
 export default App;

@@ -1,6 +1,7 @@
 // Telemetry system for logging user interactions
 
 import { state } from './state';
+import { parseUrlParam } from './utils';
 
 const STORAGE_KEY = 'llm_consistency_study_session';
 const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzjSK-bJaYB15HqtNBDNK9kjoDdJS9LDmkxMkoK22ij_kzsdGqtu5B58HIisn-qo5Ls/exec';
@@ -25,6 +26,16 @@ function generateParticipantId(): string {
   return `participant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
+// Get participant ID from URL parameter, or generate one
+function getParticipantIdFromUrlOrGenerate(): string {
+  // Check for participant_id or user_id in URL parameters
+  const participantId = parseUrlParam('participant_id') || parseUrlParam('user_id');
+  if (participantId) {
+    return participantId;
+  }
+  return generateParticipantId();
+}
+
 // Get or create a study session from localStorage
 export function getOrCreateSession(): StudySession {
   const stored = localStorage.getItem(STORAGE_KEY);
@@ -34,6 +45,12 @@ export function getOrCreateSession(): StudySession {
       const session = JSON.parse(stored) as StudySession;
       // If session exists but isn't submitted, restore it
       if (!session.submitted) {
+        // Check if URL has a participant ID that overrides the stored one
+        const urlParticipantId = parseUrlParam('participant_id') || parseUrlParam('user_id');
+        if (urlParticipantId && urlParticipantId !== session.participantId) {
+          session.participantId = urlParticipantId;
+          saveSession(session);
+        }
         return session;
       }
     } catch (e) {
@@ -41,9 +58,9 @@ export function getOrCreateSession(): StudySession {
     }
   }
   
-  // Create new session
+  // Create new session with participant ID from URL or generate one
   const newSession: StudySession = {
-    participantId: generateParticipantId(),
+    participantId: getParticipantIdFromUrlOrGenerate(),
     interfaceVersion: state.visType,
     startedAt: Date.now(),
     telemetry: [],
@@ -52,13 +69,6 @@ export function getOrCreateSession(): StudySession {
   
   saveSession(newSession);
   return newSession;
-}
-
-// Set participant ID (for user study)
-export function setParticipantId(participantId: string): void {
-  const session = getOrCreateSession();
-  session.participantId = participantId;
-  saveSession(session);
 }
 
 // Save session to localStorage
