@@ -1,6 +1,15 @@
 // embed.ts
-import { pipeline, Tensor } from '@xenova/transformers';
 import { stripWhitespaceAndPunctuation } from './utils';
+
+import { pipeline, env } from '@xenova/transformers';
+
+// Some weird hacks to fix caching errors.
+env.allowRemoteModels = true;
+env.allowLocalModels = false;
+
+// Make the URL construction unambiguous:
+env.remoteHost = 'https://huggingface.co';
+env.remotePathTemplate = '{model}/resolve/main/';
 
 let extractorCache: any = null;
 const modelId = 'Xenova/all-MiniLM-L6-v2';

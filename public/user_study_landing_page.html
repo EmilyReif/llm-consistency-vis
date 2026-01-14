@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Study Landing Page</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      color: #34495e;
+      border-bottom: 2px solid #ecf0f1;
+      padding-bottom: 10px;
+    }
+
+    .user-info {
+      background-color: #e8f5e9;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      border-left: 4px solid #4caf50;
+    }
+
+    .user-info strong {
+      color: #2e7d32;
+    }
+
+    .page-container {
+      min-height: 600px;
+      position: relative;
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateX(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .description {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+    }
+
+    .task-section {
+      background-color: #ffffff;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .task-section h3 {
+      color: #2c3e50;
+      margin-top: 0;
+    }
+
+    .task-meta {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 15px 0;
+      font-size: 0.9em;
+    }
+
+    .task-meta strong {
+      color: #2c3e50;
+    }
+
+    .form-container {
+      text-align: center;
+      display: none;
+    }
+
+    .form-container.visible {
+      display: block;
+    }
+
+    .video-container {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .video-container iframe {
+      max-width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .task-link {
+      display: inline-block;
+      background-color: #3498db;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin: 15px 0;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+
+    .task-link:hover {
+      background-color: #2980b9;
+    }
+
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #ecf0f1;
+    }
+
+    .nav-button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .nav-button:hover:not(:disabled) {
+      background-color: #2980b9;
+    }
+
+    .nav-button:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .progress-dots {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: #bdc3c7;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .dot.active {
+      background-color: #3498db;
+      transform: scale(1.2);
+    }
+
+    .dot:hover {
+      background-color: #95a5a6;
+    }
+
+    .dot.active:hover {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <h1>LLM Consistency Visualization User Study</h1>
+
+  <div id="userInfo" class="user-info" style="display: none;">
+    <strong>User ID:</strong> <span id="userId"></span>
+  </div>
+
+  <div class="page-container">
+    <!-- Page 1: Overview -->
+    <div id="page1" class="page active">
+      <div class="description">
+        <h2>Study Overview</h2>
+        <p>
+          In this study, you'll act as a game designer working on a fantasy game.
+        </p>
+      
+        <p>
+          Your goal is to compare prompts that automatically generate short descriptions of fantasy monsters or places, and ultimately choose the best.
+        </p>
+      
+        <p>
+          Each time this hypothetical game needs a new monster or place, it will call the prompt once to generate a description—there is no manual editing or selection after generation.
+          Because of this, it's important to think about the overall range of possible outputs, not just a single example.
+        </p>
+      
+        <p>
+          Using the interface, you'll look through groups of outputs from the LLM, and evaluate how well each prompt would work in practice.
+          When judging prompts, try to balance these goals:
+        </p>
+      
+        <ul>
+          <li><strong>Variety:</strong> Monsters and places should feel diverse and interesting.</li>
+          <li><strong>Consistency:</strong> Writing style and tone should feel cohesive.</li>
+          <li><strong>Safety &amp; Plausibility:</strong> Avoid offensive, inappropriate, or implausible content.</li>
+          <li><strong>Relevance:</strong> Monsters and places should fit a fantasy setting.</li>
+        </ul>
+      
+        <p>
+          There are no right or wrong answers. We're interested in your judgments and how the interface supports comparing many possible outputs.
+        </p>
+      </div>
+    </div>
+
+    <!-- Page 2: Task 1 -->
+    <div id="page2" class="page">
+      <div id="task1Section" class="task-section">
+        <h3>Task 1</h3>
+        <div class="task-meta">
+          <strong>Dataset:</strong> <span id="task1Dataset"></span><br>
+          <strong>Visualization Type:</strong> <span id="task1VisType"></span>
+        </div>
+        
+        <div class="video-container">
+          <h4>Task Instructions Video</h4>
+          <iframe 
+            id="task1Video"
+            width="560" 
+            height="315" 
+            src="" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+          </iframe>
+        </div>
+
+        <div>
+          <a id="task1Link" href="#" class="task-link" target="_blank">
+            Start Task 1 →
+          </a>
+        </div>
+
+        <div id="task1FormContainer" class="form-container">
+          <h4>Task 1 Questionnaire</h4>
+          <p>Please complete the questionnaire after finishing Task 1.</p>
+          <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdLZFiFxcohdSDKzot0ptxDN82Ixx7iPnV1_My0a3WWC4nHWw/viewform?embedded=true" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 3: Task 2 -->
+    <div id="page3" class="page">
+      <div id="task2Section" class="task-section">
+        <h3>Task 2</h3>
+        <div class="task-meta">
+          <strong>Dataset:</strong> <span id="task2Dataset"></span><br>
+          <strong>Visualization Type:</strong> <span id="task2VisType"></span>
+        </div>
+        
+        <div class="video-container">
+          <h4>Task Instructions Video</h4>
+          <iframe 
+            id="task2Video"
+            width="560" 
+            height="315" 
+            src="" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+          </iframe>
+        </div>
+
+        <div>
+          <a id="task2Link" href="#" class="task-link" target="_blank">
+            Start Task 2 →
+          </a>
+        </div>
+
+        <div id="task2FormContainer" class="form-container">
+          <h4>Task 2 Questionnaire</h4>
+          <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdLZFiFxcohdSDKzot0ptxDN82Ixx7iPnV1_My0a3WWC4nHWw/viewform?embedded=true" width="640" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="navigation">
+    <button id="prevButton" class="nav-button" onclick="previousPage()">← Previous</button>
+    
+    <div class="progress-dots" id="progressDots"></div>
+    
+    <button id="nextButton" class="nav-button" onclick="nextPage()">Next →</button>
+  </div>
+
+  <script>
+    // Page navigation state
+    let currentPage = 1;
+    const totalPages = 3;
+
+    // YouTube embed URLs - replace these with your actual embed URLs
+    const videoExplanationGraph = '[PLACEHOLDER: YouTube embed URL for graph explanation]';
+    const videoExplanationRawOutputs = '[PLACEHOLDER: YouTube embed URL for raw outputs explanation]';
+
+    // Function to get video URL based on vis type
+    function getVideoUrlForVisType(visType) {
+      if (visType === 'graph') {
+        return videoExplanationGraph.includes('[PLACEHOLDER') ? '' : videoExplanationGraph;
+      } else if (visType === 'raw_outputs') {
+        return videoExplanationRawOutputs.includes('[PLACEHOLDER') ? '' : videoExplanationRawOutputs;
+      }
+      return '';
+    }
+
+    // Function to get URL parameter
+    function getUrlParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // Function to get base URL (works for both local dev and deployed with subdirectory)
+    function getBaseUrl() {
+      const path = window.location.pathname;
+      // Remove the filename and any trailing slashes
+      const basePath = path.substring(0, path.lastIndexOf('/') + 1);
+      return window.location.origin + basePath;
+    }
+
+    // Get user_id from URL
+    const userId = getUrlParam('user_id');
+    if (userId) {
+      document.getElementById('userId').textContent = userId;
+      document.getElementById('userInfo').style.display = 'block';
+    }
+
+    // All possible task combinations
+    const datasets = ['user_study_places', 'user_study_monsters'];
+    const visTypes = ['graph', 'raw_outputs'];
+    const allCombinations = [];
+    
+    datasets.forEach(dataset => {
+      visTypes.forEach(visType => {
+        allCombinations.push({ dataset, visType });
+      });
+    });
+
+    // Create a deterministic randomization based on user_id for reproducibility
+    // If user_id exists, use it as seed; otherwise use timestamp
+    function seededRandom(seed) {
+      let value = seed;
+      return function() {
+        value = (value * 9301 + 49297) % 233280;
+        return value / 233280;
+      };
+    }
+
+    const seed = userId ? 
+      userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 
+      Date.now();
+    const random = seededRandom(seed);
+
+    // Shuffle array using seeded random
+    function shuffleArray(array, rng) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    // Randomly assign one combination to Task 1 (each appears ~25% of the time)
+    const shuffled = shuffleArray(allCombinations, random);
+    const task1Combo = shuffled[0];
+    
+    // For Task 2, select the combination with BOTH different dataset AND different vis type
+    // This ensures each participant sees both datasets and both vis types
+    const task2Combo = allCombinations.find(combo => 
+      combo.dataset !== task1Combo.dataset && combo.visType !== task1Combo.visType
+    );
+
+    // Randomize the order (50% chance to swap) to control for learning effect
+    let finalTask1, finalTask2;
+    if (random() < 0.5) {
+      finalTask1 = task1Combo;
+      finalTask2 = task2Combo;
+    } else {
+      finalTask1 = task2Combo;
+      finalTask2 = task1Combo;
+    }
+
+    // Build URLs for Task 1 and Task 2
+    const baseUrl = getBaseUrl();
+    
+    function buildTaskUrl(task, taskNum) {
+      const params = new URLSearchParams({
+        is_user_study: 'true',
+        user_id: userId || '',
+        dataset: task.dataset,
+        vis_type: task.visType,
+        task_number: taskNum.toString()
+      });
+      return `${baseUrl}index.html?${params.toString()}`;
+    }
+
+    const task1Url = buildTaskUrl(finalTask1, 1);
+    const task2Url = buildTaskUrl(finalTask2, 2);
+
+    // Helper function to display dataset name nicely
+    function getDatasetDisplayName(dataset) {
+      if (dataset === 'user_study_monsters') return 'Monsters';
+      if (dataset === 'user_study_places') return 'Stories';
+      return dataset;
+    }
+
+    // Update Task 1 section
+    document.getElementById('task1Dataset').textContent = getDatasetDisplayName(finalTask1.dataset);
+    document.getElementById('task1VisType').textContent = 
+      finalTask1.visType === 'graph' ? 'Graph Visualization' : 'Raw Outputs';
+    document.getElementById('task1Link').href = task1Url;
+    document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
+
+    // Update Task 2 section
+    document.getElementById('task2Dataset').textContent = getDatasetDisplayName(finalTask2.dataset);
+    document.getElementById('task2VisType').textContent = 
+      finalTask2.visType === 'graph' ? 'Graph Visualization' : 'Raw Outputs';
+    document.getElementById('task2Link').href = task2Url;
+    document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
+
+    // Show form when task link is clicked
+    document.getElementById('task1Link').addEventListener('click', function() {
+      document.getElementById('task1FormContainer').classList.add('visible');
+    });
+
+    document.getElementById('task2Link').addEventListener('click', function() {
+      document.getElementById('task2FormContainer').classList.add('visible');
+    });
+
+    // Store assignments in localStorage for potential use in the app
+    if (userId) {
+      localStorage.setItem(`user_study_${userId}_task1`, JSON.stringify(finalTask1));
+      localStorage.setItem(`user_study_${userId}_task2`, JSON.stringify(finalTask2));
+    }
+
+    // Initialize progress dots
+    function initializeProgressDots() {
+      const dotsContainer = document.getElementById('progressDots');
+      dotsContainer.innerHTML = '';
+      for (let i = 1; i <= totalPages; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 1 ? ' active' : '');
+        dot.onclick = () => goToPage(i);
+        dotsContainer.appendChild(dot);
+      }
+    }
+
+    // Update page display
+    function updatePageDisplay() {
+      // Hide all pages
+      for (let i = 1; i <= totalPages; i++) {
+        const page = document.getElementById(`page${i}`);
+        page.classList.remove('active');
+      }
+      
+      // Show current page
+      document.getElementById(`page${currentPage}`).classList.add('active');
+      
+      // Update navigation buttons
+      document.getElementById('prevButton').disabled = currentPage === 1;
+      document.getElementById('nextButton').disabled = currentPage === totalPages;
+      
+      // Update progress dots
+      const dots = document.querySelectorAll('.dot');
+      dots.forEach((dot, index) => {
+        if (index + 1 === currentPage) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+        }
+      });
+    }
+
+    // Navigation functions
+    function nextPage() {
+      if (currentPage < totalPages) {
+        currentPage++;
+        updatePageDisplay();
+      }
+    }
+
+    function previousPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        updatePageDisplay();
+      }
+    }
+
+    function goToPage(page) {
+      if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        updatePageDisplay();
+      }
+    }
+
+    // Initialize on page load
+    initializeProgressDots();
+    updatePageDisplay();
+  </script>
+</body>
+</html>
