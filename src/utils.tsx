@@ -105,17 +105,12 @@ export async function tokenize(
 
         // Get embedding if USE_EMBS is enabled
         if (USE_EMBS) {
-            try {
-                const embedding = await getEmbeddings(word);
-                embEntry.embedding = embedding;
-                const prevWordEmb = await getEmbeddings(prevWord);
-                embEntry.prevWordEmb = prevWordEmb;
-                const nextWordEmb = await getEmbeddings(nextWord);
-                embEntry.nextWordEmb = nextWordEmb;
-            } catch (error) {
-
-                console.warn(`Failed to get embedding for "${word}":`, error);
-            }
+            const embedding = await getEmbeddings(word);
+            embEntry.embedding = embedding;
+            const prevWordEmb = await getEmbeddings(prevWord);
+            embEntry.prevWordEmb = prevWordEmb;
+            const nextWordEmb = await getEmbeddings(nextWord);
+            embEntry.nextWordEmb = nextWordEmb;
         }
         embsDict[tokenKey] = embEntry as EmbEntry;
         tokensToOrigWord[tokenKey] = originalChunk; // Store the original unmodified word

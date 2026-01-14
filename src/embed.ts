@@ -1,17 +1,9 @@
 // embed.ts
 import { stripWhitespaceAndPunctuation } from './utils';
-
-import { pipeline, env } from '@xenova/transformers';
-
-// Some weird hacks to fix caching errors.
-env.allowRemoteModels = true;
-env.allowLocalModels = false;
-
-// Make the URL construction unambiguous:
-env.remoteHost = 'https://huggingface.co';
-env.remotePathTemplate = '{model}/resolve/main/';
+import { pipeline } from '@xenova/transformers';
 
 let extractorCache: any = null;
+
 const modelId = 'Xenova/all-MiniLM-L6-v2';
 const REDUCED_EMBEDDING_DIM = 50;
 
@@ -45,7 +37,8 @@ export async function getEmbeddings(input: string): Promise<number[]> {
     input = stripWhitespaceAndPunctuation(input);
     // Check cache first
     const cached = getCachedEmbedding(input);
-    if (cached !== null) {
+    console.log('====== extractorCache', extractorCache);
+    if (cached) {
         return cached;
     }
 

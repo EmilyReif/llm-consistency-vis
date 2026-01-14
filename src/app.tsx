@@ -1,4 +1,5 @@
 import './app.css';
+import './transformers_config';
 import SingleExampleApp from './single_example_app';
 import { telemetry, getOrCreateSession } from './telemetry';
 import { useEffect } from 'react';
