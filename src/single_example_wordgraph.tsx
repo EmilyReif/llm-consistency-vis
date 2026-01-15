@@ -282,7 +282,16 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
         const tokenizeModeChanged = prevState.tokenizeMode !== this.state.tokenizeMode;
         const similarityThresholdChanged = prevState.similarityThreshold !== this.state.similarityThreshold;
-        if (similarityThresholdChanged || tokenizeModeChanged || !utils.objectsAreEqual(prevProps.promptGroups, this.props.promptGroups)) {
+        const promptGroupsChanged = !utils.objectsAreEqual(prevProps.promptGroups, this.props.promptGroups);
+        
+        // Clear selected/filtered words when prompts change
+        if (promptGroupsChanged) {
+            this.selectedNodes.clear();
+            this.hoveredNode = null;
+            this.hidePopup();
+        }
+        
+        if (similarityThresholdChanged || tokenizeModeChanged || promptGroupsChanged) {
             this.rebuildGraph();
         }
 

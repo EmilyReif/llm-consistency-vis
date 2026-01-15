@@ -19,6 +19,8 @@ class SingleExampleWordtree extends React.Component<Props> {
 
     async componentDidUpdate(prevProps: Props) {
         if (prevProps.generations !== this.props.generations) {
+            // Clear hovered token when prompt/generations change
+            this.setState({ hoveredToken: '' });
             await this.initializeTrie();
         }
     }
