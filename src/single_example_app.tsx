@@ -10,7 +10,7 @@ import { examples } from "./cached_examples";
 import { TokenizeMode } from "./utils";
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
-import { telemetry, submitSession } from "./telemetry";
+import { telemetry } from "./telemetry";
 
 const DEFAULT_TEXT = Object.keys(examples)[0];
 const SLIDER_WIDTH = 150;
@@ -164,30 +164,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                     </div>
                 </div>
                 {state.loading ? this.renderLoading() : <SingleExample />}
-                {state.isUserStudy && this.renderSubmitButton()}
             </div>
-        );
-    }
-
-    handleSubmitFinalOrder = async () => {
-        // Get the current prompts in order (full text only)
-        const finalAnswers = state.prompts.map(p => p.text);
-        const success = await submitSession(finalAnswers);
-        // if (success) {
-        //     alert('Thank you! Your responses have been submitted.');
-        // } else {
-        //     alert('There was an error submitting your responses. Please try again.');
-        // }
-    }
-
-    renderSubmitButton() {
-        return (
-            <button
-                className="submit-button"
-                onClick={this.handleSubmitFinalOrder}
-            >
-                Submit
-            </button>
         );
     }
 

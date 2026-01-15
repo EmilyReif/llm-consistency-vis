@@ -104,8 +104,59 @@ export function logEvent(type: string, data?: any): void {
   saveSession(session);
 }
 
+// Prepare submission payload from session
+function prepareSubmissionPayload(session: StudySession): string {
+  return JSON.stringify({
+    participantId: session.participantId,
+    interfaceVersion: session.interfaceVersion,
+    telemetry: session.telemetry,
+  });
+}
+
+// Submit session on page unload (uses sendBeacon for reliability)
+export function submitSessionOnUnload(): void {
+  const session = getOrCreateSession();
+  
+  // Only submit if there's telemetry data and it hasn't been submitted yet
+  if (session.telemetry.length === 0 || session.submitted) {
+    return;
+  }
+  
+  const data = prepareSubmissionPayload(session);
+  
+  // Use sendBeacon - it's specifically designed for unload events
+  // and is the most reliable method for sending data when page closes
+  const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
+  const sent = navigator.sendBeacon(TELEMETRY_ENDPOINT, blob);
+  
+  // Also try fetch with keepalive as backup if sendBeacon fails
+  if (!sent) {
+    fetch(TELEMETRY_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: data,
+      keepalive: true,
+    }).catch(() => {
+      // Silently fail - we can't do anything else at this point
+    });
+  }
+  
+  // Mark session as submitted and save (even if we can't verify success)
+  // This prevents duplicate submissions if the user comes back
+  session.submitted = true;
+  saveSession(session);
+}
+
+// Check if session should be submitted (has data and not already submitted)
+export function shouldSubmitSession(): boolean {
+  const session = getOrCreateSession();
+  return session.telemetry.length > 0 && !session.submitted;
+}
+
 // Submit the session to Google Apps Script
-export async function submitSession(finalAnswers?: any): Promise<boolean> {
+export async function submitSession(): Promise<boolean> {
   const session = getOrCreateSession();
   
   if (session.submitted) {
@@ -113,26 +164,16 @@ export async function submitSession(finalAnswers?: any): Promise<boolean> {
     return false;
   }
   
-  // Update final answers if provided
-  if (finalAnswers !== undefined) {
-    session.finalAnswers = finalAnswers;
-  }
-  
   try {
     console.log('CALLING TELEMETRY ENDPOINT')
+    const data = prepareSubmissionPayload(session);
     const response = await fetch(TELEMETRY_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/plain;charset=utf-8',
       },
-      body: JSON.stringify({
-        participantId: session.participantId,
-        interfaceVersion: session.interfaceVersion,
-        telemetry: session.telemetry,
-        finalAnswers: session.finalAnswers,
-      }),
+      body: data,
     });
-
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

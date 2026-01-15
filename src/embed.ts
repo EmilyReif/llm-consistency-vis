@@ -37,7 +37,6 @@ export async function getEmbeddings(input: string): Promise<number[]> {
     input = stripWhitespaceAndPunctuation(input);
     // Check cache first
     const cached = getCachedEmbedding(input);
-    console.log('====== extractorCache', extractorCache);
     if (cached) {
         return cached;
     }
