@@ -78,7 +78,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                             <div className="info-icon-container">
                                 <div className="info-icon">?</div>
                                 <div className="info-tooltip">
-                                    <span className="authors">Emily Reif, Deniz Nazarova, Jared Hwang, Claire Yang</span>
+                                    {/* <span className="authors">Emily Reif, Deniz Nazarova, Jared Hwang, Claire Yang</span> */}
                                     <p>
                                         When an LLM returns a response, we're actually sampling from a probability distribution over many possible
                                         outputs. But we usually only see one of those samples—the response that gets returned.
