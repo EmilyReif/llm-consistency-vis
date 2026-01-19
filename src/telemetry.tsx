@@ -73,6 +73,11 @@ export function getOrCreateSession(): StudySession {
 
 // Save session to localStorage
 function saveSession(session: StudySession): void {
+  // Only save if this is a user study
+  if (!state.isUserStudy) {
+    return;
+  }
+  
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   } catch (e) {
@@ -92,6 +97,11 @@ export function clearSessionData(): void {
 
 // Log an event and immediately save to localStorage
 export function logEvent(type: string, data?: any): void {
+  // Only log events if this is a user study
+  if (!state.isUserStudy) {
+    return;
+  }
+  
   const session = getOrCreateSession();
   
   const event: Event = {
@@ -115,6 +125,11 @@ function prepareSubmissionPayload(session: StudySession): string {
 
 // Submit session on page unload (uses sendBeacon for reliability)
 export function submitSessionOnUnload(): void {
+  // Only submit if this is a user study
+  if (!state.isUserStudy) {
+    return;
+  }
+  
   const session = getOrCreateSession();
   
   // Only submit if there's telemetry data and it hasn't been submitted yet
@@ -157,6 +172,11 @@ export function shouldSubmitSession(): boolean {
 
 // Submit the session to Google Apps Script
 export async function submitSession(): Promise<boolean> {
+  // Only submit if this is a user study
+  if (!state.isUserStudy) {
+    return false;
+  }
+  
   const session = getOrCreateSession();
   
   if (session.submitted) {
