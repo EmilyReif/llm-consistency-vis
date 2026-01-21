@@ -204,32 +204,11 @@
       <div class="description">
         <h2>Study Overview</h2>
         <p>
-          In this study, you'll act as a game designer working on a fantasy game.
+          In this study, you'll act as a game designer using an LLM to generate content for a fantasy game.
         </p>
       
         <p>
           Your goal is to compare prompts that automatically generate short descriptions of fantasy monsters or places, and ultimately choose the best.
-        </p>
-      
-        <p>
-          Each time this hypothetical game needs a new monster or place, it will call the prompt once to generate a description—there is no manual editing or selection after generation.
-          Because of this, it's important to think about the overall range of possible outputs, not just a single example.
-        </p>
-      
-        <p>
-          Using the interface, you'll look through groups of outputs from the LLM, and evaluate how well each prompt would work in practice.
-          When judging prompts, try to balance these goals:
-        </p>
-      
-        <ul>
-          <li><strong>Variety:</strong> Monsters and places should feel diverse and interesting.</li>
-          <li><strong>Consistency:</strong> Writing style and tone should feel cohesive.</li>
-          <li><strong>Safety &amp; Plausibility:</strong> Avoid offensive, inappropriate, or implausible content.</li>
-          <li><strong>Relevance:</strong> Monsters and places should fit a fantasy setting.</li>
-        </ul>
-      
-        <p>
-          There are no right or wrong answers. We're interested in your judgments and how the interface supports comparing many possible outputs.
         </p>
       </div>
     </div>
@@ -238,13 +217,32 @@
     <div id="page2" class="page">
       <div id="task1Section" class="task-section">
         <h3>Task 1</h3>
-        <div class="task-meta">
-          <strong>Dataset:</strong> <span id="task1Dataset"></span><br>
-          <strong>Visualization Type:</strong> <span id="task1VisType"></span>
+        
+        <div class="description" style="margin: 20px 0;">
+          <p>
+            Each time this hypothetical game needs a new <span id="task1EntityType">monster or place</span>, it will call the prompt once to generate a description—there is no manual editing or selection after generation.
+            Because of this, it's important to think about the overall range of possible outputs, not just a single example.
+          </p>
+        
+          <p>
+            Using the interface, you'll look through groups of outputs from the LLM, and evaluate how well each prompt would work in practice.
+            When judging prompts, try to balance these goals:
+          </p>
+        
+          <ul>
+            <li><strong>Variety:</strong> <span id="task1VarietyText">Monsters and places</span> should feel diverse and interesting.</li>
+            <li><strong>Consistency:</strong> Writing style and tone should feel cohesive.</li>
+            <li><strong>Safety &amp; Plausibility:</strong> Avoid offensive, inappropriate, or implausible content.</li>
+            <li><strong>Relevance:</strong> <span id="task1RelevanceText">Monsters and places</span> should fit a fantasy setting.</li>
+          </ul>
+        
+          <p>
+            There are no right or wrong answers. We're interested in your judgments and how the interface supports comparing many possible outputs.
+          </p>
         </div>
         
         <div class="video-container">
-          <h4>Task Instructions Video</h4>
+          <h4>Please watch the video below before starting the task</h4>
           <iframe 
             id="task1Video"
             width="1000" 
@@ -262,6 +260,11 @@
           </a>
         </div>
 
+        <div id="task1BackupLink" style="display: none; margin-top: 15px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px; font-size: 0.9em;">
+          <p style="margin: 0 0 8px 0;"><strong>Clicking the Task 1 button should open a new tab.</strong> If it doesn't, copy and paste this link into a new tab:</p>
+          <p style="margin: 0; word-break: break-all;"><a id="task1BackupUrl" href="#" target="_blank" style="color: #0066cc; text-decoration: underline;"></a></p>
+        </div>
+
         <div id="task1FormContainer" class="form-container">
           <h4>Task 1 Questionnaire</h4>
           <p>Please complete the questionnaire after finishing Task 1.</p>
@@ -274,13 +277,32 @@
     <div id="page3" class="page">
       <div id="task2Section" class="task-section">
         <h3>Task 2</h3>
-        <div class="task-meta">
-          <strong>Dataset:</strong> <span id="task2Dataset"></span><br>
-          <strong>Visualization Type:</strong> <span id="task2VisType"></span>
+        
+        <div class="description" style="margin: 20px 0;">
+          <p>
+            Each time this hypothetical game needs a new <span id="task2EntityType">monster or place</span>, it will call the prompt once to generate a description—there is no manual editing or selection after generation.
+            Because of this, it's important to think about the overall range of possible outputs, not just a single example.
+          </p>
+        
+          <p>
+            Using the interface, you'll look through groups of outputs from the LLM, and evaluate how well each prompt would work in practice.
+            When judging prompts, try to balance these goals:
+          </p>
+        
+          <ul>
+            <li><strong>Variety:</strong> <span id="task2VarietyText">Monsters and places</span> should feel diverse and interesting.</li>
+            <li><strong>Consistency:</strong> Writing style and tone should feel cohesive.</li>
+            <li><strong>Safety &amp; Plausibility:</strong> Avoid offensive, inappropriate, or implausible content.</li>
+            <li><strong>Relevance:</strong> <span id="task2RelevanceText">Monsters and places</span> should fit a fantasy setting.</li>
+          </ul>
+        
+          <p>
+            There are no right or wrong answers. We're interested in your judgments and how the interface supports comparing many possible outputs.
+          </p>
         </div>
         
         <div class="video-container">
-          <h4>Task Instructions Video</h4>
+          <h4>Please watch the video below before starting the task</h4>
           <iframe 
             id="task2Video"
             width="1000" 
@@ -296,6 +318,11 @@
           <a id="task2Link" href="#" class="task-link" target="_blank">
             Start Task 2 →
           </a>
+        </div>
+
+        <div id="task2BackupLink" style="display: none; margin-top: 15px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px; font-size: 0.9em;">
+          <p style="margin: 0 0 8px 0;"><strong>Clicking the Task 2 button should open a new tab.</strong> If it doesn't, copy and paste this link into a new tab:</p>
+          <p style="margin: 0; word-break: break-all;"><a id="task2BackupUrl" href="#" target="_blank" style="color: #0066cc; text-decoration: underline;"></a></p>
         </div>
 
         <div id="task2FormContainer" class="form-container">
@@ -331,6 +358,10 @@
     // Page navigation state
     let currentPage = 1;
     const totalPages = 4;
+    
+    // Track if tasks have been started
+    let task1Started = false;
+    let task2Started = false;
 
     // Google Drive embed URLs
     const videoExplanationGraph = 'https://drive.google.com/file/d/1DLkEhCWnByYmAWss-LITaVjsHKNCFp1v/preview';
@@ -498,34 +529,66 @@
       return dataset;
     }
 
+    // Helper function to get entity type text based on dataset
+    function getEntityTypeText(dataset) {
+      if (dataset === 'user_study_monsters') return 'monster';
+      if (dataset === 'user_study_places') return 'place';
+      return 'monster or place';
+    }
+
+    // Helper function to get variety/relevance text based on dataset
+    function getEntityPluralText(dataset) {
+      if (dataset === 'user_study_monsters') return 'Monsters';
+      if (dataset === 'user_study_places') return 'Places';
+      return 'Monsters and places';
+    }
+
     // Update Task 1 section
-    document.getElementById('task1Dataset').textContent = getDatasetDisplayName(finalTask1.dataset);
-    document.getElementById('task1VisType').textContent = 
-      finalTask1.visType === 'graph' ? 'Graph Visualization' : 'Raw Outputs';
     document.getElementById('task1Link').href = task1Url;
     document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
     document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset);
+    // Update task-specific text
+    document.getElementById('task1EntityType').textContent = getEntityTypeText(finalTask1.dataset);
+    document.getElementById('task1VarietyText').textContent = getEntityPluralText(finalTask1.dataset);
+    document.getElementById('task1RelevanceText').textContent = getEntityPluralText(finalTask1.dataset);
 
     // Update Task 2 section
-    document.getElementById('task2Dataset').textContent = getDatasetDisplayName(finalTask2.dataset);
-    document.getElementById('task2VisType').textContent = 
-      finalTask2.visType === 'graph' ? 'Graph Visualization' : 'Raw Outputs';
     document.getElementById('task2Link').href = task2Url;
     document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
     document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset);
+    // Update task-specific text
+    document.getElementById('task2EntityType').textContent = getEntityTypeText(finalTask2.dataset);
+    document.getElementById('task2VarietyText').textContent = getEntityPluralText(finalTask2.dataset);
+    document.getElementById('task2RelevanceText').textContent = getEntityPluralText(finalTask2.dataset);
 
     // Update Final Survey section
     const paramsString = encodeURIComponent(getProlificParamsString());
     const finalSurveyUrl = formUrlFinalSurveyTemplate.replace('UID', paramsString);
     document.getElementById('finalSurveyForm').src = finalSurveyUrl;
 
-    // Show form when task link is clicked
+    // Show form when task link is clicked and enable Next button
     document.getElementById('task1Link').addEventListener('click', function() {
       document.getElementById('task1FormContainer').classList.add('visible');
+      // Show backup link message
+      const backupLinkDiv = document.getElementById('task1BackupLink');
+      const backupUrlLink = document.getElementById('task1BackupUrl');
+      backupLinkDiv.style.display = 'block';
+      backupUrlLink.href = task1Url;
+      backupUrlLink.textContent = task1Url;
+      task1Started = true;
+      updatePageDisplay();
     });
 
     document.getElementById('task2Link').addEventListener('click', function() {
       document.getElementById('task2FormContainer').classList.add('visible');
+      // Show backup link message
+      const backupLinkDiv = document.getElementById('task2BackupLink');
+      const backupUrlLink = document.getElementById('task2BackupUrl');
+      backupLinkDiv.style.display = 'block';
+      backupUrlLink.href = task2Url;
+      backupUrlLink.textContent = task2Url;
+      task2Started = true;
+      updatePageDisplay();
     });
 
     // Store assignments in localStorage for potential use in the app
@@ -559,7 +622,15 @@
       
       // Update navigation buttons
       document.getElementById('prevButton').disabled = currentPage === 1;
-      document.getElementById('nextButton').disabled = currentPage === totalPages;
+      
+      // Disable Next button if on task pages and task hasn't been started
+      let nextButtonDisabled = currentPage === totalPages;
+      if (currentPage === 2 && !task1Started) {
+        nextButtonDisabled = true;
+      } else if (currentPage === 3 && !task2Started) {
+        nextButtonDisabled = true;
+      }
+      document.getElementById('nextButton').disabled = nextButtonDisabled;
       
       // Update progress dots
       const dots = document.querySelectorAll('.dot');
