@@ -243,6 +243,7 @@
         
         <div class="video-container">
           <h4>Please watch the video below before starting the task</h4>
+          <div id="task1Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
           <iframe 
             id="task1Video"
             width="1000" 
@@ -303,6 +304,7 @@
         
         <div class="video-container">
           <h4>Please watch the video below before starting the task</h4>
+          <div id="task2Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
           <iframe 
             id="task2Video"
             width="1000" 
@@ -543,6 +545,16 @@
       return 'Monsters and places';
     }
 
+    // Helper function to get description text based on visualization type
+    function getDescriptionText(visType) {
+      if (visType === 'raw_outputs') {
+        return 'This tool shows many outputs generated from the same prompt.<br>Select one or more prompts at the top to compare them.';
+      } else if (visType === 'graph') {
+        return 'This tool shows many outputs generated from the same prompt.<br>Select a prompt at the top to view its outputs.<br>Outputs are summarized as a graph, where each <b>path is one generation</b> and shared words show overlap (larger words appear more often).<br>Click words to filter outputs, simplify the view to highlight common patterns, and use color to compare outputs from different prompts.';
+      }
+      return '';
+    }
+
     // Update Task 1 section
     document.getElementById('task1Link').href = task1Url;
     document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
@@ -551,6 +563,8 @@
     document.getElementById('task1EntityType').textContent = getEntityTypeText(finalTask1.dataset);
     document.getElementById('task1VarietyText').textContent = getEntityPluralText(finalTask1.dataset);
     document.getElementById('task1RelevanceText').textContent = getEntityPluralText(finalTask1.dataset);
+    // Update description
+    document.getElementById('task1Description').innerHTML = getDescriptionText(finalTask1.visType);
 
     // Update Task 2 section
     document.getElementById('task2Link').href = task2Url;
@@ -560,6 +574,8 @@
     document.getElementById('task2EntityType').textContent = getEntityTypeText(finalTask2.dataset);
     document.getElementById('task2VarietyText').textContent = getEntityPluralText(finalTask2.dataset);
     document.getElementById('task2RelevanceText').textContent = getEntityPluralText(finalTask2.dataset);
+    // Update description
+    document.getElementById('task2Description').innerHTML = getDescriptionText(finalTask2.visType);
 
     // Update Final Survey section
     const paramsString = encodeURIComponent(getProlificParamsString());
