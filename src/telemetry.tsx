@@ -13,27 +13,59 @@ export interface Event {
 }
 
 export interface StudySession {
-  participantId: string;
   interfaceVersion: string;
   startedAt: number;
   telemetry: Event[];
   finalAnswers?: any;
   submitted: boolean;
+  prolificPid?: string;
+  sessionId?: string;
+  studyId?: string;
 }
 
-// Generate a unique participant ID if one doesn't exist
-function generateParticipantId(): string {
-  return `participant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+interface UrlParams {
+  prolificPid: string | null;
+  sessionId: string | null;
+  studyId: string | null;
+  interfaceVersion: string | null;
 }
 
-// Get participant ID from URL parameter, or generate one
-function getParticipantIdFromUrlOrGenerate(): string {
-  // Check for participant_id or user_id in URL parameters
-  const participantId = parseUrlParam('participant_id') || parseUrlParam('user_id');
-  if (participantId) {
-    return participantId;
+// Parse all telemetry-related URL parameters
+function parseTelemetryUrlParams(): UrlParams {
+  return {
+    prolificPid: parseUrlParam('prolific_pid'),
+    sessionId: parseUrlParam('session_id'),
+    studyId: parseUrlParam('study_id'),
+    interfaceVersion: parseUrlParam('vis_type'),
+  };
+}
+
+// Warn if any required parameters are missing
+function warnIfMissingParams(params: UrlParams): void {
+  if (!params.prolificPid || !params.sessionId || !params.studyId || !params.interfaceVersion) {
+    console.warn('Missing required telemetry parameters:', params);
   }
-  return generateParticipantId();
+}
+
+// Update session with URL parameters
+function updateSessionFromUrl(session: StudySession, params: UrlParams): void {
+  session.prolificPid = params.prolificPid || undefined;
+  session.sessionId = params.sessionId || undefined;
+  session.studyId = params.studyId || undefined;
+  session.interfaceVersion = params.interfaceVersion || 'graph';
+}
+
+// Create a new session with URL parameters
+function createNewSession(params: UrlParams): StudySession {
+  return {
+    interfaceVersion: params.interfaceVersion || 'graph',
+    startedAt: Date.now(),
+    telemetry: [],
+    submitted: false,
+    prolificPid: params.prolificPid || undefined,
+    sessionId: params.sessionId || undefined,
+    studyId: params.studyId || undefined,
+  };
 }
 
 // Get or create a study session from localStorage
@@ -45,12 +77,10 @@ export function getOrCreateSession(): StudySession {
       const session = JSON.parse(stored) as StudySession;
       // If session exists but isn't submitted, restore it
       if (!session.submitted) {
-        // Check if URL has a participant ID that overrides the stored one
-        const urlParticipantId = parseUrlParam('participant_id') || parseUrlParam('user_id');
-        if (urlParticipantId && urlParticipantId !== session.participantId) {
-          session.participantId = urlParticipantId;
-          saveSession(session);
-        }
+        const params = parseTelemetryUrlParams();
+        warnIfMissingParams(params);
+        updateSessionFromUrl(session, params);
+        saveSession(session);
         return session;
       }
     } catch (e) {
@@ -58,23 +88,22 @@ export function getOrCreateSession(): StudySession {
     }
   }
   
-  // Create new session with participant ID from URL or generate one
-  const newSession: StudySession = {
-    participantId: getParticipantIdFromUrlOrGenerate(),
-    interfaceVersion: state.visType,
-    startedAt: Date.now(),
-    telemetry: [],
-    submitted: false,
-  };
-  
+  // Create new session with Prolific fields and interface version from URL
+  const params = parseTelemetryUrlParams();
+  warnIfMissingParams(params);
+  const newSession = createNewSession(params);
   saveSession(newSession);
   return newSession;
 }
 
+// Check if telemetry should be active (only for user studies)
+function isTelemetryActive(): boolean {
+  return state.isUserStudy;
+}
+
 // Save session to localStorage
 function saveSession(session: StudySession): void {
-  // Only save if this is a user study
-  if (!state.isUserStudy) {
+  if (!isTelemetryActive()) {
     return;
   }
   
@@ -97,8 +126,7 @@ export function clearSessionData(): void {
 
 // Log an event and immediately save to localStorage
 export function logEvent(type: string, data?: any): void {
-  // Only log events if this is a user study
-  if (!state.isUserStudy) {
+  if (!isTelemetryActive()) {
     return;
   }
   
@@ -116,82 +144,72 @@ export function logEvent(type: string, data?: any): void {
 
 // Prepare submission payload from session
 function prepareSubmissionPayload(session: StudySession): string {
+  const participantIdParts = [
+    session.prolificPid,
+    session.sessionId,
+    session.studyId,
+  ].filter(Boolean);
+  const participantId = participantIdParts.length > 0 
+    ? participantIdParts.join('_') 
+    : '';
+  console.log('PREPARING SUBMISSION PAYLOAD', participantId);
   return JSON.stringify({
-    participantId: session.participantId,
+    participantId,
     interfaceVersion: session.interfaceVersion,
     telemetry: session.telemetry,
+    ...(session.prolificPid && { prolificPid: session.prolificPid }),
+    ...(session.sessionId && { sessionId: session.sessionId }),
+    ...(session.studyId && { studyId: session.studyId }),
   });
 }
 
-// Submit session on page unload (uses sendBeacon for reliability)
-export function submitSessionOnUnload(): void {
-  // Only submit if this is a user study
-  if (!state.isUserStudy) {
-    return;
-  }
-  
-  const session = getOrCreateSession();
-  
-  // Only submit if there's telemetry data and it hasn't been submitted yet
-  if (session.telemetry.length === 0 || session.submitted) {
-    return;
-  }
-  
-  const data = prepareSubmissionPayload(session);
-  
-  // Use sendBeacon - it's specifically designed for unload events
-  // and is the most reliable method for sending data when page closes
+// Check if session can be submitted (has data and not already submitted)
+function canSubmitSession(session: StudySession): boolean {
+  return session.telemetry.length > 0 && !session.submitted;
+}
+
+// Mark session as submitted, save, and clear session data
+// This is called by BOTH submission paths to ensure consistent handling
+function markSessionAsSubmittedAndClear(session: StudySession): void {
+  session.submitted = true;
+  saveSession(session);
+  // Clear session data to prevent duplicate submissions
+  // This ensures that even if the user returns, the session won't be resubmitted
+  clearSessionData();
+}
+
+// Common fetch options for telemetry submission
+const SUBMISSION_FETCH_OPTIONS = {
+  method: 'POST' as const,
+  headers: {
+    'Content-Type': 'text/plain;charset=utf-8',
+  },
+};
+
+// Submit using sendBeacon (for unload events) with fetch fallback
+function submitWithBeacon(data: string): void {
   const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
   const sent = navigator.sendBeacon(TELEMETRY_ENDPOINT, blob);
   
-  // Also try fetch with keepalive as backup if sendBeacon fails
+  // Fallback to fetch with keepalive if sendBeacon fails
   if (!sent) {
     fetch(TELEMETRY_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
+      ...SUBMISSION_FETCH_OPTIONS,
       body: data,
       keepalive: true,
     }).catch(() => {
       // Silently fail - we can't do anything else at this point
     });
   }
-  
-  // Mark session as submitted and save (even if we can't verify success)
-  // This prevents duplicate submissions if the user comes back
-  session.submitted = true;
-  saveSession(session);
 }
 
-// Check if session should be submitted (has data and not already submitted)
-export function shouldSubmitSession(): boolean {
-  const session = getOrCreateSession();
-  return session.telemetry.length > 0 && !session.submitted;
-}
-
-// Submit the session to Google Apps Script
-export async function submitSession(): Promise<boolean> {
-  // Only submit if this is a user study
-  if (!state.isUserStudy) {
-    return false;
-  }
-  
-  const session = getOrCreateSession();
-  
-  if (session.submitted) {
-    console.warn('Session already submitted');
-    return false;
-  }
-  
+// Submit using fetch with async/await (for manual submission)
+async function submitWithFetch(data: string): Promise<boolean> {
   try {
-    console.log('CALLING TELEMETRY ENDPOINT')
-    const data = prepareSubmissionPayload(session);
+    console.log('CALLING TELEMETRY ENDPOINT');
+    console.log(data);
     const response = await fetch(TELEMETRY_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
+      ...SUBMISSION_FETCH_OPTIONS,
       body: data,
     });
 
@@ -202,9 +220,6 @@ export async function submitSession(): Promise<boolean> {
     const result = await response.json();
     
     if (result.status === 'ok') {
-      // Mark as submitted and save
-      session.submitted = true;
-      saveSession(session);
       return true;
     } else {
       throw new Error('Unexpected response from server');
@@ -213,6 +228,63 @@ export async function submitSession(): Promise<boolean> {
     console.error('Error submitting telemetry:', error);
     return false;
   }
+}
+
+/**
+ * SUBMISSION PATH 2: Unload submission (for page close events)
+ */
+export function submitSessionOnUnload(): void {
+  if (!isTelemetryActive()) {
+    return;
+  }
+  
+  const session = getOrCreateSession();
+  
+  if (!canSubmitSession(session)) {
+    return;
+  }
+  
+  const data = prepareSubmissionPayload(session);
+  submitWithBeacon(data);
+  
+  // Mark as submitted AND clear session data
+  // This is the same handling as manual submission to prevent duplicates
+  markSessionAsSubmittedAndClear(session);
+}
+
+// Check if session should be submitted (has data and not already submitted)
+export function shouldSubmitSession(): boolean {
+  const session = getOrCreateSession();
+  return canSubmitSession(session);
+}
+
+/**
+ * SUBMISSION PATH 1: Manual submission (for blur/visibilitychange events)
+ * 
+ * This is called when the user switches tabs/windows (via blur/visibilitychange).
+ * Uses async fetch with response validation.
+ */
+export async function submitSession(): Promise<boolean> {
+  if (!isTelemetryActive()) {
+    return false;
+  }
+  
+  const session = getOrCreateSession();
+  
+  if (!canSubmitSession(session)) {
+    console.warn('Session already submitted or has no telemetry data');
+    return false;
+  }
+  
+  const data = prepareSubmissionPayload(session);
+  console.log('SUBMITTING SESSION', data);
+  const success = await submitWithFetch(data);
+  
+  if (success) {
+    markSessionAsSubmittedAndClear(session);
+  }
+  
+  return success;
 }
 
 // Log page load/refresh
