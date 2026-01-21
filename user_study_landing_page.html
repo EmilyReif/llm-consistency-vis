@@ -247,8 +247,8 @@
           <h4>Task Instructions Video</h4>
           <iframe 
             id="task1Video"
-            width="560" 
-            height="315" 
+            width="1000" 
+            height="500" 
             src="" 
             frameborder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -265,7 +265,7 @@
         <div id="task1FormContainer" class="form-container">
           <h4>Task 1 Questionnaire</h4>
           <p>Please complete the questionnaire after finishing Task 1.</p>
-          <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdLZFiFxcohdSDKzot0ptxDN82Ixx7iPnV1_My0a3WWC4nHWw/viewform?embedded=true" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+          <iframe id="task1Form" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
         </div>
       </div>
     </div>
@@ -283,8 +283,8 @@
           <h4>Task Instructions Video</h4>
           <iframe 
             id="task2Video"
-            width="560" 
-            height="315" 
+            width="1000" 
+            height="500" 
             src="" 
             frameborder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -300,7 +300,19 @@
 
         <div id="task2FormContainer" class="form-container">
           <h4>Task 2 Questionnaire</h4>
-          <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdLZFiFxcohdSDKzot0ptxDN82Ixx7iPnV1_My0a3WWC4nHWw/viewform?embedded=true" width="640" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+          <iframe id="task2Form" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 4: Final Survey -->
+    <div id="page4" class="page">
+      <div class="task-section">
+        <h3>Final Survey</h3>
+        <p>Thank you for completing both tasks! Please complete this final survey about your overall experience.</p>
+        
+        <div class="form-container visible">
+          <iframe id="finalSurveyForm" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
         </div>
       </div>
     </div>
@@ -318,11 +330,16 @@
   <script>
     // Page navigation state
     let currentPage = 1;
-    const totalPages = 3;
+    const totalPages = 4;
 
-    // YouTube embed URLs - replace these with your actual embed URLs
-    const videoExplanationGraph = '[PLACEHOLDER: YouTube embed URL for graph explanation]';
-    const videoExplanationRawOutputs = '[PLACEHOLDER: YouTube embed URL for raw outputs explanation]';
+    // Google Drive embed URLs
+    const videoExplanationGraph = 'https://drive.google.com/file/d/1DLkEhCWnByYmAWss-LITaVjsHKNCFp1v/preview';
+    const videoExplanationRawOutputs = 'https://drive.google.com/file/d/1qOgPwDVBZ1IGEx0cutb88NzZ7Xc6KZi_/preview';
+
+    // Google Form URLs for different conditions (prefilled format)
+    const formUrlCharactersTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSfbOEthQdVxALvWYzARrWYin22J4fsW0WTTy7MsPQhE6rB4Gw/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
+    const formUrlPlacesTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSdLZFiFxcohdSDKzot0ptxDN82Ixx7iPnV1_My0a3WWC4nHWw/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
+    const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSd5trytqg1lOWpxhnoSXUduZe7Z8qW4ep688C8S310dNDDzMw/viewform?usp=pp_url&entry.1859965680=UID&embedded=true';
 
     // Function to get video URL based on vis type
     function getVideoUrlForVisType(visType) {
@@ -332,6 +349,37 @@
         return videoExplanationRawOutputs.includes('[PLACEHOLDER') ? '' : videoExplanationRawOutputs;
       }
       return '';
+    }
+
+    // Function to get Prolific parameters as a formatted string
+    function getProlificParamsString() {
+      const prolificPid = getUrlParam('prolific_pid') || '';
+      const sessionId = getUrlParam('session_id') || '';
+      const studyId = getUrlParam('study_id') || '';
+      
+      const params = [];
+      if (prolificPid) params.push(`prolific_pid=${prolificPid}`);
+      if (sessionId) params.push(`session_id=${sessionId}`);
+      if (studyId) params.push(`study_id=${studyId}`);
+      
+      return params.join('&');
+    }
+
+    // Function to get form URL based on dataset, with Prolific parameters prefilled
+    function getFormUrlForDataset(dataset) {
+      const paramsString = encodeURIComponent(getProlificParamsString());
+      let formUrl;
+      
+      if (dataset === 'user_study_monsters') {
+        formUrl = formUrlCharactersTemplate;
+      } else if (dataset === 'user_study_places') {
+        formUrl = formUrlPlacesTemplate;
+      } else {
+        return '';
+      }
+      
+      // Replace UID with the encoded Prolific parameters string
+      return formUrl.replace('UID', paramsString);
     }
 
     // Function to get URL parameter
@@ -354,6 +402,11 @@
       document.getElementById('userId').textContent = userId;
       document.getElementById('userInfo').style.display = 'block';
     }
+
+    // Get Prolific URL parameters
+    const prolificPid = getUrlParam('prolific_pid');
+    const sessionId = getUrlParam('session_id');
+    const studyId = getUrlParam('study_id');
 
     // All possible task combinations
     const datasets = ['user_study_places', 'user_study_monsters'];
@@ -422,6 +475,16 @@
         vis_type: task.visType,
         task_number: taskNum.toString()
       });
+      // Add Prolific parameters if present
+      if (prolificPid) {
+        params.set('prolific_pid', prolificPid);
+      }
+      if (sessionId) {
+        params.set('session_id', sessionId);
+      }
+      if (studyId) {
+        params.set('study_id', studyId);
+      }
       return `${baseUrl}index.html?${params.toString()}`;
     }
 
@@ -441,6 +504,7 @@
       finalTask1.visType === 'graph' ? 'Graph Visualization' : 'Raw Outputs';
     document.getElementById('task1Link').href = task1Url;
     document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
+    document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset);
 
     // Update Task 2 section
     document.getElementById('task2Dataset').textContent = getDatasetDisplayName(finalTask2.dataset);
@@ -448,6 +512,12 @@
       finalTask2.visType === 'graph' ? 'Graph Visualization' : 'Raw Outputs';
     document.getElementById('task2Link').href = task2Url;
     document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
+    document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset);
+
+    // Update Final Survey section
+    const paramsString = encodeURIComponent(getProlificParamsString());
+    const finalSurveyUrl = formUrlFinalSurveyTemplate.replace('UID', paramsString);
+    document.getElementById('finalSurveyForm').src = finalSurveyUrl;
 
     // Show form when task link is clicked
     document.getElementById('task1Link').addEventListener('click', function() {
