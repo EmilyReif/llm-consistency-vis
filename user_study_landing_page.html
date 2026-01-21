@@ -194,10 +194,6 @@
 <body>
   <h1>LLM Consistency Visualization User Study</h1>
 
-  <div id="userInfo" class="user-info" style="display: none;">
-    <strong>User ID:</strong> <span id="userId"></span>
-  </div>
-
   <div class="page-container">
     <!-- Page 1: Overview -->
     <div id="page1" class="page active">
@@ -429,13 +425,6 @@
       return window.location.origin + basePath;
     }
 
-    // Get user_id from URL
-    const userId = getUrlParam('user_id');
-    if (userId) {
-      document.getElementById('userId').textContent = userId;
-      document.getElementById('userInfo').style.display = 'block';
-    }
-
     // Get Prolific URL parameters
     const prolificPid = getUrlParam('prolific_pid');
     const sessionId = getUrlParam('session_id');
@@ -462,8 +451,8 @@
       };
     }
 
-    const seed = userId ? 
-      userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 
+    const seed = prolificPid ? 
+    prolificPid.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 
       Date.now();
     const random = seededRandom(seed);
 
@@ -503,7 +492,7 @@
     function buildTaskUrl(task, taskNum) {
       const params = new URLSearchParams({
         is_user_study: 'true',
-        user_id: userId || '',
+        user_id: prolificPid || '',
         dataset: task.dataset,
         vis_type: task.visType,
         task_number: taskNum.toString()
@@ -555,6 +544,13 @@
       return '';
     }
 
+    // Helper function to get Task 2 description with intro acknowledging similarity
+    function getTask2Description(visType, task2Dataset, task1Dataset) {
+      const task2Entity = getEntityTypeText(task2Dataset);
+      const intro = `Now, we are going to be doing something similar, but instead we will be generating ${task2Entity}s.<br><br>`;
+      return intro + getDescriptionText(visType);
+    }
+
     // Update Task 1 section
     document.getElementById('task1Link').href = task1Url;
     document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
@@ -574,8 +570,8 @@
     document.getElementById('task2EntityType').textContent = getEntityTypeText(finalTask2.dataset);
     document.getElementById('task2VarietyText').textContent = getEntityPluralText(finalTask2.dataset);
     document.getElementById('task2RelevanceText').textContent = getEntityPluralText(finalTask2.dataset);
-    // Update description
-    document.getElementById('task2Description').innerHTML = getDescriptionText(finalTask2.visType);
+    // Update description with intro acknowledging similarity
+    document.getElementById('task2Description').innerHTML = getTask2Description(finalTask2.visType, finalTask2.dataset, finalTask1.dataset);
 
     // Update Final Survey section
     const paramsString = encodeURIComponent(getProlificParamsString());
@@ -608,9 +604,9 @@
     });
 
     // Store assignments in localStorage for potential use in the app
-    if (userId) {
-      localStorage.setItem(`user_study_${userId}_task1`, JSON.stringify(finalTask1));
-      localStorage.setItem(`user_study_${userId}_task2`, JSON.stringify(finalTask2));
+    if (prolificPid) {
+      localStorage.setItem(`user_study_${prolificPid}_task1`, JSON.stringify(finalTask1));
+      localStorage.setItem(`user_study_${prolificPid}_task2`, JSON.stringify(finalTask2));
     }
 
     // Initialize progress dots
