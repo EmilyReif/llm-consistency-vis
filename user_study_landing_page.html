@@ -566,7 +566,7 @@
     }
 
     // Function to get Prolific parameters as a formatted string
-    function getProlificParamsString() {
+    function getProlificParamsString(dataset, visType) {
       const prolificPid = getUrlParam('prolific_pid') || '';
       const sessionId = getUrlParam('session_id') || '';
       const studyId = getUrlParam('study_id') || '';
@@ -575,13 +575,15 @@
       if (prolificPid) params.push(`prolific_pid=${prolificPid}`);
       if (sessionId) params.push(`session_id=${sessionId}`);
       if (studyId) params.push(`study_id=${studyId}`);
+      if (dataset) params.push(`dataset=${dataset}`);
+      if (visType) params.push(`vis_type=${visType}`);
       
       return params.join('&');
     }
 
     // Function to get form URL based on dataset, with Prolific parameters prefilled
-    function getFormUrlForDataset(dataset) {
-      const paramsString = encodeURIComponent(getProlificParamsString());
+    function getFormUrlForDataset(dataset, visType) {
+      const paramsString = encodeURIComponent(getProlificParamsString(dataset, visType));
       let formUrl;
       
       if (dataset === 'user_study_monsters') {
@@ -739,7 +741,7 @@
     // Update Task 1 section
     document.getElementById('task1Link').href = task1Url;
     document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
-    document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset);
+    document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset, finalTask1.visType);
     // Update task-specific text
     document.getElementById('task1EntityType').textContent = getEntityTypeText(finalTask1.dataset);
     document.getElementById('task1VarietyText').textContent = getEntityPluralText(finalTask1.dataset);
@@ -750,7 +752,7 @@
     // Update Task 2 section
     document.getElementById('task2Link').href = task2Url;
     document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
-    document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset);
+    document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset, finalTask2.visType);
     // Update task-specific text
     document.getElementById('task2EntityType').textContent = getEntityTypeText(finalTask2.dataset);
     document.getElementById('task2VarietyText').textContent = getEntityPluralText(finalTask2.dataset);
@@ -759,7 +761,11 @@
     document.getElementById('task2Description').innerHTML = getTask2Description(finalTask2.visType, finalTask2.dataset, finalTask1.dataset);
 
     // Update Final Survey section
-    const paramsString = encodeURIComponent(getProlificParamsString());
+    // Include both tasks' dataset and visType for the final survey
+    const paramsString = encodeURIComponent(getProlificParamsString(
+      `${finalTask1.dataset},${finalTask2.dataset}`,
+      `${finalTask1.visType},${finalTask2.visType}`
+    ));
     const finalSurveyUrl = formUrlFinalSurveyTemplate.replace('UID', paramsString);
     document.getElementById('finalSurveyForm').src = finalSurveyUrl;
 
