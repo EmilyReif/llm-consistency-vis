@@ -194,10 +194,6 @@
 <body>
   <h1>LLM Consistency Visualization User Study</h1>
 
-  <div id="userInfo" class="user-info" style="display: none;">
-    <strong>User ID:</strong> <span id="userId"></span>
-  </div>
-
   <div class="page-container">
     <!-- Page 1: Overview -->
     <div id="page1" class="page active">
@@ -357,6 +353,191 @@
   </div>
 
   <script>
+    // ===== TELEMETRY SYSTEM =====
+    const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzjSK-bJaYB15HqtNBDNK9kjoDdJS9LDmkxMkoK22ij_kzsdGqtu5B58HIisn-qo5Ls/exec';
+    
+    let telemetryEvents = [];
+    let pageStartedAt = Date.now();
+    let hasSubmitted = false;
+    
+    // Get URL parameter
+    function getTelemetryUrlParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+    
+    // Get metadata for events
+    function getTelemetryMetadata() {
+      return {
+        interfaceVersion: 'landing_page',
+        startedAt: pageStartedAt,
+        prolificPid: getTelemetryUrlParam('prolific_pid') || undefined,
+        sessionId: getTelemetryUrlParam('session_id') || undefined,
+        studyId: getTelemetryUrlParam('study_id') || undefined,
+      };
+    }
+    
+    // Log a telemetry event
+    function logTelemetryEvent(type, data) {
+      const metadata = getTelemetryMetadata();
+      const event = {
+        timestamp: Date.now(),
+        type,
+        data,
+        ...metadata,
+      };
+      telemetryEvents.push(event);
+    }
+    
+    // Get participant ID
+    function getParticipantId() {
+      const prolificPid = getTelemetryUrlParam('prolific_pid');
+      const sessionId = getTelemetryUrlParam('session_id');
+      const studyId = getTelemetryUrlParam('study_id');
+      const parts = [prolificPid, sessionId, studyId].filter(Boolean);
+      return parts.length > 0 ? parts.join('_') : '';
+    }
+    
+    // Prepare submission payload
+    function prepareTelemetryPayload() {
+      return JSON.stringify({
+        participantId: getParticipantId(),
+        interfaceVersion: 'landing_page',
+        telemetry: telemetryEvents,
+      });
+    }
+    
+    // Submit telemetry (async version for blur/visibilitychange)
+    async function submitTelemetryAsync() {
+      if (hasSubmitted || telemetryEvents.length === 0) {
+        return false;
+      }
+      
+      // Log leavePage event before submitting
+      const timeOnPage = Date.now() - pageStartedAt;
+      logTelemetryEvent('leavePage', {
+        timeOnPage,
+        url: window.location.href,
+      });
+      
+      const data = prepareTelemetryPayload();
+      
+      try {
+        const response = await fetch(TELEMETRY_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
+          body: data,
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        if (result.status === 'ok') {
+          hasSubmitted = true;
+          return true;
+        } else {
+          throw new Error('Unexpected response from server');
+        }
+      } catch (error) {
+        console.error('Error submitting telemetry:', error);
+        return false;
+      }
+    }
+    
+    // Submit telemetry (sync version for unload events)
+    function submitTelemetrySync() {
+      if (hasSubmitted || telemetryEvents.length === 0) {
+        return;
+      }
+      
+      // Log leavePage event before submitting
+      const timeOnPage = Date.now() - pageStartedAt;
+      logTelemetryEvent('leavePage', {
+        timeOnPage,
+        url: window.location.href,
+      });
+      
+      const data = prepareTelemetryPayload();
+      const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
+      const sent = navigator.sendBeacon(TELEMETRY_ENDPOINT, blob);
+      
+      if (!sent) {
+        fetch(TELEMETRY_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
+          body: data,
+          keepalive: true,
+        }).catch(() => {
+          // Silently fail
+        });
+      }
+      
+      hasSubmitted = true;
+    }
+    
+    // Auto-submit telemetry when window loses focus or closes (similar to app.tsx)
+    let hasSubmittedRef = false;
+    
+    const handleAutoSubmit = async () => {
+      // Prevent multiple simultaneous submissions
+      if (hasSubmittedRef) {
+        return;
+      }
+      
+      if (hasSubmitted || telemetryEvents.length === 0) {
+        return;
+      }
+      
+      hasSubmittedRef = true;
+      const success = await submitTelemetryAsync();
+      
+      if (!success) {
+        // Reset flag if submission failed so we can retry on next blur/close
+        hasSubmittedRef = false;
+      }
+    };
+    
+    // Handle window blur (user switches to another tab/window)
+    const handleBlur = () => {
+      handleAutoSubmit();
+    };
+    
+    // Handle visibility change (more reliable for tab switching)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handleAutoSubmit();
+      }
+    };
+    
+    // Handle page unload (window is closing)
+    const submitOnUnload = () => {
+      if (!hasSubmittedRef && !hasSubmitted && telemetryEvents.length > 0) {
+        hasSubmittedRef = true;
+        submitTelemetrySync();
+      }
+    };
+    
+    // Add event listeners (same pattern as app.tsx)
+    window.addEventListener('blur', handleBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // Use onbeforeunload property for maximum reliability
+    window.onbeforeunload = submitOnUnload;
+    // Also add pagehide as additional backup
+    window.addEventListener('pagehide', submitOnUnload);
+    
+    // Log page load
+    logTelemetryEvent('page_load', {
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+    });
+    // ===== END TELEMETRY SYSTEM =====
+    
     // Page navigation state
     let currentPage = 1;
     const totalPages = 4;
@@ -385,7 +566,7 @@
     }
 
     // Function to get Prolific parameters as a formatted string
-    function getProlificParamsString() {
+    function getProlificParamsString(dataset, visType) {
       const prolificPid = getUrlParam('prolific_pid') || '';
       const sessionId = getUrlParam('session_id') || '';
       const studyId = getUrlParam('study_id') || '';
@@ -394,13 +575,15 @@
       if (prolificPid) params.push(`prolific_pid=${prolificPid}`);
       if (sessionId) params.push(`session_id=${sessionId}`);
       if (studyId) params.push(`study_id=${studyId}`);
+      if (dataset) params.push(`dataset=${dataset}`);
+      if (visType) params.push(`vis_type=${visType}`);
       
       return params.join('&');
     }
 
     // Function to get form URL based on dataset, with Prolific parameters prefilled
-    function getFormUrlForDataset(dataset) {
-      const paramsString = encodeURIComponent(getProlificParamsString());
+    function getFormUrlForDataset(dataset, visType) {
+      const paramsString = encodeURIComponent(getProlificParamsString(dataset, visType));
       let formUrl;
       
       if (dataset === 'user_study_monsters') {
@@ -429,13 +612,6 @@
       return window.location.origin + basePath;
     }
 
-    // Get user_id from URL
-    const userId = getUrlParam('user_id');
-    if (userId) {
-      document.getElementById('userId').textContent = userId;
-      document.getElementById('userInfo').style.display = 'block';
-    }
-
     // Get Prolific URL parameters
     const prolificPid = getUrlParam('prolific_pid');
     const sessionId = getUrlParam('session_id');
@@ -462,8 +638,8 @@
       };
     }
 
-    const seed = userId ? 
-      userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 
+    const seed = prolificPid ? 
+    prolificPid.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 
       Date.now();
     const random = seededRandom(seed);
 
@@ -503,7 +679,7 @@
     function buildTaskUrl(task, taskNum) {
       const params = new URLSearchParams({
         is_user_study: 'true',
-        user_id: userId || '',
+        user_id: prolificPid || '',
         dataset: task.dataset,
         vis_type: task.visType,
         task_number: taskNum.toString()
@@ -555,10 +731,17 @@
       return '';
     }
 
+    // Helper function to get Task 2 description with intro acknowledging similarity
+    function getTask2Description(visType, task2Dataset, task1Dataset) {
+      const task2Entity = getEntityTypeText(task2Dataset);
+      const intro = `Now, we are going to be doing something similar, but instead we will be generating ${task2Entity}s.<br><br>`;
+      return intro + getDescriptionText(visType);
+    }
+
     // Update Task 1 section
     document.getElementById('task1Link').href = task1Url;
     document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
-    document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset);
+    document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset, finalTask1.visType);
     // Update task-specific text
     document.getElementById('task1EntityType').textContent = getEntityTypeText(finalTask1.dataset);
     document.getElementById('task1VarietyText').textContent = getEntityPluralText(finalTask1.dataset);
@@ -569,21 +752,31 @@
     // Update Task 2 section
     document.getElementById('task2Link').href = task2Url;
     document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
-    document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset);
+    document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset, finalTask2.visType);
     // Update task-specific text
     document.getElementById('task2EntityType').textContent = getEntityTypeText(finalTask2.dataset);
     document.getElementById('task2VarietyText').textContent = getEntityPluralText(finalTask2.dataset);
     document.getElementById('task2RelevanceText').textContent = getEntityPluralText(finalTask2.dataset);
-    // Update description
-    document.getElementById('task2Description').innerHTML = getDescriptionText(finalTask2.visType);
+    // Update description with intro acknowledging similarity
+    document.getElementById('task2Description').innerHTML = getTask2Description(finalTask2.visType, finalTask2.dataset, finalTask1.dataset);
 
     // Update Final Survey section
-    const paramsString = encodeURIComponent(getProlificParamsString());
+    // Include both tasks' dataset and visType for the final survey
+    const paramsString = encodeURIComponent(getProlificParamsString(
+      `${finalTask1.dataset},${finalTask2.dataset}`,
+      `${finalTask1.visType},${finalTask2.visType}`
+    ));
     const finalSurveyUrl = formUrlFinalSurveyTemplate.replace('UID', paramsString);
     document.getElementById('finalSurveyForm').src = finalSurveyUrl;
 
     // Show form when task link is clicked and enable Next button
     document.getElementById('task1Link').addEventListener('click', function() {
+      logTelemetryEvent('start_task', {
+        taskNumber: 1,
+        dataset: finalTask1.dataset,
+        visType: finalTask1.visType,
+        url: task1Url,
+      });
       document.getElementById('task1FormContainer').classList.add('visible');
       // Show backup link message
       const backupLinkDiv = document.getElementById('task1BackupLink');
@@ -596,6 +789,12 @@
     });
 
     document.getElementById('task2Link').addEventListener('click', function() {
+      logTelemetryEvent('start_task', {
+        taskNumber: 2,
+        dataset: finalTask2.dataset,
+        visType: finalTask2.visType,
+        url: task2Url,
+      });
       document.getElementById('task2FormContainer').classList.add('visible');
       // Show backup link message
       const backupLinkDiv = document.getElementById('task2BackupLink');
@@ -608,9 +807,9 @@
     });
 
     // Store assignments in localStorage for potential use in the app
-    if (userId) {
-      localStorage.setItem(`user_study_${userId}_task1`, JSON.stringify(finalTask1));
-      localStorage.setItem(`user_study_${userId}_task2`, JSON.stringify(finalTask2));
+    if (prolificPid) {
+      localStorage.setItem(`user_study_${prolificPid}_task1`, JSON.stringify(finalTask1));
+      localStorage.setItem(`user_study_${prolificPid}_task2`, JSON.stringify(finalTask2));
     }
 
     // Initialize progress dots
@@ -659,23 +858,83 @@
       });
     }
 
+    // Helper function to get dataset and visType for a page
+    function getPageTaskInfo(page) {
+      if (page === 2) {
+        // Task 1 page
+        return {
+          dataset: finalTask1.dataset,
+          visType: finalTask1.visType,
+        };
+      } else if (page === 3) {
+        // Task 2 page
+        return {
+          dataset: finalTask2.dataset,
+          visType: finalTask2.visType,
+        };
+      }
+      // Page 1 (Overview) or Page 4 (Final Survey) - no task info
+      return {
+        dataset: null,
+        visType: null,
+      };
+    }
+
     // Navigation functions
     function nextPage() {
       if (currentPage < totalPages) {
-        currentPage++;
+        const toPage = currentPage + 1;
+        const fromPageInfo = getPageTaskInfo(currentPage);
+        const toPageInfo = getPageTaskInfo(toPage);
+        
+        logTelemetryEvent('landing_page_nav', {
+          action: 'next',
+          fromPage: currentPage,
+          toPage: toPage,
+          fromDataset: fromPageInfo.dataset,
+          fromVisType: fromPageInfo.visType,
+          toDataset: toPageInfo.dataset,
+          toVisType: toPageInfo.visType,
+        });
+        currentPage = toPage;
         updatePageDisplay();
       }
     }
 
     function previousPage() {
       if (currentPage > 1) {
-        currentPage--;
+        const toPage = currentPage - 1;
+        const fromPageInfo = getPageTaskInfo(currentPage);
+        const toPageInfo = getPageTaskInfo(toPage);
+        
+        logTelemetryEvent('landing_page_nav', {
+          action: 'prev',
+          fromPage: currentPage,
+          toPage: toPage,
+          fromDataset: fromPageInfo.dataset,
+          fromVisType: fromPageInfo.visType,
+          toDataset: toPageInfo.dataset,
+          toVisType: toPageInfo.visType,
+        });
+        currentPage = toPage;
         updatePageDisplay();
       }
     }
 
     function goToPage(page) {
       if (page >= 1 && page <= totalPages) {
+        const fromPageInfo = getPageTaskInfo(currentPage);
+        const toPageInfo = getPageTaskInfo(page);
+        
+        logTelemetryEvent('landing_page_nav', {
+          action: 'dot_click',
+          fromPage: currentPage,
+          toPage: page,
+          fromDataset: fromPageInfo.dataset,
+          fromVisType: fromPageInfo.visType,
+          toDataset: toPageInfo.dataset,
+          toVisType: toPageInfo.visType,
+        });
         currentPage = page;
         updatePageDisplay();
       }

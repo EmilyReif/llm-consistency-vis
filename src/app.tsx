@@ -1,15 +1,14 @@
 import './app.css';
 import './transformers_config';
 import SingleExampleApp from './single_example_app';
-import { telemetry, getOrCreateSession, submitSession, clearSessionData, submitSessionOnUnload, shouldSubmitSession } from './telemetry';
+import { telemetry, submitSession, clearSessionData, submitSessionOnUnload, shouldSubmitSession } from './telemetry';
 import { useEffect, useRef } from 'react';
 
 function App() {
   const hasSubmittedRef = useRef(false);
 
   useEffect(() => {
-    // Initialize session and log page load immediately
-    getOrCreateSession();
+    // Log page load immediately
     telemetry.logPageLoad();
 
     // Auto-submit telemetry when window loses focus or closes
@@ -27,10 +26,7 @@ function App() {
       hasSubmittedRef.current = true;
       const success = await submitSession();
       
-      if (success) {
-        // Clear telemetry data after successful submission to avoid duplicates
-        clearSessionData();
-      } else {
+      if (!success) {
         // Reset flag if submission failed so we can retry on next blur/close
         hasSubmittedRef.current = false;
       }

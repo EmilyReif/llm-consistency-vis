@@ -3,21 +3,17 @@
 import { state } from './state';
 import { parseUrlParam } from './utils';
 
-const STORAGE_KEY = 'llm_consistency_study_session';
 const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzjSK-bJaYB15HqtNBDNK9kjoDdJS9LDmkxMkoK22ij_kzsdGqtu5B58HIisn-qo5Ls/exec';
 // const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwBecSgj0Sk7qCi0DO_k1uHQVaOJa04PJv-XMftUUc/dev';
+
 export interface Event {
   timestamp: number;
   type: string;
   data?: any;
-}
-
-export interface StudySession {
+  // Metadata included in each event
   interfaceVersion: string;
+  dataset?: string;
   startedAt: number;
-  telemetry: Event[];
-  finalAnswers?: any;
-  submitted: boolean;
   prolificPid?: string;
   sessionId?: string;
   studyId?: string;
@@ -28,7 +24,13 @@ interface UrlParams {
   sessionId: string | null;
   studyId: string | null;
   interfaceVersion: string | null;
+  dataset: string | null;
 }
+
+// In-memory storage for events (only for current page load)
+let events: Event[] = [];
+let pageStartedAt: number | null = null;
+let hasSubmitted: boolean = false;
 
 // Parse all telemetry-related URL parameters
 function parseTelemetryUrlParams(): UrlParams {
@@ -37,63 +39,42 @@ function parseTelemetryUrlParams(): UrlParams {
     sessionId: parseUrlParam('session_id'),
     studyId: parseUrlParam('study_id'),
     interfaceVersion: parseUrlParam('vis_type'),
+    dataset: parseUrlParam('dataset'),
   };
 }
 
-// Warn if any required parameters are missing
-function warnIfMissingParams(params: UrlParams): void {
-  if (!params.prolificPid || !params.sessionId || !params.studyId || !params.interfaceVersion) {
-    console.warn('Missing required telemetry parameters:', params);
+// Get metadata that should be included in each event
+function getEventMetadata(): {
+  interfaceVersion: string;
+  dataset?: string;
+  startedAt: number;
+  prolificPid?: string;
+  sessionId?: string;
+  studyId?: string;
+} {
+  const params = parseTelemetryUrlParams();
+  
+  // Initialize pageStartedAt on first call
+  if (pageStartedAt === null) {
+    pageStartedAt = Date.now();
   }
-}
-
-// Update session with URL parameters
-function updateSessionFromUrl(session: StudySession, params: UrlParams): void {
-  session.prolificPid = params.prolificPid || undefined;
-  session.sessionId = params.sessionId || undefined;
-  session.studyId = params.studyId || undefined;
-  session.interfaceVersion = params.interfaceVersion || 'graph';
-}
-
-// Create a new session with URL parameters
-function createNewSession(params: UrlParams): StudySession {
+  
   return {
     interfaceVersion: params.interfaceVersion || 'graph',
-    startedAt: Date.now(),
-    telemetry: [],
-    submitted: false,
+    dataset: params.dataset || undefined,
+    startedAt: pageStartedAt,
     prolificPid: params.prolificPid || undefined,
     sessionId: params.sessionId || undefined,
     studyId: params.studyId || undefined,
   };
 }
 
-// Get or create a study session from localStorage
-export function getOrCreateSession(): StudySession {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  
-  if (stored) {
-    try {
-      const session = JSON.parse(stored) as StudySession;
-      // If session exists but isn't submitted, restore it
-      if (!session.submitted) {
-        const params = parseTelemetryUrlParams();
-        warnIfMissingParams(params);
-        updateSessionFromUrl(session, params);
-        saveSession(session);
-        return session;
-      }
-    } catch (e) {
-      console.error('Error parsing stored session:', e);
-    }
-  }
-  
-  // Create new session with Prolific fields and interface version from URL
+// Warn if any required parameters are missing
+function warnIfMissingParams(): void {
   const params = parseTelemetryUrlParams();
-  warnIfMissingParams(params);
-  const newSession = createNewSession(params);
-  saveSession(newSession);
-  return newSession;
+  if (!params.prolificPid || !params.sessionId || !params.studyId || !params.interfaceVersion) {
+    console.warn('Missing required telemetry parameters:', params);
+  }
 }
 
 // Check if telemetry should be active (only for user studies)
@@ -101,81 +82,68 @@ function isTelemetryActive(): boolean {
   return state.isUserStudy;
 }
 
-// Save session to localStorage
-function saveSession(session: StudySession): void {
-  if (!isTelemetryActive()) {
-    return;
-  }
-  
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  } catch (e) {
-    console.error('Error saving session to localStorage:', e);
-  }
-}
-
-// Clear session data from localStorage (for dev/testing)
-export function clearSessionData(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-    console.log('✅ Telemetry session data cleared from localStorage');
-  } catch (e) {
-    console.error('Error clearing session from localStorage:', e);
-  }
-}
-
-// Log an event and immediately save to localStorage
+// Log an event (stored in memory only, no localStorage)
 export function logEvent(type: string, data?: any): void {
   if (!isTelemetryActive()) {
     return;
   }
   
-  const session = getOrCreateSession();
+  const metadata = getEventMetadata();
   
   const event: Event = {
     timestamp: Date.now(),
     type,
     data,
+    ...metadata,
   };
   
-  session.telemetry.push(event);
-  saveSession(session);
+  events.push(event);
 }
 
-// Prepare submission payload from session
-function prepareSubmissionPayload(session: StudySession): string {
+// Get participant ID from URL parameters
+function getParticipantId(): string {
+  const params = parseTelemetryUrlParams();
   const participantIdParts = [
-    session.prolificPid,
-    session.sessionId,
-    session.studyId,
+    params.prolificPid,
+    params.sessionId,
+    params.studyId,
   ].filter(Boolean);
-  const participantId = participantIdParts.length > 0 
+  
+  return participantIdParts.length > 0 
     ? participantIdParts.join('_') 
     : '';
+}
+
+// Get interface version from URL parameters
+function getInterfaceVersion(): string {
+  const params = parseTelemetryUrlParams();
+  return params.interfaceVersion || 'graph';
+}
+
+// Prepare submission payload
+function prepareSubmissionPayload(): string {
+  const participantId = getParticipantId();
+  const interfaceVersion = getInterfaceVersion();
+  
   console.log('PREPARING SUBMISSION PAYLOAD', participantId);
+  
   return JSON.stringify({
     participantId,
-    interfaceVersion: session.interfaceVersion,
-    telemetry: session.telemetry,
-    ...(session.prolificPid && { prolificPid: session.prolificPid }),
-    ...(session.sessionId && { sessionId: session.sessionId }),
-    ...(session.studyId && { studyId: session.studyId }),
+    interfaceVersion,
+    telemetry: events,
   });
 }
 
-// Check if session can be submitted (has data and not already submitted)
-function canSubmitSession(session: StudySession): boolean {
-  return session.telemetry.length > 0 && !session.submitted;
+// Check if there are events to submit
+function hasEventsToSubmit(): boolean {
+  return events.length > 0 && !hasSubmitted;
 }
 
-// Mark session as submitted, save, and clear session data
-// This is called by BOTH submission paths to ensure consistent handling
-function markSessionAsSubmittedAndClear(session: StudySession): void {
-  session.submitted = true;
-  saveSession(session);
-  // Clear session data to prevent duplicate submissions
-  // This ensures that even if the user returns, the session won't be resubmitted
-  clearSessionData();
+// Mark as submitted (prevent duplicate submissions)
+function markAsSubmitted(): void {
+  hasSubmitted = true;
+  // Clear events after submission to free memory
+  events = [];
 }
 
 // Common fetch options for telemetry submission
@@ -238,24 +206,23 @@ export function submitSessionOnUnload(): void {
     return;
   }
   
-  const session = getOrCreateSession();
-  
-  if (!canSubmitSession(session)) {
+  if (!hasEventsToSubmit()) {
     return;
   }
   
-  const data = prepareSubmissionPayload(session);
+  // Log leavePage event before preparing payload
+  logLeavePage();
+  
+  const data = prepareSubmissionPayload();
   submitWithBeacon(data);
   
-  // Mark as submitted AND clear session data
-  // This is the same handling as manual submission to prevent duplicates
-  markSessionAsSubmittedAndClear(session);
+  // Mark as submitted to prevent duplicate submissions
+  markAsSubmitted();
 }
 
-// Check if session should be submitted (has data and not already submitted)
+// Check if session should be submitted (has events and not already submitted)
 export function shouldSubmitSession(): boolean {
-  const session = getOrCreateSession();
-  return canSubmitSession(session);
+  return hasEventsToSubmit();
 }
 
 /**
@@ -269,19 +236,20 @@ export async function submitSession(): Promise<boolean> {
     return false;
   }
   
-  const session = getOrCreateSession();
-  
-  if (!canSubmitSession(session)) {
-    console.warn('Session already submitted or has no telemetry data');
+  if (!hasEventsToSubmit()) {
+    console.warn('No events to submit or already submitted');
     return false;
   }
   
-  const data = prepareSubmissionPayload(session);
+  // Log leavePage event before preparing payload
+  logLeavePage();
+  
+  const data = prepareSubmissionPayload();
   console.log('SUBMITTING SESSION', data);
   const success = await submitWithFetch(data);
   
   if (success) {
-    markSessionAsSubmittedAndClear(session);
+    markAsSubmitted();
   }
   
   return success;
@@ -289,10 +257,35 @@ export async function submitSession(): Promise<boolean> {
 
 // Log page load/refresh
 export function logPageLoad(): void {
+  // Warn about missing params on page load
+  warnIfMissingParams();
+  
   logEvent('page_load', {
     url: window.location.href,
     userAgent: navigator.userAgent,
   });
+}
+
+// Log page leave/close (called right before submission)
+function logLeavePage(): void {
+  if (!isTelemetryActive()) {
+    return;
+  }
+  
+  const timeOnPage = pageStartedAt ? Date.now() - pageStartedAt : 0;
+  
+  logEvent('leavePage', {
+    timeOnPage,
+    url: window.location.href,
+  });
+}
+
+// Clear telemetry data (for dev/testing)
+export function clearSessionData(): void {
+  events = [];
+  hasSubmitted = false;
+  pageStartedAt = null;
+  console.log('✅ Telemetry data cleared');
 }
 
 // Convenience functions for common event types
@@ -370,4 +363,3 @@ if (typeof window !== 'undefined') {
   (window as any).clearTelemetryData = clearSessionData;
   console.log('💡 Dev tool: Call clearTelemetryData() in the console to clear telemetry data');
 }
-
