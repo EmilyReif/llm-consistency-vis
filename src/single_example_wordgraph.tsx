@@ -106,7 +106,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         super(props);
         this.state = {
             popupNodes: [],
-            isPopupVisible: false,
+            isPopupVisible: true,
             similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
             minOpacityThreshold: DEFAULT_MIN_OPACITY_THRESHOLD,
             spread: DEFAULT_SPREAD,
@@ -134,7 +134,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         if (event.key === 'Escape') {
             this.selectedNodes.clear();
             this.hoveredNode = null;
-            this.hidePopup();
+            // Clear popup nodes but keep popup visible
+            this.setState({ popupNodes: [] });
             // Trigger a re-render by rebuilding the graph
             this.rebuildGraph();
         }
@@ -263,7 +264,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 <NodeExamplesPopup
                     nodes={this.state.popupNodes}
                     promptGroups={this.props.promptGroups}
-                    isVisible={this.state.isPopupVisible}
+                    isVisible={true}
                     onClose={() => this.hidePopup()}
                     onRemoveNode={this.removePopupNode}
                 />
@@ -288,7 +289,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         if (promptGroupsChanged) {
             this.selectedNodes.clear();
             this.hoveredNode = null;
-            this.hidePopup();
+            // Keep popup visible but clear selected nodes
+            this.setState({ popupNodes: [] });
         }
         
         if (similarityThresholdChanged || tokenizeModeChanged || promptGroupsChanged) {
@@ -355,7 +357,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                     if (this.nodeSelected() || this.hoveredNode) {
                         this.selectedNodes.clear();
                         this.hoveredNode = null;
-                        this.hidePopup();
+                        // Clear popup nodes but keep popup visible
+                        this.setState({ popupNodes: [] });
                         this.updateSimulation();
                         this.update();
                     }
@@ -758,7 +761,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
             return {
                 popupNodes,
-                isPopupVisible: popupNodes.length > 0
+                isPopupVisible: true // Always keep popup visible
             };
         });
     }
@@ -768,19 +771,19 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             const popupNodes = prevState.popupNodes.filter(selected => selected !== node);
             return {
                 popupNodes,
-                isPopupVisible: popupNodes.length > 0
+                isPopupVisible: true // Always keep popup visible
             };
         });
     }
 
     private hidePopup() {
-        if (!this.state.isPopupVisible && this.state.popupNodes.length === 0) {
-            return;
+        // Clear popup nodes but keep popup visible to show all outputs
+        if (this.state.popupNodes.length > 0) {
+            this.setState({
+                popupNodes: [],
+                isPopupVisible: true
+            });
         }
-        this.setState({
-            popupNodes: [],
-            isPopupVisible: false
-        });
     }
 }
 

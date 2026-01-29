@@ -52,6 +52,13 @@ class NodeExamplesPopup extends React.Component<Props, State> {
         };
     }
 
+    componentDidMount() {
+        // Initialize with all outputs if popup is visible
+        if (this.props.isVisible) {
+            this.updatePopupContent();
+        }
+    }
+
     componentDidUpdate(prevProps: Props) {
         const nodesChanged = !this.areNodeArraysEqual(prevProps.nodes, this.props.nodes);
         const visibilityChanged = prevProps.isVisible !== this.props.isVisible;
@@ -69,15 +76,9 @@ class NodeExamplesPopup extends React.Component<Props, State> {
             }
         }
 
-        if (!this.props.isVisible && visibilityChanged) {
-            const totalGenerations = this.calculateTotalGenerations(this.props.promptGroups);
-            if (this.state.examples.length || this.state.matchingCount) {
-                this.setState({
-                    examples: [],
-                    matchingCount: 0,
-                    totalGenerations
-                });
-            }
+        // Always update content when visible, even if visibility didn't change
+        if (this.props.isVisible && (nodesChanged || promptGroupsChanged)) {
+            this.updatePopupContent();
         }
     }
 
@@ -85,11 +86,18 @@ class NodeExamplesPopup extends React.Component<Props, State> {
         const { nodes, promptGroups } = this.props;
         const totalGenerations = this.calculateTotalGenerations(promptGroups);
 
+        // If no nodes are selected, show all outputs
         if (!nodes.length) {
-            if (this.state.examples.length || this.state.matchingCount || this.state.totalGenerations !== totalGenerations) {
+            const allSentIndices = this.getAllSentIndices(promptGroups);
+            const examples = this.buildExamples(promptGroups, allSentIndices, new Map());
+            const matchingCount = examples.length;
+
+            if (!this.areExamplesEqual(examples, this.state.examples) ||
+                matchingCount !== this.state.matchingCount ||
+                totalGenerations !== this.state.totalGenerations) {
                 this.setState({
-                    examples: [],
-                    matchingCount: 0,
+                    examples,
+                    matchingCount,
                     totalGenerations
                 });
             }
@@ -308,6 +316,11 @@ class NodeExamplesPopup extends React.Component<Props, State> {
         return color_utils.MILLER_STONE_COLORS[colorIndex];
     }
 
+    private getAllSentIndices(promptGroups: PromptGroup[]): number[] {
+        const totalGenerations = this.calculateTotalGenerations(promptGroups);
+        return Array.from({ length: totalGenerations }, (_, i) => i + 1);
+    }
+
     private getCommonSentIndices(nodes: NodeDatum[]) {
         if (!nodes.length) {
             return [];
@@ -405,6 +418,7 @@ class NodeExamplesPopup extends React.Component<Props, State> {
                 </React.Fragment>);
             })}
         </div>;
+
         return (
             <div
                 ref={this.popupRef}
@@ -414,7 +428,11 @@ class NodeExamplesPopup extends React.Component<Props, State> {
                 <div className="popup-header">
                     <div className="popup-title">
                         <div className="popup-title-main">
-                            Examples containing {nodesHTML}: {matchingCount}/{totalGenerations} ({percentage}%)
+                            {nodes.length > 0 ? (
+                                <>Examples containing {nodesHTML}: {matchingCount}/{totalGenerations} ({percentage}%)</>
+                            ) : (
+                                <>All outputs: {matchingCount}/{totalGenerations} ({percentage}%)</>
+                            )}
                         </div>
 
                     </div>
@@ -426,13 +444,14 @@ class NodeExamplesPopup extends React.Component<Props, State> {
                         >
                             {isMaximized ? '↙' : '↗'}
                         </button>
-                        <button className="popup-action-button popup-close" onClick={onClose} aria-label="Close examples panel">×</button>
                     </div>
                 </div>
                 <div className="popup-content">
                     {matchingCount === 0 ? (
                         <div className="no-examples-message">
-                            No examples found containing all selected nodes.
+                            {nodes.length > 0 
+                                ? 'No examples found containing all selected nodes.'
+                                : 'No outputs available.'}
                         </div>
                     ) : (
                         examples.map(example => (
