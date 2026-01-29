@@ -35,6 +35,7 @@ class State {
     shuffle: boolean = false;
     tokenizeMode: TokenizeMode = "space";
     isUserStudy: boolean = false;
+    disableCompare: boolean = false;
     visType: 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' = 'graph';
     generationsCache: { [example: string]: { [temp: number]: { [modelFamily: string]: { [model: string]: string[] } } } } = {};
     // Track which prompts are disabled
@@ -58,6 +59,7 @@ class State {
 
         // Parse URL parameters
         this.isUserStudy = parseUrlParam('is_user_study') === 'true';
+        this.disableCompare = parseUrlParam('disable_compare') !== null;
         
         // Initialize visType from URL parameter
         const urlParam = parseUrlParam('vis_type');

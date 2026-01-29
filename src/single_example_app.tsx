@@ -146,27 +146,29 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         totalPrompts={state.prompts.length}
                     />
                 ))}
-                <div 
-                    className="add-prompt-container" 
-                    onClick={() => {
-                        if (state.prompts.length < 3) {
-                            state.addPrompt('');
-                        }
-                    }}
-                    style={{
-                        backgroundColor: state.getPromptColor(state.prompts.length),
-                        borderColor: state.getPromptColor(state.prompts.length),
-                        opacity: state.prompts.length >= 3 ? 0.5 : 1,
-                        cursor: state.prompts.length >= 3 ? 'not-allowed' : 'pointer',
-                    }}
-                >
-                    <div className="controls-row" style={{ width: 'fit-content' }}>
-                    Compare to another prompt
-                        <div className='input-header'>
-                            <span className="material-icons">add</span>
+                {!state.disableCompare && (
+                    <div 
+                        className="add-prompt-container" 
+                        onClick={() => {
+                            if (state.prompts.length < 3) {
+                                state.addPrompt('');
+                            }
+                        }}
+                        style={{
+                            backgroundColor: state.getPromptColor(state.prompts.length),
+                            borderColor: state.getPromptColor(state.prompts.length),
+                            opacity: state.prompts.length >= 3 ? 0.5 : 1,
+                            cursor: state.prompts.length >= 3 ? 'not-allowed' : 'pointer',
+                        }}
+                    >
+                        <div className="controls-row" style={{ width: 'fit-content' }}>
+                        Compare to another prompt
+                            <div className='input-header'>
+                                <span className="material-icons">add</span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
                 {state.loading ? this.renderLoading() : <SingleExample />}
             </div>
         );
