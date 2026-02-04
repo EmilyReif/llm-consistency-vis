@@ -179,7 +179,10 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
     }
 
     async componentDidMount() {
-        state.updatePromptTextAt(0, DEFAULT_TEXT);
+        // Only set DEFAULT_TEXT if prompt hasn't been initialized from URL params
+        if (!state.prompts[0]?.text) {
+            state.updatePromptTextAt(0, DEFAULT_TEXT);
+        }
     }
 }
 

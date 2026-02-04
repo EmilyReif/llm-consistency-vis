@@ -676,6 +676,9 @@
     // Build URLs for Task 1 and Task 2
     const baseUrl = getBaseUrl();
     
+    // Get prompt_idx parameter if present
+    const promptIdx = getUrlParam('prompt_idx');
+    
     function buildTaskUrl(task, taskNum) {
       const params = new URLSearchParams({
         is_user_study: 'true',
@@ -693,6 +696,10 @@
       }
       if (studyId) {
         params.set('study_id', studyId);
+      }
+      // Add prompt_idx parameter if present
+      if (promptIdx) {
+        params.set('prompt_idx', promptIdx);
       }
       return `${baseUrl}index.html?${params.toString()}`;
     }

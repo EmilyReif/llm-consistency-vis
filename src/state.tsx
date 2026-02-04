@@ -83,14 +83,54 @@ class State {
             this.generationsCache[example][temp][defaultModelFamily][defaultModel] = outputs;
         }
         
-        // Initialize with a default prompt using the first available example
-        const first = Object.keys(examples)[0];
-        this.prompts = [{ 
-            text: first, 
-            temp: DEFAULT_TEMP, 
-            modelFamily: defaultModelFamily, 
-            model: defaultModel 
-        }];
+        // Parse prompt_idx URL parameter to select specific prompts
+        const promptIdxParam = parseUrlParam('prompt_idx');
+        const exampleKeys = Object.keys(examples);
+        
+        if (promptIdxParam) {
+            // Parse comma-separated indices
+            const indices = promptIdxParam.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+            
+            if (indices.length > 0) {
+                // Initialize prompts based on the provided indices
+                this.prompts = indices
+                    .filter(idx => idx >= 0 && idx < exampleKeys.length) // Only valid indices
+                    .map(idx => ({
+                        text: exampleKeys[idx],
+                        temp: DEFAULT_TEMP,
+                        modelFamily: defaultModelFamily,
+                        model: defaultModel
+                    }));
+                
+                // If no valid indices were found, fall back to default
+                if (this.prompts.length === 0) {
+                    console.warn(`Invalid prompt_idx parameter: "${promptIdxParam}". Using default prompt.`);
+                    this.prompts = [{ 
+                        text: exampleKeys[0], 
+                        temp: DEFAULT_TEMP, 
+                        modelFamily: defaultModelFamily, 
+                        model: defaultModel 
+                    }];
+                }
+            } else {
+                // Invalid format, use default
+                console.warn(`Invalid prompt_idx format: "${promptIdxParam}". Expected integer or comma-separated integers.`);
+                this.prompts = [{ 
+                    text: exampleKeys[0], 
+                    temp: DEFAULT_TEMP, 
+                    modelFamily: defaultModelFamily, 
+                    model: defaultModel 
+                }];
+            }
+        } else {
+            // No prompt_idx parameter, use default prompt (first example)
+            this.prompts = [{ 
+                text: exampleKeys[0], 
+                temp: DEFAULT_TEMP, 
+                modelFamily: defaultModelFamily, 
+                model: defaultModel 
+            }];
+        }
     }
 
     addPrompt = ((value: string = '') => {
