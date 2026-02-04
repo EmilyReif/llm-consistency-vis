@@ -442,7 +442,7 @@ class NodeExamplesPopup extends React.Component<Props, State> {
                             className="popup-action-button popup-maximize"
                             onClick={this.handleToggleMaximize}
                         >
-                            {isMaximized ? '↙' : '↗'}
+                            {isMaximized ? '↓' : '↑'}
                         </button>
                     </div>
                 </div>

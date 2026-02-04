@@ -1,7 +1,7 @@
 .node-examples-popup {
     position: fixed;
     bottom: 20px;
-    left: 20px;
+    right: 20px;
     max-width: 800px;
     max-height: 300px;
     background-color: white;
