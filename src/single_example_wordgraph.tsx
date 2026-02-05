@@ -183,7 +183,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                 <span id='loader' className="loader"></span>
                 <svg id='graph-holder'></svg>
-                <div className="graph-controls-overlay">
+                {!state.isUserStudy && <div className="graph-controls-overlay">
                     <div className="slider-container">
                         <label>Graph spread</label>
                         <div className="tooltip">
@@ -280,7 +280,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                             Separate graphs by prompt
                         </label>
                     </div>
-                </div>
+                </div>}
                 <NodeExamplesPopup
                     nodes={this.state.popupNodes}
                     promptGroups={this.props.promptGroups}
