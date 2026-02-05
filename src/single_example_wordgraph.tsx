@@ -33,7 +33,7 @@ interface State {
     tokenizeMode: TokenizeMode;
 }
 
-const NUM_WORDS_TO_WRAP = 3;
+const NUM_WORDS_TO_WRAP = 5;
 const SHOW_DEBUG_ELLIPSES = false;
 
 // Information about how a node appears in a specific sentence
