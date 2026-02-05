@@ -289,7 +289,8 @@ export async function createGraphDataFromPromptGroups(
     groups: { promptId: string; generations: string[] }[],
     similarityThreshold: number = 0.5,
     shuffle: boolean = false,
-    tokenizeMode: TokenizeMode = "space"
+    tokenizeMode: TokenizeMode = "space",
+    separateByPrompt: boolean = false
 ): Promise<{ nodesData: NodeDatum[]; linksData: LinkDatum[] }> {
 
 
@@ -309,6 +310,14 @@ export async function createGraphDataFromPromptGroups(
                     if (sameSentence) return ;
                     const similarityScore = similarity(existingWord, word);
                     if (similarityScore + .01 < similarityThreshold) return;
+                    
+                    // If separating by prompt and the word was part of a different prompt, don't merge.
+                    if (separateByPrompt) {
+                        const otherPromptIds = (nodesDict[existingWord]?.origPromptIds || []).filter(pId => pId !== promptId);
+                        if (otherPromptIds.length > 0) {
+                            return;
+                        }
+                    }
                     
                     // Check if merging would create a cycle
                     if (prevWord && reachabilityChecker.wouldCreateCycleThroughIncomingEdge(existingWord, prevWord)) {

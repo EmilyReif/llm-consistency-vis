@@ -11,7 +11,7 @@ import NodeExamplesPopup from './node_examples_popup';
 import { telemetry } from "./telemetry";
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
-import { TokenizeMode } from "./utils";
+import { TokenizeMode, parseUrlParam } from "./utils";
 
 const TRANSITION_DURATION = 300;
 const SLIDER_WIDTH = 150;
@@ -31,6 +31,7 @@ interface State {
     minOpacityThreshold: number;
     spread: number;
     tokenizeMode: TokenizeMode;
+    separateByPrompt: boolean;
 }
 
 const NUM_WORDS_TO_WRAP = 5;
@@ -104,6 +105,10 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private zoomThrottleTimer: number | null = null;
     constructor(props: Props) {
         super(props);
+        // Parse URL parameter for separate_graphs
+        const separateGraphsParam = parseUrlParam('separate_graphs');
+        const separateByPrompt = separateGraphsParam === 'true';
+        
         this.state = {
             popupNodes: [],
             isPopupVisible: true,
@@ -111,6 +116,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             minOpacityThreshold: DEFAULT_MIN_OPACITY_THRESHOLD,
             spread: DEFAULT_SPREAD,
             tokenizeMode: state.tokenizeMode,
+            separateByPrompt,
         };
     }
 
@@ -260,6 +266,20 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                             <option value="sentence">Sentence</option>
                         </select>
                     </div>
+
+                    <div className="checkbox-container">
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={this.state.separateByPrompt}
+                                onChange={(e) => {
+                                    this.setState({ separateByPrompt: e.target.checked });
+                                    telemetry.logDropdownChange('separateByPrompt', e.target.checked ? 'true' : 'false');
+                                }}
+                            />
+                            Separate graphs by prompt
+                        </label>
+                    </div>
                 </div>
                 <NodeExamplesPopup
                     nodes={this.state.popupNodes}
@@ -283,6 +303,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
         const tokenizeModeChanged = prevState.tokenizeMode !== this.state.tokenizeMode;
         const similarityThresholdChanged = prevState.similarityThreshold !== this.state.similarityThreshold;
+        const separateByPromptChanged = prevState.separateByPrompt !== this.state.separateByPrompt;
         const promptGroupsChanged = !utils.objectsAreEqual(prevProps.promptGroups, this.props.promptGroups);
         
         // Clear selected/filtered words when prompts change
@@ -293,7 +314,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             this.setState({ popupNodes: [] });
         }
         
-        if (similarityThresholdChanged || tokenizeModeChanged || promptGroupsChanged) {
+        if (similarityThresholdChanged || tokenizeModeChanged || promptGroupsChanged || separateByPromptChanged) {
             this.rebuildGraph();
         }
 
@@ -329,7 +350,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
     private async rebuildGraphContent() {
         // Generate graph data from all text
-        const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.state.similarityThreshold, state.shuffle, this.state.tokenizeMode);
+        const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.state.similarityThreshold, state.shuffle, this.state.tokenizeMode, this.state.separateByPrompt);
 
         // Create color scale that matches the state's color assignment
         // Use the same logic as state.getPromptColor() for consistency
@@ -606,14 +627,39 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
 
         const selectedLinks = this.nodeSelected() ? this.linksData.filter(d => this.linkIsInSents(d)) : this.linksData;
         const selectedNodes = this.nodeSelected() ? this.nodesData.filter(d => this.nodeIsInSelectedSents(d)) : this.nodesData;
+        
+        // If separating by prompt, add a force to separate graphs vertically
+        let yForce: any;
+        if (this.state.separateByPrompt && this.props.promptGroups.length > 1) {
+            // Create vertical spacing based on prompt ID
+            const promptIdToIndex = new Map<string, number>();
+            this.props.promptGroups.forEach((group, idx) => {
+                promptIdToIndex.set(group.promptId, idx);
+            });
+            
+            const numPrompts = this.props.promptGroups.length;
+            const spacing = this.height / numPrompts;
+            
+            yForce = d3.forceY((d: any) => {
+                // Get the first prompt ID from the node's origPromptIds
+                const firstPromptId = d.origPromptIds?.[0];
+                if (firstPromptId && promptIdToIndex.has(firstPromptId)) {
+                    const promptIndex = promptIdToIndex.get(firstPromptId)!;
+                    return spacing * (promptIndex + 0.5);
+                }
+                return this.height / 2;
+            }).strength(0.5);
+        } else {
+            yForce = d3.forceY(this.height / 2).strength((d: any) => d.count / 100);
+        }
+        
         this.simulation
             .nodes(selectedNodes)
             .force("collide", ellipseForce(selectedNodes, 10, 5, 5))
             .force("link", d3.forceLink(selectedLinks)
                 .id((d: any) => d.word)
                 .strength(.4))
-            // .force('y', () => selectedNodes.forEach((d: NodeDatum) => d.origSentIndices.includes(0) && (d.y = this.height /2)))
-            .force("y", d3.forceY(this.height / 2).strength((d: any) => d.count / 100)) // Center nodes vertically
+            .force("y", yForce)
             .force("x", () => selectedNodes.forEach((d: NodeDatum) => d.x = this.getExpectedX(d, selectedNodes)))
         this.simulation.on("tick", () => this.update());
 
