@@ -80,6 +80,19 @@
     height: auto;
 }
 
+.node-examples-popup.minimized {
+    max-height: none;
+    height: auto;
+}
+
+.node-examples-popup.minimized .popup-content {
+    display: none;
+}
+
+.node-examples-popup.minimized .popup-header {
+    border-bottom: none;
+}
+
 .popup-content {
     font-size: 12px;
     line-height: 1.4;

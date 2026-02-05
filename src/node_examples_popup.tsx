@@ -32,11 +32,13 @@ interface ExampleItem {
     textColor: string;
 }
 
+type ViewState = 'minimized' | 'default' | 'maximized';
+
 interface State {
     examples: ExampleItem[];
     matchingCount: number;
     totalGenerations: number;
-    isMaximized: boolean;
+    viewState: ViewState;
 }
 
 class NodeExamplesPopup extends React.Component<Props, State> {
@@ -48,7 +50,7 @@ class NodeExamplesPopup extends React.Component<Props, State> {
             examples: [],
             matchingCount: 0,
             totalGenerations: this.calculateTotalGenerations(props.promptGroups),
-            isMaximized: false
+            viewState: 'default'
         };
     }
 
@@ -378,18 +380,13 @@ class NodeExamplesPopup extends React.Component<Props, State> {
         return rgb.toString();
     }
 
-    private handleToggleMaximize = () => {
-        this.setState(prevState => {
-            const nextIsMaximized = !prevState.isMaximized;
-            return {
-                isMaximized: nextIsMaximized
-            };
-        });
+    private setViewState = (viewState: ViewState) => {
+        this.setState({ viewState });
     };
 
     render() {
         const { isVisible, onClose, nodes, onRemoveNode } = this.props;
-        const { examples, matchingCount, totalGenerations, isMaximized } = this.state;
+        const { examples, matchingCount, totalGenerations, viewState } = this.state;
         const percentage = totalGenerations > 0 ? Math.round((matchingCount / totalGenerations) * 100) : 0;
         const nodesHTML = <div className="selected-nodes">
             {nodes.map((node, idx) => {
@@ -419,10 +416,17 @@ class NodeExamplesPopup extends React.Component<Props, State> {
             })}
         </div>;
 
+        const classNames = ['node-examples-popup'];
+        if (viewState === 'maximized') {
+            classNames.push('maximized');
+        } else if (viewState === 'minimized') {
+            classNames.push('minimized');
+        }
+
         return (
             <div
                 ref={this.popupRef}
-                className={`node-examples-popup${isMaximized ? ' maximized' : ''}`}
+                className={classNames.join(' ')}
                 style={{ display: isVisible ? 'block' : 'none' }}
             >
                 <div className="popup-header">
@@ -437,13 +441,46 @@ class NodeExamplesPopup extends React.Component<Props, State> {
 
                     </div>
                     <div className="popup-actions">
-                        <button
-                            type="button"
-                            className="popup-action-button popup-maximize"
-                            onClick={this.handleToggleMaximize}
-                        >
-                            {isMaximized ? '↓' : '↑'}
-                        </button>
+                        {viewState === 'minimized' && (
+                            <button
+                                type="button"
+                                className="popup-action-button"
+                                onClick={() => this.setViewState('default')}
+                                title="Restore to default view"
+                            >
+                                =
+                            </button>
+                        )}
+                        {viewState === 'default' && (
+                            <>
+                                <button
+                                    type="button"
+                                    className="popup-action-button"
+                                    onClick={() => this.setViewState('minimized')}
+                                    title="Minimize"
+                                >
+                                    ߺ
+                                </button>
+                                <button
+                                    type="button"
+                                    className="popup-action-button"
+                                    onClick={() => this.setViewState('maximized')}
+                                    title="Maximize"
+                                >
+                                    ≡
+                                </button>
+                            </>
+                        )}
+                        {viewState === 'maximized' && (
+                            <button
+                                type="button"
+                                className="popup-action-button"
+                                onClick={() => this.setViewState('default')}
+                                title="Restore to default view"
+                            >
+                                =
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="popup-content">
