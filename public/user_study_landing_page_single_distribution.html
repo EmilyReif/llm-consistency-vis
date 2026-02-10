@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>User Study Landing Page</title>
+  <title>User Study Landing Page - Single Distribution</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -192,7 +192,7 @@
   </style>
 </head>
 <body>
-  <h1>LLM Consistency Visualization User Study</h1>
+  <h1>LLM Output Distribution Study</h1>
 
   <div class="page-container">
     <!-- Page 1: Overview -->
@@ -200,11 +200,22 @@
       <div class="description">
         <h2>Study Overview</h2>
         <p>
-          In this study, you'll act as a game designer using an LLM to generate content for a fantasy game.
+          Large Language Models (LLMs) are <strong>stochastic</strong>, meaning they don't produce the same output every time. When you give an LLM the same prompt multiple times, you get a <strong>distribution of possible outputs</strong>—some responses may be very similar, while others might vary significantly.
         </p>
       
         <p>
-          Your goal is to compare prompts that automatically generate short descriptions of fantasy monsters or places, and ultimately choose the best.
+          Understanding this distribution of outputs is crucial for many applications. Rather than judging an LLM prompt based on a single example, we need to consider the full range of possibilities it can generate. This helps us understand:
+        </p>
+        
+        <ul>
+          <li>What kinds of responses are most common?</li>
+          <li>How much variety exists across outputs?</li>
+          <li>Are there any problematic or unexpected responses?</li>
+          <li>Is the overall quality consistent?</li>
+        </ul>
+      
+        <p>
+          In this study, you'll use a visualization tool to explore and reason about distributions of LLM outputs, helping us understand how people make sense of LLM behavior at scale.
         </p>
       </div>
     </div>
@@ -216,29 +227,28 @@
         
         <div class="description" style="margin: 20px 0;">
           <p>
-            Each time this hypothetical game needs a new <span id="task1EntityType">monster or place</span>, it will call the prompt once to generate a description—there is no manual editing or selection after generation.
-            Because of this, it's important to think about the overall range of possible outputs, not just a single example.
+            In this task, you'll examine a set of outputs generated from the same prompt. Your goal is to <strong>reason about the distribution</strong> of these outputs—understanding patterns, variety, consistency, and any notable characteristics across the full set of responses.
           </p>
         
           <p>
-            Using the interface, you'll look through groups of outputs from the LLM, and evaluate how well each prompt would work in practice.
-            When judging prompts, try to balance these goals:
+            Using the visualization interface, you'll explore groups of LLM outputs and develop an understanding of what this prompt typically generates. Consider questions like:
           </p>
         
           <ul>
-            <li><strong>Variety:</strong> <span id="task1VarietyText">Monsters and places</span> should feel diverse and interesting.</li>
-            <li><strong>Consistency:</strong> Writing style and tone should feel cohesive.</li>
-            <li><strong>Safety &amp; Plausibility:</strong> Avoid offensive, inappropriate, or implausible content.</li>
-            <li><strong>Relevance:</strong> <span id="task1RelevanceText">Monsters and places</span> should fit a fantasy setting.</li>
+            <li><strong>Variety:</strong> How diverse are the outputs? What range of responses does this prompt produce?</li>
+            <li><strong>Consistency:</strong> Are there common patterns, themes, or stylistic elements across outputs?</li>
+            <li><strong>Quality:</strong> Are the outputs generally appropriate and high-quality?</li>
+            <li><strong>Distribution shape:</strong> Are most outputs similar with a few outliers, or is there broad variation?</li>
           </ul>
         
           <p>
-            There are no right or wrong answers. We're interested in your judgments and how the interface supports comparing many possible outputs.
+            There are no right or wrong answers. We're interested in how you reason about these distributions and what the interface reveals about LLM output behavior.
           </p>
         </div>
         
         <div class="video-container">
           <h4>Please watch the video below before starting the task</h4>
+          <!-- TODO: Replace with new video for single distribution study -->
           <div id="task1Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
           <iframe 
             id="task1Video"
@@ -277,29 +287,28 @@
         
         <div class="description" style="margin: 20px 0;">
           <p>
-            Each time this hypothetical game needs a new <span id="task2EntityType">monster or place</span>, it will call the prompt once to generate a description—there is no manual editing or selection after generation.
-            Because of this, it's important to think about the overall range of possible outputs, not just a single example.
+            In this task, you'll examine another set of outputs generated from a different prompt. As before, your goal is to <strong>reason about the distribution</strong> of these outputs—understanding patterns, variety, consistency, and any notable characteristics across the full set of responses.
           </p>
         
           <p>
-            Using the interface, you'll look through groups of outputs from the LLM, and evaluate how well each prompt would work in practice.
-            When judging prompts, try to balance these goals:
+            Using the visualization interface, you'll explore groups of LLM outputs and develop an understanding of what this prompt typically generates. Consider questions like:
           </p>
         
           <ul>
-            <li><strong>Variety:</strong> <span id="task2VarietyText">Monsters and places</span> should feel diverse and interesting.</li>
-            <li><strong>Consistency:</strong> Writing style and tone should feel cohesive.</li>
-            <li><strong>Safety &amp; Plausibility:</strong> Avoid offensive, inappropriate, or implausible content.</li>
-            <li><strong>Relevance:</strong> <span id="task2RelevanceText">Monsters and places</span> should fit a fantasy setting.</li>
+            <li><strong>Variety:</strong> How diverse are the outputs? What range of responses does this prompt produce?</li>
+            <li><strong>Consistency:</strong> Are there common patterns, themes, or stylistic elements across outputs?</li>
+            <li><strong>Quality:</strong> Are the outputs generally appropriate and high-quality?</li>
+            <li><strong>Distribution shape:</strong> Are most outputs similar with a few outliers, or is there broad variation?</li>
           </ul>
         
           <p>
-            There are no right or wrong answers. We're interested in your judgments and how the interface supports comparing many possible outputs.
+            There are no right or wrong answers. We're interested in how you reason about these distributions and what the interface reveals about LLM output behavior.
           </p>
         </div>
         
         <div class="video-container">
           <h4>Please watch the video below before starting the task</h4>
+          <!-- TODO: Replace with new video for single distribution study -->
           <div id="task2Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
           <iframe 
             id="task2Video"
@@ -369,7 +378,7 @@
     // Get metadata for events
     function getTelemetryMetadata() {
       return {
-        interfaceVersion: 'landing_page',
+        interfaceVersion: 'landing_page_single_distribution',
         startedAt: pageStartedAt,
         prolificPid: getTelemetryUrlParam('prolific_pid') || undefined,
         sessionId: getTelemetryUrlParam('session_id') || undefined,
@@ -402,7 +411,7 @@
     function prepareTelemetryPayload() {
       return JSON.stringify({
         participantId: getParticipantId(),
-        interfaceVersion: 'landing_page',
+        interfaceVersion: 'landing_page_single_distribution',
         telemetry: telemetryEvents,
       });
     }
@@ -685,6 +694,7 @@
     function buildTaskUrl(task, taskNum) {
       const params = new URLSearchParams({
         is_user_study: 'true',
+        hide_popups: 'true',
         separate_graphs: 'true',
         num_generations: NUM_GENERATIONS.toString(),
         user_id: prolificPid || '',
@@ -754,10 +764,6 @@
     document.getElementById('task1Link').href = task1Url;
     document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
     document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset, finalTask1.visType);
-    // Update task-specific text
-    document.getElementById('task1EntityType').textContent = getEntityTypeText(finalTask1.dataset);
-    document.getElementById('task1VarietyText').textContent = getEntityPluralText(finalTask1.dataset);
-    document.getElementById('task1RelevanceText').textContent = getEntityPluralText(finalTask1.dataset);
     // Update description
     document.getElementById('task1Description').innerHTML = getDescriptionText(finalTask1.visType);
 
@@ -765,10 +771,6 @@
     document.getElementById('task2Link').href = task2Url;
     document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
     document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset, finalTask2.visType);
-    // Update task-specific text
-    document.getElementById('task2EntityType').textContent = getEntityTypeText(finalTask2.dataset);
-    document.getElementById('task2VarietyText').textContent = getEntityPluralText(finalTask2.dataset);
-    document.getElementById('task2RelevanceText').textContent = getEntityPluralText(finalTask2.dataset);
     // Update description with intro acknowledging similarity
     document.getElementById('task2Description').innerHTML = getTask2Description(finalTask2.visType, finalTask2.dataset, finalTask1.dataset);
 

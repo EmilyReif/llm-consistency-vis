@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>User Study Landing Page</title>
+  <title>User Study Landing Page - Compare Distributions</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -192,7 +192,7 @@
   </style>
 </head>
 <body>
-  <h1>LLM Consistency Visualization User Study</h1>
+  <h1>Comparing Two Output Distributions</h1>
 
   <div class="page-container">
     <!-- Page 1: Overview -->
@@ -200,11 +200,21 @@
       <div class="description">
         <h2>Study Overview</h2>
         <p>
-          In this study, you'll act as a game designer using an LLM to generate content for a fantasy game.
+          When you change a prompt, the distribution of LLM outputs changes too. A central question is: <strong>What changed between prompt A and prompt B?</strong> Answering this requires comparing two distributions—looking at diversity, typical vs. rare outputs, and what the two sets of outputs share or don't share.
         </p>
       
         <p>
-          Your goal is to compare prompts that automatically generate short descriptions of fantasy monsters or places, and ultimately choose the best.
+          In this study, you'll use a visualization tool to compare outputs from two different prompts. We're interested in how people reason about:
+        </p>
+        
+        <ul>
+          <li><strong>Distribution-level questions:</strong> Which prompt has higher diversity? What would you call an "average" output for each? What are rare or unusual outputs for each?</li>
+          <li><strong>Overlap and difference:</strong> What are common elements (e.g., phrases, structure) in both sets of outputs? What elements differ between the two (e.g., phrasing, length, tone)?</li>
+          <li><strong>Specific tasks with ground truth:</strong> Some questions have a verifiable answer (e.g., "What is the most common monster name in the outputs for each prompt?"). You may be asked to answer these and we can compare your answers to the data.</li>
+        </ul>
+      
+        <p>
+          Your task is to explore the interface, compare the two distributions, and answer questions about how they differ. There are no trick questions—we want to see how the visualization supports this kind of comparison.
         </p>
       </div>
     </div>
@@ -216,29 +226,29 @@
         
         <div class="description" style="margin: 20px 0;">
           <p>
-            Each time this hypothetical game needs a new <span id="task1EntityType">monster or place</span>, it will call the prompt once to generate a description—there is no manual editing or selection after generation.
-            Because of this, it's important to think about the overall range of possible outputs, not just a single example.
+            In this task, you'll compare <strong>two distributions</strong> of outputs—one from prompt A and one from prompt B. Your goal is to reason about <strong>what changed between the two prompts</strong> by exploring both sets of outputs in the visualization.
           </p>
         
           <p>
-            Using the interface, you'll look through groups of outputs from the LLM, and evaluate how well each prompt would work in practice.
-            When judging prompts, try to balance these goals:
+            As you explore, consider:
           </p>
         
           <ul>
-            <li><strong>Variety:</strong> <span id="task1VarietyText">Monsters and places</span> should feel diverse and interesting.</li>
-            <li><strong>Consistency:</strong> Writing style and tone should feel cohesive.</li>
-            <li><strong>Safety &amp; Plausibility:</strong> Avoid offensive, inappropriate, or implausible content.</li>
-            <li><strong>Relevance:</strong> <span id="task1RelevanceText">Monsters and places</span> should fit a fantasy setting.</li>
+            <li><strong>Diversity:</strong> Which prompt produces higher diversity in its outputs?</li>
+            <li><strong>Typical vs. rare:</strong> What would you describe as an "average" or representative output for each? What are rare or unusual outputs for each?</li>
+            <li><strong>Common elements:</strong> What phrases, patterns, or structural elements appear in both sets of outputs?</li>
+            <li><strong>Different elements:</strong> What differs between the two sets (e.g., phrasing, length, tone, content)?</li>
+            <li><strong>Specific questions:</strong> You may be asked concrete questions with a right answer (e.g., the most common name or phrase in the outputs for each prompt). Use the tool to find and report these when asked.</li>
           </ul>
         
           <p>
-            There are no right or wrong answers. We're interested in your judgments and how the interface supports comparing many possible outputs.
+            Use the interface to select and compare both prompts. There are no right or wrong answers for the qualitative comparisons; for specific factual questions, we're interested in whether the tool helps you find the correct answer.
           </p>
         </div>
         
         <div class="video-container">
           <h4>Please watch the video below before starting the task</h4>
+          <!-- TODO: Replace with new video for compare distributions study -->
           <div id="task1Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
           <iframe 
             id="task1Video"
@@ -277,29 +287,29 @@
         
         <div class="description" style="margin: 20px 0;">
           <p>
-            Each time this hypothetical game needs a new <span id="task2EntityType">monster or place</span>, it will call the prompt once to generate a description—there is no manual editing or selection after generation.
-            Because of this, it's important to think about the overall range of possible outputs, not just a single example.
+            In this task, you'll again compare <strong>two distributions</strong> of outputs from two different prompts (prompt A and prompt B), but with a different dataset and/or visualization. Your goal is the same: reason about <strong>what changed between the two prompts</strong>.
           </p>
         
           <p>
-            Using the interface, you'll look through groups of outputs from the LLM, and evaluate how well each prompt would work in practice.
-            When judging prompts, try to balance these goals:
+            As you explore, consider:
           </p>
         
           <ul>
-            <li><strong>Variety:</strong> <span id="task2VarietyText">Monsters and places</span> should feel diverse and interesting.</li>
-            <li><strong>Consistency:</strong> Writing style and tone should feel cohesive.</li>
-            <li><strong>Safety &amp; Plausibility:</strong> Avoid offensive, inappropriate, or implausible content.</li>
-            <li><strong>Relevance:</strong> <span id="task2RelevanceText">Monsters and places</span> should fit a fantasy setting.</li>
+            <li><strong>Diversity:</strong> Which prompt produces higher diversity in its outputs?</li>
+            <li><strong>Typical vs. rare:</strong> What would you describe as an "average" or representative output for each? What are rare or unusual outputs for each?</li>
+            <li><strong>Common elements:</strong> What phrases, patterns, or structural elements appear in both sets of outputs?</li>
+            <li><strong>Different elements:</strong> What differs between the two sets (e.g., phrasing, length, tone, content)?</li>
+            <li><strong>Specific questions:</strong> You may be asked concrete questions with a right answer. Use the tool to find and report these when asked.</li>
           </ul>
         
           <p>
-            There are no right or wrong answers. We're interested in your judgments and how the interface supports comparing many possible outputs.
+            Use the interface to select and compare both prompts. There are no right or wrong answers for the qualitative comparisons; for specific factual questions, we're interested in whether the tool helps you find the correct answer.
           </p>
         </div>
         
         <div class="video-container">
           <h4>Please watch the video below before starting the task</h4>
+          <!-- TODO: Replace with new video for compare distributions study -->
           <div id="task2Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
           <iframe 
             id="task2Video"
@@ -369,7 +379,7 @@
     // Get metadata for events
     function getTelemetryMetadata() {
       return {
-        interfaceVersion: 'landing_page',
+        interfaceVersion: 'landing_page_compare_distributions',
         startedAt: pageStartedAt,
         prolificPid: getTelemetryUrlParam('prolific_pid') || undefined,
         sessionId: getTelemetryUrlParam('session_id') || undefined,
@@ -402,7 +412,7 @@
     function prepareTelemetryPayload() {
       return JSON.stringify({
         participantId: getParticipantId(),
-        interfaceVersion: 'landing_page',
+        interfaceVersion: 'landing_page_compare_distributions',
         telemetry: telemetryEvents,
       });
     }
@@ -679,18 +689,26 @@
     // Build URLs for Task 1 and Task 2
     const baseUrl = getBaseUrl();
     
-    // Get prompt_idx parameter if present
-    const promptIdx = getUrlParam('prompt_idx');
+    // For compare-distributions study: pick two distinct prompt indices (0-5) with seeded random
+    function pickTwoPromptIndices(rng) {
+      const indices = [0, 1, 2, 3, 4, 5];
+      const shuffled = shuffleArray(indices, rng);
+      return [shuffled[0], shuffled[1]];
+    }
+    const promptIndices = pickTwoPromptIndices(random);
+    const promptIdxParam = promptIndices.join(',');
     
     function buildTaskUrl(task, taskNum) {
       const params = new URLSearchParams({
         is_user_study: 'true',
+        hide_popups: 'true',
         separate_graphs: 'true',
         num_generations: NUM_GENERATIONS.toString(),
         user_id: prolificPid || '',
         dataset: task.dataset,
         vis_type: task.visType,
-        task_number: taskNum.toString()
+        task_number: taskNum.toString(),
+        prompt_idx: promptIdxParam
       });
       // Add Prolific parameters if present
       if (prolificPid) {
@@ -701,10 +719,6 @@
       }
       if (studyId) {
         params.set('study_id', studyId);
-      }
-      // Add prompt_idx parameter if present
-      if (promptIdx) {
-        params.set('prompt_idx', promptIdx);
       }
       return `${baseUrl}index.html?${params.toString()}`;
     }
@@ -754,10 +768,6 @@
     document.getElementById('task1Link').href = task1Url;
     document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
     document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset, finalTask1.visType);
-    // Update task-specific text
-    document.getElementById('task1EntityType').textContent = getEntityTypeText(finalTask1.dataset);
-    document.getElementById('task1VarietyText').textContent = getEntityPluralText(finalTask1.dataset);
-    document.getElementById('task1RelevanceText').textContent = getEntityPluralText(finalTask1.dataset);
     // Update description
     document.getElementById('task1Description').innerHTML = getDescriptionText(finalTask1.visType);
 
@@ -765,10 +775,6 @@
     document.getElementById('task2Link').href = task2Url;
     document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
     document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset, finalTask2.visType);
-    // Update task-specific text
-    document.getElementById('task2EntityType').textContent = getEntityTypeText(finalTask2.dataset);
-    document.getElementById('task2VarietyText').textContent = getEntityPluralText(finalTask2.dataset);
-    document.getElementById('task2RelevanceText').textContent = getEntityPluralText(finalTask2.dataset);
     // Update description with intro acknowledging similarity
     document.getElementById('task2Description').innerHTML = getTask2Description(finalTask2.visType, finalTask2.dataset, finalTask1.dataset);
 
