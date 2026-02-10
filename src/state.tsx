@@ -1,4 +1,4 @@
-import { makeAutoObservable, action } from "mobx";
+import { makeAutoObservable, action, reaction } from "mobx";
 import { examples } from "./cached_examples";
 import * as color_utils from "./color_utils";
 import * as d3 from 'd3';
@@ -6,8 +6,8 @@ import { createLLM } from "./llm/factory";
 import { getDefaultModelFamily, getDefaultModel } from "./llm/config";
 import { LLM } from "./llm/base";
 import { OpenAILLM } from "./llm/openai";
-import { TokenizeMode, parseUrlParam } from "./utils";
 import { telemetry } from "./telemetry";
+import { urlParams, URLParam, type TokenizeMode } from "./url_params_manager";
 
 
 const DEFAULT_NUM_GENERATIONS = 10;
@@ -35,7 +35,6 @@ class State {
     shuffle: boolean = false;
     tokenizeMode: TokenizeMode = "space";
     isUserStudy: boolean = false;
-    disableCompare: boolean = false;
     visType: 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' = 'graph';
     generationsCache: { [example: string]: { [temp: number]: { [modelFamily: string]: { [model: string]: string[] } } } } = {};
     // Track which prompts are disabled
@@ -57,18 +56,25 @@ class State {
     constructor() {
         makeAutoObservable(this);
 
-        // Parse URL parameters
-        this.isUserStudy = parseUrlParam('is_user_study') === 'true';
-        this.disableCompare = parseUrlParam('disable_compare') !== null;
+        // Parse URL parameters using URLParamsManager
+        this.isUserStudy = urlParams.getBoolean(URLParam.IS_USER_STUDY);
+        
+        // Initialize numGenerations from URL parameter
+        const urlNumGenerations = urlParams.getInt(URLParam.NUM_GENERATIONS);
+        if (urlNumGenerations !== null) {
+            this.numGenerations = urlNumGenerations;
+        }
         
         // Initialize visType from URL parameter
-        const urlParam = parseUrlParam('vis_type');
-        if (urlParam) {
-            const validTypes: ('graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights')[] = 
-                ['graph', 'raw_outputs', 'first_output', 'word_tree', 'highlights'];
-            if (validTypes.includes(urlParam as any)) {
-                this.visType = urlParam as 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights';
-            }
+        const urlVisType = urlParams.getVisType();
+        if (urlVisType) {
+            this.visType = urlVisType;
+        }
+
+        // Initialize tokenizeMode from URL parameter
+        const urlTokenizeMode = urlParams.getTokenizeMode();
+        if (urlTokenizeMode) {
+            this.tokenizeMode = urlTokenizeMode;
         }
 
         // Initialize the cache with the examples using the default temperature and model
@@ -84,43 +90,31 @@ class State {
         }
         
         // Parse prompt_idx URL parameter to select specific prompts
-        const promptIdxParam = parseUrlParam('prompt_idx');
+        const indices = urlParams.getPromptIndices();
         const exampleKeys = Object.keys(examples);
         
-        if (promptIdxParam) {
-            // Parse comma-separated indices
-            const indices = promptIdxParam.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+        if (indices.length > 0) {
+            // Initialize prompts based on the provided indices
+            const validPrompts = indices
+                .filter(idx => idx >= 0 && idx < exampleKeys.length) // Only valid indices
+                .map(idx => ({
+                    text: exampleKeys[idx],
+                    temp: DEFAULT_TEMP,
+                    modelFamily: defaultModelFamily,
+                    model: defaultModel
+                }));
             
-            if (indices.length > 0) {
-                // Initialize prompts based on the provided indices
-                this.prompts = indices
-                    .filter(idx => idx >= 0 && idx < exampleKeys.length) // Only valid indices
-                    .map(idx => ({
-                        text: exampleKeys[idx],
-                        temp: DEFAULT_TEMP,
-                        modelFamily: defaultModelFamily,
-                        model: defaultModel
-                    }));
-                
-                // If no valid indices were found, fall back to default
-                if (this.prompts.length === 0) {
-                    console.warn(`Invalid prompt_idx parameter: "${promptIdxParam}". Using default prompt.`);
-                    this.prompts = [{ 
-                        text: exampleKeys[0], 
-                        temp: DEFAULT_TEMP, 
-                        modelFamily: defaultModelFamily, 
-                        model: defaultModel 
-                    }];
-                }
-            } else {
-                // Invalid format, use default
-                console.warn(`Invalid prompt_idx format: "${promptIdxParam}". Expected integer or comma-separated integers.`);
+            // If no valid indices were found, fall back to default
+            if (validPrompts.length === 0) {
+                console.warn(`Invalid prompt_idx parameter. Using default prompt.`);
                 this.prompts = [{ 
                     text: exampleKeys[0], 
                     temp: DEFAULT_TEMP, 
                     modelFamily: defaultModelFamily, 
                     model: defaultModel 
                 }];
+            } else {
+                this.prompts = validPrompts;
             }
         } else {
             // No prompt_idx parameter, use default prompt (first example)
@@ -131,6 +125,54 @@ class State {
                 model: defaultModel 
             }];
         }
+
+        // Set up reactions to sync state changes to URL
+        this.setupURLSync();
+    }
+
+    /**
+     * Set up MobX reactions to automatically sync state changes to URL
+     */
+    private setupURLSync() {
+        // Sync prompt changes to URL
+        reaction(
+            () => this.prompts.map(p => p.text),
+            (promptTexts) => {
+                // Find indices of current prompts in examples
+                const exampleKeys = Object.keys(examples);
+                const indices = promptTexts
+                    .map(text => exampleKeys.indexOf(text))
+                    .filter(idx => idx >= 0);
+                
+                if (indices.length > 0) {
+                    urlParams.setPromptIndices(indices);
+                }
+            }
+        );
+
+        // Sync visType changes to URL
+        reaction(
+            () => this.visType,
+            (visType) => {
+                urlParams.set(URLParam.VIS_TYPE, visType);
+            }
+        );
+
+        // Sync tokenizeMode changes to URL
+        reaction(
+            () => this.tokenizeMode,
+            (tokenizeMode) => {
+                urlParams.set(URLParam.TOKENIZE_MODE, tokenizeMode);
+            }
+        );
+
+        // Sync numGenerations changes to URL
+        reaction(
+            () => this.numGenerations,
+            (numGenerations) => {
+                urlParams.set(URLParam.NUM_GENERATIONS, numGenerations);
+            }
+        );
     }
 
     addPrompt = ((value: string = '') => {

@@ -7,7 +7,6 @@ import PromptContainer from './PromptContainer';
 import './single_example_app.css'
 import './loading.css'
 import { examples } from "./cached_examples";
-import { TokenizeMode } from "./utils";
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
 import { telemetry } from "./telemetry";
@@ -72,26 +71,26 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
     render() {
         return (
             <div className='single-input-holder'>
-                <div className='controls'>
-                        <h1 className="controls-title">
-                            Visualizing LLM outputs
-                            <div className="info-icon-container">
-                                <div className="info-icon">?</div>
-                                <div className="info-tooltip">
-                                    {/* <span className="authors">Emily Reif, Deniz Nazarova, Jared Hwang, Claire Yang</span> */}
-                                    <p>
-                                        When an LLM returns a response, we're actually sampling from a probability distribution over many possible
-                                        outputs. But we usually only see one of those samples—the response that gets returned.
-                                    </p>
-                                    <p>
-                                        If we're just using the model to get an answer or write some text, that's fine. But if we want to understand how
-                                        the model behaves—or build systems that depend on it—we need more than just one response. <b>We need to understand
-                                        the whole distribution of possible outputs.</b>
-                                    </p>
+                {!state.isUserStudy && (
+                    <div className='controls'>
+                            <h1 className="controls-title">
+                                Visualizing LLM outputs
+                                <div className="info-icon-container">
+                                    <div className="info-icon">?</div>
+                                    <div className="info-tooltip">
+                                        {/* <span className="authors">Emily Reif, Deniz Nazarova, Jared Hwang, Claire Yang</span> */}
+                                        <p>
+                                            When an LLM returns a response, we're actually sampling from a probability distribution over many possible
+                                            outputs. But we usually only see one of those samples—the response that gets returned.
+                                        </p>
+                                        <p>
+                                            If we're just using the model to get an answer or write some text, that's fine. But if we want to understand how
+                                            the model behaves—or build systems that depend on it—we need more than just one response. <b>We need to understand
+                                            the whole distribution of possible outputs.</b>
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        </h1>
-                    {!state.isUserStudy && (
+                            </h1>
                         <div className="controls-row">
                             {/* <label><b>Global Controls</b></label> */}
                             <div className="slider-container">
@@ -114,23 +113,23 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                 </Box>
                             </div>
                         </div>
-                    )}
 
-                        {/* <div className="slider-container">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        checked={this.state.shuffle}
-                                        onChange={(e) => this.handleCheckboxChange(e, 'shuffle')}
-                                        onMouseUp={() => state.setShuffle(!this.state.shuffle)}
-                                    />
-                                    Shuffle Sentence Indices
-                                </label>
-                                <div className="tooltip">
-                                    When enabled, shuffles the origSentIndices to randomize the visual ordering of sentence connections in the graph.
-                                </div>
-                            </div> */}
-                </div>
+                            {/* <div className="slider-container">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            checked={this.state.shuffle}
+                                            onChange={(e) => this.handleCheckboxChange(e, 'shuffle')}
+                                            onMouseUp={() => state.setShuffle(!this.state.shuffle)}
+                                        />
+                                        Shuffle Sentence Indices
+                                    </label>
+                                    <div className="tooltip">
+                                        When enabled, shuffles the origSentIndices to randomize the visual ordering of sentence connections in the graph.
+                                    </div>
+                                </div> */}
+                    </div>
+                )}
                 {state.prompts.map((p, idx) => (
                     <PromptContainer
                         key={'prompt-' + idx}
@@ -146,7 +145,7 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                         totalPrompts={state.prompts.length}
                     />
                 ))}
-                {!state.disableCompare && (
+                {!state.isUserStudy && (
                     <div 
                         className="add-prompt-container" 
                         onClick={() => {

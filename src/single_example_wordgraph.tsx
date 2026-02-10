@@ -11,7 +11,7 @@ import NodeExamplesPopup from './node_examples_popup';
 import { telemetry } from "./telemetry";
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
-import { TokenizeMode, parseUrlParam } from "./utils";
+import { urlParams, URLParam, TokenizeMode } from "./url_params_manager";
 
 const TRANSITION_DURATION = 300;
 const SLIDER_WIDTH = 150;
@@ -105,9 +105,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private zoomThrottleTimer: number | null = null;
     constructor(props: Props) {
         super(props);
-        // Parse URL parameter for separate_graphs
-        const separateGraphsParam = parseUrlParam('separate_graphs');
-        const separateByPrompt = separateGraphsParam === 'true';
+        // Parse URL parameter for separate_graphs using URLParamsManager
+        const separateByPrompt = urlParams.getBoolean(URLParam.SEPARATE_GRAPHS);
         
         this.state = {
             popupNodes: [],
@@ -258,6 +257,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                                 const newMode = e.target.value as TokenizeMode;
                                 this.setState({ tokenizeMode: newMode });
                                 state.setTokenizeMode(newMode);
+                                // Note: URL sync happens automatically via MobX reaction in state.tsx
                                 telemetry.logDropdownChange('tokenizeMode', newMode);
                             }}
                         >
@@ -273,21 +273,26 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                                 type="checkbox"
                                 checked={this.state.separateByPrompt}
                                 onChange={(e) => {
-                                    this.setState({ separateByPrompt: e.target.checked });
-                                    telemetry.logDropdownChange('separateByPrompt', e.target.checked ? 'true' : 'false');
+                                    const checked = e.target.checked;
+                                    this.setState({ separateByPrompt: checked });
+                                    // Sync to URL
+                                    urlParams.set(URLParam.SEPARATE_GRAPHS, checked);
+                                    telemetry.logDropdownChange('separateByPrompt', checked ? 'true' : 'false');
                                 }}
                             />
                             Separate graphs by prompt
                         </label>
                     </div>
                 </div>}
-                <NodeExamplesPopup
-                    nodes={this.state.popupNodes}
-                    promptGroups={this.props.promptGroups}
-                    isVisible={true}
-                    onClose={() => this.hidePopup()}
-                    onRemoveNode={this.removePopupNode}
-                />
+                {!urlParams.getBoolean(URLParam.HIDE_POPUPS) && (
+                    <NodeExamplesPopup
+                        nodes={this.state.popupNodes}
+                        promptGroups={this.props.promptGroups}
+                        isVisible={true}
+                        onClose={() => this.hidePopup()}
+                        onRemoveNode={this.removePopupNode}
+                    />
+                )}
             </div>
         );
     }

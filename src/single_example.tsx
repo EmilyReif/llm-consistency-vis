@@ -7,6 +7,7 @@ import SingleExampleHighlights from "./single_example_highlights";
 import SingleExampleWordGraph from "./single_example_wordgraph";
 import { reaction } from 'mobx';
 import { telemetry } from "./telemetry";
+import { urlParams, URLParam } from "./url_params_manager";
 
 
 class SingleExample extends React.Component {
@@ -133,7 +134,14 @@ renderOutputsBasic(firstOnly: boolean = false) {
                 return (
                     <div key={`group-${groupIndex}`} className="prompt-output-group" style={{ borderColor: backgroundColor }}>
                         <div className="prompt-output-header"  style={{ backgroundColor: backgroundColor }}>
-                            <div className="prompt-text">Prompt {originalIndex + 1}: {promptText}</div>
+                            <div 
+                                className="prompt-text"
+                                style={{
+                                    visibility: urlParams.getBoolean(URLParam.HIDE_PROMPT_TEXT) ? 'hidden' : 'visible'
+                                }}
+                            >
+                                Prompt {originalIndex + 1}: {promptText}
+                            </div>
                             <div className="prompt-info">
                                 {!firstOnly && `${group.generations.length} outputs - `}
                                 {state.prompts[originalIndex]?.modelFamily}/{state.prompts[originalIndex]?.model}

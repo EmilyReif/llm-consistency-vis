@@ -5,7 +5,7 @@ import { exampleOlmoTrace } from "./cached_data/examples_olmo_trace";
 import { examplesUserStudyMonsters } from "./cached_data/examples_user_study_monsters";
 import { examplesUserStudyPlaces } from "./cached_data/examples_user_study_places";
 import { examplesPresidents } from "./cached_data/presidents";
-import { parseUrlParam } from "./utils";
+import { urlParams, URLParam } from "./url_params_manager";
 
 const datasetMap: { [key: string]: { [key: string]: string[] } } = {
     'examples': examplesOrig,
@@ -17,7 +17,7 @@ const datasetMap: { [key: string]: { [key: string]: string[] } } = {
     'presidents': examplesPresidents,
 };
 
-const datasetParam = parseUrlParam('dataset') || 'examples';
+const datasetParam = urlParams.get(URLParam.DATASET) || 'examples';
 if (datasetParam && !datasetMap[datasetParam]) {
     console.warn(`Unknown dataset parameter: "${datasetParam}". Defaulting to 'examples'. Available options: ${Object.keys(datasetMap).join(', ')}`);
 }

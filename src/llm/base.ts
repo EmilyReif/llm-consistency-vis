@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import * as utils from "../utils";
+import { urlParams } from "../url_params_manager";
 import { ProviderConfig } from "./config";
 
 // LLM class that works with any provider via configuration
@@ -24,12 +24,12 @@ export class LLM {
     
     // Common method to get API key with fallback to prompt
     protected getApiKey(paramName: string, promptMessage: string): string | null {
-        let apiKey = utils.parseUrlParam(paramName) || this.apiKey;
+        let apiKey = urlParams.getRaw(paramName) || this.apiKey;
         
         if (!apiKey) {
             apiKey = prompt(promptMessage) || '';
             if (apiKey) {
-                utils.setUrlParam(paramName, apiKey);
+                urlParams.setRaw(paramName, apiKey);
             }
         }
         

@@ -1,7 +1,7 @@
 // Telemetry system for logging user interactions
 
 import { state } from './state';
-import { parseUrlParam } from './utils';
+import { urlParams, URLParam } from './url_params_manager';
 
 const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzjSK-bJaYB15HqtNBDNK9kjoDdJS9LDmkxMkoK22ij_kzsdGqtu5B58HIisn-qo5Ls/exec';
 // const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwBecSgj0Sk7qCi0DO_k1uHQVaOJa04PJv-XMftUUc/dev';
@@ -35,11 +35,11 @@ let hasSubmitted: boolean = false;
 // Parse all telemetry-related URL parameters
 function parseTelemetryUrlParams(): UrlParams {
   return {
-    prolificPid: parseUrlParam('prolific_pid'),
-    sessionId: parseUrlParam('session_id'),
-    studyId: parseUrlParam('study_id'),
-    interfaceVersion: parseUrlParam('vis_type'),
-    dataset: parseUrlParam('dataset'),
+    prolificPid: urlParams.get(URLParam.PROLIFIC_PID),
+    sessionId: urlParams.get(URLParam.SESSION_ID),
+    studyId: urlParams.get(URLParam.STUDY_ID),
+    interfaceVersion: urlParams.get(URLParam.VIS_TYPE),
+    dataset: urlParams.get(URLParam.DATASET),
   };
 }
 

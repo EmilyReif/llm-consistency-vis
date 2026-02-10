@@ -3,8 +3,10 @@ import * as d3 from "d3";
 import { getEmbeddings } from './embed'
 import { cosineSimilarity } from "fast-cosine-similarity";
 import { ReachabilityChecker } from './reachability';
+import { TokenizeMode as TokenizeModeType } from './url_params_manager';
 
-export type TokenizeMode = "space" | "comma" | "sentence";
+// Re-export TokenizeMode from centralized location
+export type TokenizeMode = TokenizeModeType;
 
 // Global flag to use embeddings instead of Levenshtein distance
 const USE_EMBS = true;
@@ -468,12 +470,20 @@ function merge(nodesDict: { [key: string]: NodeDatum }, linksDict: { [key: strin
     }
 }
 
+/**
+ * @deprecated Use URLParamsManager (urlParams.get()) instead
+ * Parse a URL parameter by name
+ */
 export function parseUrlParam(urlParamName: string): string | null {
     const urlParams = new URLSearchParams(window.location.search);
     const paramValue = urlParams.get(urlParamName);
     return paramValue ? decodeURIComponent(paramValue) : null;
 }
 
+/**
+ * @deprecated Use URLParamsManager (urlParams.set()) instead
+ * Set a URL parameter
+ */
 export function setUrlParam(urlParamName: string, value: string): void {
     const urlParams = new URLSearchParams(window.location.search);
     urlParams.set(urlParamName, encodeURIComponent(value));

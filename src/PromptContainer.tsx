@@ -5,6 +5,7 @@ import { PROVIDERS, getModelsForFamily } from "./llm/config";
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
 import { telemetry } from "./telemetry";
+import { urlParams, URLParam } from "./url_params_manager";
 
 interface PromptContainerProps {
     promptIndex: number;
@@ -326,7 +327,13 @@ class EditableDropdown extends React.Component<any, any> {
         const { open, value } = this.state;
 
         return (
-            <div className="input-with-hint" ref={this.dropdownRef}>
+            <div 
+                className="input-with-hint" 
+                ref={this.dropdownRef}
+                style={{
+                    visibility: urlParams.getBoolean(URLParam.HIDE_PROMPT_TEXT) ? 'hidden' : 'visible'
+                }}
+            >
                 <input
                     type="text"
                     className="input-field"
