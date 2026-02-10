@@ -586,8 +586,10 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             })
             .attr("stroke-width", (d: any) => {
                 return 2;
-            })
-            .style('filter', (d: LinkDatum) => getBlur(d));
+            });
+        
+        // Apply filter style directly (CSS will handle the transition)
+        this.links.style('filter', (d: LinkDatum) => getBlur(d));
 
         // Choose opacity based on 
         const opacity = (d: NodeDatum) => {
@@ -615,8 +617,10 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             })
             .style('font-weight', (d: NodeDatum) => {
                 return this.selectedNodes.has(d) || this.hoveredNode === d ? 'bold' : 'normal';
-            })
-            .style('filter', (d: NodeDatum) => getBlur(d));
+            });
+        
+        // Apply filter style directly (CSS will handle the transition)
+        this.nodes.style('filter', (d: NodeDatum) => getBlur(d));
     };
 
     // Create the simulation.

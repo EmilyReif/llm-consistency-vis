@@ -12,9 +12,9 @@ text {
     cursor: default;
 }
 
-/* .node, .link {
-    transition: opacity filter 2s ease;
-} */
+.node, .link {
+    transition: filter .5s ease;
+}
 
 .graph-controls-overlay {
     position: absolute;
