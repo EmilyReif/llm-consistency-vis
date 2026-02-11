@@ -32,6 +32,9 @@ interface State {
     spread: number;
     tokenizeMode: TokenizeMode;
     separateByPrompt: boolean;
+    animatingGeneration: boolean;
+    animationWordIdx: number;
+    animationPhase: 'first' | 'all';
 }
 
 const NUM_WORDS_TO_WRAP = 5;
@@ -116,6 +119,9 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             spread: DEFAULT_SPREAD,
             tokenizeMode: state.tokenizeMode,
             separateByPrompt,
+            animatingGeneration: false,
+            animationWordIdx: -1,
+            animationPhase: 'first',
         };
     }
 
@@ -133,7 +139,14 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             clearTimeout(this.zoomThrottleTimer);
             this.zoomThrottleTimer = null;
         }
+        // Clean up animation timer if running
+        if (this.animationTimer !== null) {
+            clearTimeout(this.animationTimer);
+            this.animationTimer = null;
+        }
     }
+
+    private animationTimer: number | null = null;
 
     private handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === 'Escape') {
@@ -282,6 +295,15 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                             />
                             Separate graphs by prompt
                         </label>
+                    </div>
+
+                    <div className="button-container">
+                        <button
+                            onClick={this.animateGeneration}
+                            disabled={this.state.animatingGeneration}
+                        >
+                            {this.state.animatingGeneration ? 'Animating...' : 'Animate Generation'}
+                        </button>
                     </div>
                 </div>}
                 {!urlParams.getBoolean(URLParam.HIDE_POPUPS) && (
@@ -566,8 +588,13 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             }
             return '';
         }
+        // Use 1 second transition for phase 2 fade-in
+        const transitionDuration = firstTime ? 0 : 
+            (this.state.animatingGeneration && this.state.animationPhase === 'all') ? 1000 : 
+            TRANSITION_DURATION;
+        
         this.links
-            .transition().duration(firstTime ? 0 : TRANSITION_DURATION).ease(d3.easeSinInOut)
+            .transition().duration(transitionDuration).ease(d3.easeSinInOut)
             .attr("d", (d: LinkDatum) => {
                 const { sourceX, targetX, y1, y2, sourceRightX, targetLeftX } = this.getLinkEndpoints!(d);
                 const points = [
@@ -591,9 +618,23 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Apply filter style directly (CSS will handle the transition)
         this.links.style('filter', (d: LinkDatum) => getBlur(d));
 
-        // Choose opacity based on 
+        // Choose opacity based on animation state
         const opacity = (d: NodeDatum) => {
             if ((d as any).word === '' || !this.opacityScale) return 0;
+            
+            if (this.state.animatingGeneration) {
+                if (this.state.animationPhase === 'first') {
+                    // Phase 1: only show first gen nodes up to current step
+                    const step = this.getFirstGenStep(d);
+                    if (step > this.state.animationWordIdx) return 0;
+                } else {
+                    // Phase 2: show all first gen nodes + fade in the rest
+                    if (!this.isInFirstGeneration(d)) {
+                        // Non-first-gen nodes fade in (handled by transition duration)
+                    }
+                }
+            }
+            
             return this.opacityScale(d.count);
         }
 
@@ -602,12 +643,24 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             const gradient = this.defs!.select(`#gradient-${i}`);
             const multiplier = .2;
             const stops = gradient.selectAll("stop");
-            stops.filter((_: any, j: number) => j === 0).attr("stop-opacity", opacity(d.source) * multiplier);
-            stops.filter((_: any, j: number) => j === 1).attr("stop-opacity", opacity(d.target) * multiplier);
+            
+            let sourceOpacity = opacity(d.source);
+            let targetOpacity = opacity(d.target);
+            
+            // Phase 1: only show edges between first gen nodes
+            if (this.state.animatingGeneration && this.state.animationPhase === 'first') {
+                if (!this.isInFirstGeneration(d.source) || !this.isInFirstGeneration(d.target)) {
+                    sourceOpacity = 0;
+                    targetOpacity = 0;
+                }
+            }
+            
+            stops.filter((_: any, j: number) => j === 0).attr("stop-opacity", sourceOpacity * multiplier);
+            stops.filter((_: any, j: number) => j === 1).attr("stop-opacity", targetOpacity * multiplier);
         });
 
         this.nodes
-            .transition().duration(firstTime ? 0 : TRANSITION_DURATION).ease(d3.easeSinInOut)
+            .transition().duration(transitionDuration).ease(d3.easeSinInOut)
             .attr("transform", (d: any) => `translate(${d.x}, ${d.y})`)
             .attr('fill', (d: NodeDatum) => {
                 return getNodeColor(d, this.linksData);
@@ -839,6 +892,97 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 isPopupVisible: true
             });
         }
+    }
+
+    private firstGenStepMapping: Map<NodeDatum, number> | null = null;
+
+    private buildFirstGenStepMapping(): void {
+        // Get the first generation sentIdx from each prompt group
+        const firstGenSentIndices = new Set<number>();
+        let currentSentIdx = 0;
+        for (const group of this.props.promptGroups) {
+            if (group.generations.length > 0) {
+                firstGenSentIndices.add(currentSentIdx);
+            }
+            currentSentIdx += group.generations.length;
+        }
+        
+        // Find all nodes in first generation and assign sequential step numbers
+        const firstGenNodes = this.nodesData
+            .filter(node => node.origSentenceInfo?.some(info => firstGenSentIndices.has(info.sentIdx)))
+            .map(node => {
+                const firstGenInfo = node.origSentenceInfo!.find(info => firstGenSentIndices.has(info.sentIdx));
+                return { node, startWordIdx: firstGenInfo!.wordIdx };
+            })
+            .sort((a, b) => a.startWordIdx - b.startWordIdx);
+        
+        this.firstGenStepMapping = new Map();
+        firstGenNodes.forEach(({ node }, index) => {
+            this.firstGenStepMapping!.set(node, index);
+        });
+    }
+
+    private isInFirstGeneration(node: NodeDatum): boolean {
+        if (!this.firstGenStepMapping) {
+            this.buildFirstGenStepMapping();
+        }
+        return this.firstGenStepMapping!.has(node);
+    }
+
+    private getFirstGenStep(node: NodeDatum): number {
+        if (!this.firstGenStepMapping) {
+            this.buildFirstGenStepMapping();
+        }
+        return this.firstGenStepMapping!.get(node) ?? Infinity;
+    }
+
+    private animateGeneration = () => {
+        if (this.state.animatingGeneration) return;
+
+        // Build mapping of first generation nodes to sequential steps
+        this.firstGenStepMapping = null;
+        this.buildFirstGenStepMapping();
+        const maxStep = this.firstGenStepMapping!.size - 1;
+
+        // Start animation
+        this.setState({ 
+            animatingGeneration: true, 
+            animationWordIdx: -1,
+            animationPhase: 'first'
+        });
+
+        let currentStep = 0;
+        
+        const animateFirstGenStep = () => {
+            if (currentStep > maxStep) {
+                // Phase 1 complete, fade in everything else
+                this.setState({ 
+                    animationPhase: 'all',
+                    animationWordIdx: Infinity
+                });
+                this.update();
+                
+                // End animation after 1 second fade-in
+                this.animationTimer = window.setTimeout(() => {
+                    this.setState({ 
+                        animatingGeneration: false,
+                        animationWordIdx: -1,
+                        animationPhase: 'first'
+                    });
+                    this.animationTimer = null;
+                }, 1000);
+                return;
+            }
+
+            this.setState({ animationWordIdx: currentStep });
+            this.update();
+
+            currentStep++;
+            this.animationTimer = window.setTimeout(animateFirstGenStep, 500);
+        };
+
+        // Start with a delay to show all transparent
+        this.animationTimer = window.setTimeout(animateFirstGenStep, 800);
     }
 }
 

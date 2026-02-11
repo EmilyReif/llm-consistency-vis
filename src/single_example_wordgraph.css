@@ -34,7 +34,8 @@ text {
 
 .graph-controls-overlay .slider-container,
 .graph-controls-overlay .dropdown-container,
-.graph-controls-overlay .checkbox-container {
+.graph-controls-overlay .checkbox-container,
+.graph-controls-overlay .button-container {
     display: flex;
     flex-direction: column;
     font-size: 0.9em;
@@ -108,4 +109,24 @@ text {
     cursor: pointer;
     width: 16px;
     height: 16px;
+}
+
+.graph-controls-overlay .button-container button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    font-size: 0.9em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+}
+
+.graph-controls-overlay .button-container button:hover:not(:disabled) {
+    background-color: #f0f0f0;
+}
+
+.graph-controls-overlay .button-container button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
 }
