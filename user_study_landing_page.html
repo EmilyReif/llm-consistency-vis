@@ -546,6 +546,9 @@
     let task1Started = false;
     let task2Started = false;
 
+    // Number of generations to show in the visualization (passed in task URLs)
+    const NUM_GENERATIONS = 20;
+
     // Google Drive embed URLs
     const videoExplanationGraph = 'https://drive.google.com/file/d/1DLkEhCWnByYmAWss-LITaVjsHKNCFp1v/preview';
     const videoExplanationRawOutputs = 'https://drive.google.com/file/d/1qOgPwDVBZ1IGEx0cutb88NzZ7Xc6KZi_/preview';
@@ -676,9 +679,14 @@
     // Build URLs for Task 1 and Task 2
     const baseUrl = getBaseUrl();
     
+    // Get prompt_idx parameter if present
+    const promptIdx = getUrlParam('prompt_idx');
+    
     function buildTaskUrl(task, taskNum) {
       const params = new URLSearchParams({
         is_user_study: 'true',
+        separate_graphs: 'true',
+        num_generations: NUM_GENERATIONS.toString(),
         user_id: prolificPid || '',
         dataset: task.dataset,
         vis_type: task.visType,
@@ -693,6 +701,10 @@
       }
       if (studyId) {
         params.set('study_id', studyId);
+      }
+      // Add prompt_idx parameter if present
+      if (promptIdx) {
+        params.set('prompt_idx', promptIdx);
       }
       return `${baseUrl}index.html?${params.toString()}`;
     }

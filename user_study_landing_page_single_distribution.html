@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Study Landing Page - Single Distribution</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      color: #34495e;
+      border-bottom: 2px solid #ecf0f1;
+      padding-bottom: 10px;
+    }
+
+    .user-info {
+      background-color: #e8f5e9;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      border-left: 4px solid #4caf50;
+    }
+
+    .user-info strong {
+      color: #2e7d32;
+    }
+
+    .page-container {
+      min-height: 600px;
+      position: relative;
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateX(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .description {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+    }
+
+    .task-section {
+      background-color: #ffffff;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .task-section h3 {
+      color: #2c3e50;
+      margin-top: 0;
+    }
+
+    .task-meta {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 15px 0;
+      font-size: 0.9em;
+    }
+
+    .task-meta strong {
+      color: #2c3e50;
+    }
+
+    .form-container {
+      text-align: center;
+      display: none;
+    }
+
+    .form-container.visible {
+      display: block;
+    }
+
+    .video-container {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .video-container iframe {
+      max-width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .task-link {
+      display: inline-block;
+      background-color: #3498db;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin: 15px 0;
+      font-weight: 500;
+      transition: background-color 0.3s;
+    }
+
+    .task-link:hover {
+      background-color: #2980b9;
+    }
+
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #ecf0f1;
+    }
+
+    .nav-button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .nav-button:hover:not(:disabled) {
+      background-color: #2980b9;
+    }
+
+    .nav-button:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .progress-dots {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: #bdc3c7;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .dot.active {
+      background-color: #3498db;
+      transform: scale(1.2);
+    }
+
+    .dot:hover {
+      background-color: #95a5a6;
+    }
+
+    .dot.active:hover {
+      background-color: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <h1>LLM Output Distribution Study</h1>
+
+  <div class="page-container">
+    <!-- Page 1: Overview -->
+    <div id="page1" class="page active">
+      <div class="description">
+        <h2>Study Overview</h2>
+        <p>
+          Large Language Models (LLMs) are <strong>stochastic</strong>, meaning they don't produce the same output every time. When you give an LLM the same prompt multiple times, you get a <strong>distribution of possible outputs</strong>—some responses may be very similar, while others might vary significantly.
+        </p>
+      
+        <p>
+          Understanding this distribution of outputs is crucial for many applications. Rather than judging an LLM prompt based on a single example, we need to consider the full range of possibilities it can generate. This helps us understand:
+        </p>
+        
+        <ul>
+          <li>What kinds of responses are most common?</li>
+          <li>How much variety exists across outputs?</li>
+          <li>Are there any problematic or unexpected responses?</li>
+          <li>Is the overall quality consistent?</li>
+        </ul>
+      
+        <p>
+          In this study, you'll use a visualization tool to explore and reason about distributions of LLM outputs, helping us understand how people make sense of LLM behavior at scale.
+        </p>
+      </div>
+    </div>
+
+    <!-- Page 2: Task 1 -->
+    <div id="page2" class="page">
+      <div id="task1Section" class="task-section">
+        <h3>Task 1</h3>
+        
+        <div class="description" style="margin: 20px 0;">
+          <p>
+            In this task, you'll examine a set of outputs generated from the same prompt. Your goal is to <strong>reason about the distribution</strong> of these outputs—understanding patterns, variety, consistency, and any notable characteristics across the full set of responses.
+          </p>
+        
+          <p>
+            Using the visualization interface, you'll explore groups of LLM outputs and develop an understanding of what this prompt typically generates. Consider questions like:
+          </p>
+        
+          <ul>
+            <li><strong>Variety:</strong> How diverse are the outputs? What range of responses does this prompt produce?</li>
+            <li><strong>Consistency:</strong> Are there common patterns, themes, or stylistic elements across outputs?</li>
+            <li><strong>Quality:</strong> Are the outputs generally appropriate and high-quality?</li>
+            <li><strong>Distribution shape:</strong> Are most outputs similar with a few outliers, or is there broad variation?</li>
+          </ul>
+        
+          <p>
+            There are no right or wrong answers. We're interested in how you reason about these distributions and what the interface reveals about LLM output behavior.
+          </p>
+        </div>
+        
+        <div class="video-container">
+          <h4>Please watch the video below before starting the task</h4>
+          <!-- TODO: Replace with new video for single distribution study -->
+          <div id="task1Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
+          <iframe 
+            id="task1Video"
+            width="1000" 
+            height="500" 
+            src="" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+          </iframe>
+        </div>
+
+        <div>
+          <a id="task1Link" href="#" class="task-link" target="_blank">
+            Start Task 1 →
+          </a>
+        </div>
+
+        <div id="task1BackupLink" style="display: none; margin-top: 15px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px; font-size: 0.9em;">
+          <p style="margin: 0 0 8px 0;"><strong>Clicking the Task 1 button should open a new tab.</strong> If it doesn't, copy and paste this link into a new tab:</p>
+          <p style="margin: 0; word-break: break-all;"><a id="task1BackupUrl" href="#" target="_blank" style="color: #0066cc; text-decoration: underline;"></a></p>
+        </div>
+
+        <div id="task1FormContainer" class="form-container">
+          <h4>Task 1 Questionnaire</h4>
+          <p>Please complete the questionnaire after finishing Task 1.</p>
+          <iframe id="task1Form" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 3: Task 2 -->
+    <div id="page3" class="page">
+      <div id="task2Section" class="task-section">
+        <h3>Task 2</h3>
+        
+        <div class="description" style="margin: 20px 0;">
+          <p>
+            In this task, you'll examine another set of outputs generated from a different prompt. As before, your goal is to <strong>reason about the distribution</strong> of these outputs—understanding patterns, variety, consistency, and any notable characteristics across the full set of responses.
+          </p>
+        
+          <p>
+            Using the visualization interface, you'll explore groups of LLM outputs and develop an understanding of what this prompt typically generates. Consider questions like:
+          </p>
+        
+          <ul>
+            <li><strong>Variety:</strong> How diverse are the outputs? What range of responses does this prompt produce?</li>
+            <li><strong>Consistency:</strong> Are there common patterns, themes, or stylistic elements across outputs?</li>
+            <li><strong>Quality:</strong> Are the outputs generally appropriate and high-quality?</li>
+            <li><strong>Distribution shape:</strong> Are most outputs similar with a few outliers, or is there broad variation?</li>
+          </ul>
+        
+          <p>
+            There are no right or wrong answers. We're interested in how you reason about these distributions and what the interface reveals about LLM output behavior.
+          </p>
+        </div>
+        
+        <div class="video-container">
+          <h4>Please watch the video below before starting the task</h4>
+          <!-- TODO: Replace with new video for single distribution study -->
+          <div id="task2Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
+          <iframe 
+            id="task2Video"
+            width="1000" 
+            height="500" 
+            src="" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+          </iframe>
+        </div>
+
+        <div>
+          <a id="task2Link" href="#" class="task-link" target="_blank">
+            Start Task 2 →
+          </a>
+        </div>
+
+        <div id="task2BackupLink" style="display: none; margin-top: 15px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px; font-size: 0.9em;">
+          <p style="margin: 0 0 8px 0;"><strong>Clicking the Task 2 button should open a new tab.</strong> If it doesn't, copy and paste this link into a new tab:</p>
+          <p style="margin: 0; word-break: break-all;"><a id="task2BackupUrl" href="#" target="_blank" style="color: #0066cc; text-decoration: underline;"></a></p>
+        </div>
+
+        <div id="task2FormContainer" class="form-container">
+          <h4>Task 2 Questionnaire</h4>
+          <iframe id="task2Form" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 4: Final Survey -->
+    <div id="page4" class="page">
+      <div class="task-section">
+        <h3>Final Survey</h3>
+        <p>Thank you for completing both tasks! Please complete this final survey about your overall experience.</p>
+        
+        <div class="form-container visible">
+          <iframe id="finalSurveyForm" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="navigation">
+    <button id="prevButton" class="nav-button" onclick="previousPage()">← Previous</button>
+    
+    <div class="progress-dots" id="progressDots"></div>
+    
+    <button id="nextButton" class="nav-button" onclick="nextPage()">Next →</button>
+  </div>
+
+  <script>
+    // ===== TELEMETRY SYSTEM =====
+    const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzjSK-bJaYB15HqtNBDNK9kjoDdJS9LDmkxMkoK22ij_kzsdGqtu5B58HIisn-qo5Ls/exec';
+    
+    let telemetryEvents = [];
+    let pageStartedAt = Date.now();
+    let hasSubmitted = false;
+    
+    // Get URL parameter
+    function getTelemetryUrlParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+    
+    // Get metadata for events
+    function getTelemetryMetadata() {
+      return {
+        interfaceVersion: 'landing_page_single_distribution',
+        startedAt: pageStartedAt,
+        prolificPid: getTelemetryUrlParam('prolific_pid') || undefined,
+        sessionId: getTelemetryUrlParam('session_id') || undefined,
+        studyId: getTelemetryUrlParam('study_id') || undefined,
+      };
+    }
+    
+    // Log a telemetry event
+    function logTelemetryEvent(type, data) {
+      const metadata = getTelemetryMetadata();
+      const event = {
+        timestamp: Date.now(),
+        type,
+        data,
+        ...metadata,
+      };
+      telemetryEvents.push(event);
+    }
+    
+    // Get participant ID
+    function getParticipantId() {
+      const prolificPid = getTelemetryUrlParam('prolific_pid');
+      const sessionId = getTelemetryUrlParam('session_id');
+      const studyId = getTelemetryUrlParam('study_id');
+      const parts = [prolificPid, sessionId, studyId].filter(Boolean);
+      return parts.length > 0 ? parts.join('_') : '';
+    }
+    
+    // Prepare submission payload
+    function prepareTelemetryPayload() {
+      return JSON.stringify({
+        participantId: getParticipantId(),
+        interfaceVersion: 'landing_page_single_distribution',
+        telemetry: telemetryEvents,
+      });
+    }
+    
+    // Submit telemetry (async version for blur/visibilitychange)
+    async function submitTelemetryAsync() {
+      if (hasSubmitted || telemetryEvents.length === 0) {
+        return false;
+      }
+      
+      // Log leavePage event before submitting
+      const timeOnPage = Date.now() - pageStartedAt;
+      logTelemetryEvent('leavePage', {
+        timeOnPage,
+        url: window.location.href,
+      });
+      
+      const data = prepareTelemetryPayload();
+      
+      try {
+        const response = await fetch(TELEMETRY_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
+          body: data,
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        if (result.status === 'ok') {
+          hasSubmitted = true;
+          return true;
+        } else {
+          throw new Error('Unexpected response from server');
+        }
+      } catch (error) {
+        console.error('Error submitting telemetry:', error);
+        return false;
+      }
+    }
+    
+    // Submit telemetry (sync version for unload events)
+    function submitTelemetrySync() {
+      if (hasSubmitted || telemetryEvents.length === 0) {
+        return;
+      }
+      
+      // Log leavePage event before submitting
+      const timeOnPage = Date.now() - pageStartedAt;
+      logTelemetryEvent('leavePage', {
+        timeOnPage,
+        url: window.location.href,
+      });
+      
+      const data = prepareTelemetryPayload();
+      const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
+      const sent = navigator.sendBeacon(TELEMETRY_ENDPOINT, blob);
+      
+      if (!sent) {
+        fetch(TELEMETRY_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
+          body: data,
+          keepalive: true,
+        }).catch(() => {
+          // Silently fail
+        });
+      }
+      
+      hasSubmitted = true;
+    }
+    
+    // Auto-submit telemetry when window loses focus or closes (similar to app.tsx)
+    let hasSubmittedRef = false;
+    
+    const handleAutoSubmit = async () => {
+      // Prevent multiple simultaneous submissions
+      if (hasSubmittedRef) {
+        return;
+      }
+      
+      if (hasSubmitted || telemetryEvents.length === 0) {
+        return;
+      }
+      
+      hasSubmittedRef = true;
+      const success = await submitTelemetryAsync();
+      
+      if (!success) {
+        // Reset flag if submission failed so we can retry on next blur/close
+        hasSubmittedRef = false;
+      }
+    };
+    
+    // Handle window blur (user switches to another tab/window)
+    const handleBlur = () => {
+      handleAutoSubmit();
+    };
+    
+    // Handle visibility change (more reliable for tab switching)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handleAutoSubmit();
+      }
+    };
+    
+    // Handle page unload (window is closing)
+    const submitOnUnload = () => {
+      if (!hasSubmittedRef && !hasSubmitted && telemetryEvents.length > 0) {
+        hasSubmittedRef = true;
+        submitTelemetrySync();
+      }
+    };
+    
+    // Add event listeners (same pattern as app.tsx)
+    window.addEventListener('blur', handleBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // Use onbeforeunload property for maximum reliability
+    window.onbeforeunload = submitOnUnload;
+    // Also add pagehide as additional backup
+    window.addEventListener('pagehide', submitOnUnload);
+    
+    // Log page load
+    logTelemetryEvent('page_load', {
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+    });
+    // ===== END TELEMETRY SYSTEM =====
+    
+    // Page navigation state
+    let currentPage = 1;
+    const totalPages = 4;
+    
+    // Track if tasks have been started
+    let task1Started = false;
+    let task2Started = false;
+
+    // Number of generations to show in the visualization (passed in task URLs)
+    const NUM_GENERATIONS = 20;
+
+    // Google Drive embed URLs
+    const videoExplanationGraph = 'https://drive.google.com/file/d/1DLkEhCWnByYmAWss-LITaVjsHKNCFp1v/preview';
+    const videoExplanationRawOutputs = 'https://drive.google.com/file/d/1qOgPwDVBZ1IGEx0cutb88NzZ7Xc6KZi_/preview';
+
+    // Google Form URLs for different conditions (prefilled format)
+    const formUrlCharactersTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSfbOEthQdVxALvWYzARrWYin22J4fsW0WTTy7MsPQhE6rB4Gw/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
+    const formUrlPlacesTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSdLZFiFxcohdSDKzot0ptxDN82Ixx7iPnV1_My0a3WWC4nHWw/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
+    const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSd5trytqg1lOWpxhnoSXUduZe7Z8qW4ep688C8S310dNDDzMw/viewform?usp=pp_url&entry.1859965680=UID&embedded=true';
+
+    // Function to get video URL based on vis type
+    function getVideoUrlForVisType(visType) {
+      if (visType === 'graph') {
+        return videoExplanationGraph.includes('[PLACEHOLDER') ? '' : videoExplanationGraph;
+      } else if (visType === 'raw_outputs') {
+        return videoExplanationRawOutputs.includes('[PLACEHOLDER') ? '' : videoExplanationRawOutputs;
+      }
+      return '';
+    }
+
+    // Function to get Prolific parameters as a formatted string
+    function getProlificParamsString(dataset, visType) {
+      const prolificPid = getUrlParam('prolific_pid') || '';
+      const sessionId = getUrlParam('session_id') || '';
+      const studyId = getUrlParam('study_id') || '';
+      
+      const params = [];
+      if (prolificPid) params.push(`prolific_pid=${prolificPid}`);
+      if (sessionId) params.push(`session_id=${sessionId}`);
+      if (studyId) params.push(`study_id=${studyId}`);
+      if (dataset) params.push(`dataset=${dataset}`);
+      if (visType) params.push(`vis_type=${visType}`);
+      
+      return params.join('&');
+    }
+
+    // Function to get form URL based on dataset, with Prolific parameters prefilled
+    function getFormUrlForDataset(dataset, visType) {
+      const paramsString = encodeURIComponent(getProlificParamsString(dataset, visType));
+      let formUrl;
+      
+      if (dataset === 'user_study_monsters') {
+        formUrl = formUrlCharactersTemplate;
+      } else if (dataset === 'user_study_places') {
+        formUrl = formUrlPlacesTemplate;
+      } else {
+        return '';
+      }
+      
+      // Replace UID with the encoded Prolific parameters string
+      return formUrl.replace('UID', paramsString);
+    }
+
+    // Function to get URL parameter
+    function getUrlParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // Function to get base URL (works for both local dev and deployed with subdirectory)
+    function getBaseUrl() {
+      const path = window.location.pathname;
+      // Remove the filename and any trailing slashes
+      const basePath = path.substring(0, path.lastIndexOf('/') + 1);
+      return window.location.origin + basePath;
+    }
+
+    // Get Prolific URL parameters
+    const prolificPid = getUrlParam('prolific_pid');
+    const sessionId = getUrlParam('session_id');
+    const studyId = getUrlParam('study_id');
+
+    // All possible task combinations
+    const datasets = ['user_study_places', 'user_study_monsters'];
+    const visTypes = ['graph', 'raw_outputs'];
+    const allCombinations = [];
+    
+    datasets.forEach(dataset => {
+      visTypes.forEach(visType => {
+        allCombinations.push({ dataset, visType });
+      });
+    });
+
+    // Create a deterministic randomization based on user_id for reproducibility
+    // If user_id exists, use it as seed; otherwise use timestamp
+    function seededRandom(seed) {
+      let value = seed;
+      return function() {
+        value = (value * 9301 + 49297) % 233280;
+        return value / 233280;
+      };
+    }
+
+    const seed = prolificPid ? 
+    prolificPid.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) : 
+      Date.now();
+    const random = seededRandom(seed);
+
+    // Shuffle array using seeded random
+    function shuffleArray(array, rng) {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    // Randomly assign one combination to Task 1 (each appears ~25% of the time)
+    const shuffled = shuffleArray(allCombinations, random);
+    const task1Combo = shuffled[0];
+    
+    // For Task 2, select the combination with BOTH different dataset AND different vis type
+    // This ensures each participant sees both datasets and both vis types
+    const task2Combo = allCombinations.find(combo => 
+      combo.dataset !== task1Combo.dataset && combo.visType !== task1Combo.visType
+    );
+
+    // Randomize the order (50% chance to swap) to control for learning effect
+    let finalTask1, finalTask2;
+    if (random() < 0.5) {
+      finalTask1 = task1Combo;
+      finalTask2 = task2Combo;
+    } else {
+      finalTask1 = task2Combo;
+      finalTask2 = task1Combo;
+    }
+
+    // Build URLs for Task 1 and Task 2
+    const baseUrl = getBaseUrl();
+    
+    // Get prompt_idx parameter if present
+    const promptIdx = getUrlParam('prompt_idx');
+    
+    function buildTaskUrl(task, taskNum) {
+      const params = new URLSearchParams({
+        is_user_study: 'true',
+        hide_popups: 'true',
+        separate_graphs: 'true',
+        num_generations: NUM_GENERATIONS.toString(),
+        user_id: prolificPid || '',
+        dataset: task.dataset,
+        vis_type: task.visType,
+        task_number: taskNum.toString()
+      });
+      // Add Prolific parameters if present
+      if (prolificPid) {
+        params.set('prolific_pid', prolificPid);
+      }
+      if (sessionId) {
+        params.set('session_id', sessionId);
+      }
+      if (studyId) {
+        params.set('study_id', studyId);
+      }
+      // Add prompt_idx parameter if present
+      if (promptIdx) {
+        params.set('prompt_idx', promptIdx);
+      }
+      return `${baseUrl}index.html?${params.toString()}`;
+    }
+
+    const task1Url = buildTaskUrl(finalTask1, 1);
+    const task2Url = buildTaskUrl(finalTask2, 2);
+
+    // Helper function to display dataset name nicely
+    function getDatasetDisplayName(dataset) {
+      if (dataset === 'user_study_monsters') return 'Monsters';
+      if (dataset === 'user_study_places') return 'Stories';
+      return dataset;
+    }
+
+    // Helper function to get entity type text based on dataset
+    function getEntityTypeText(dataset) {
+      if (dataset === 'user_study_monsters') return 'monster';
+      if (dataset === 'user_study_places') return 'place';
+      return 'monster or place';
+    }
+
+    // Helper function to get variety/relevance text based on dataset
+    function getEntityPluralText(dataset) {
+      if (dataset === 'user_study_monsters') return 'Monsters';
+      if (dataset === 'user_study_places') return 'Places';
+      return 'Monsters and places';
+    }
+
+    // Helper function to get description text based on visualization type
+    function getDescriptionText(visType) {
+      if (visType === 'raw_outputs') {
+        return 'This tool shows many outputs generated from the same prompt.<br>Select one or more prompts at the top to compare them.';
+      } else if (visType === 'graph') {
+        return 'This tool shows many outputs generated from the same prompt.<br>Select a prompt at the top to view its outputs.<br>Outputs are summarized as a graph, where each <b>path is one generation</b> and shared words show overlap (larger words appear more often).<br>Click words to filter outputs, simplify the view to highlight common patterns, and use color to compare outputs from different prompts.';
+      }
+      return '';
+    }
+
+    // Helper function to get Task 2 description with intro acknowledging similarity
+    function getTask2Description(visType, task2Dataset, task1Dataset) {
+      const task2Entity = getEntityTypeText(task2Dataset);
+      const intro = `Now, we are going to be doing something similar, but instead we will be generating ${task2Entity}s.<br><br>`;
+      return intro + getDescriptionText(visType);
+    }
+
+    // Update Task 1 section
+    document.getElementById('task1Link').href = task1Url;
+    document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
+    document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset, finalTask1.visType);
+    // Update description
+    document.getElementById('task1Description').innerHTML = getDescriptionText(finalTask1.visType);
+
+    // Update Task 2 section
+    document.getElementById('task2Link').href = task2Url;
+    document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
+    document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset, finalTask2.visType);
+    // Update description with intro acknowledging similarity
+    document.getElementById('task2Description').innerHTML = getTask2Description(finalTask2.visType, finalTask2.dataset, finalTask1.dataset);
+
+    // Update Final Survey section
+    // Include both tasks' dataset and visType for the final survey
+    const paramsString = encodeURIComponent(getProlificParamsString(
+      `${finalTask1.dataset},${finalTask2.dataset}`,
+      `${finalTask1.visType},${finalTask2.visType}`
+    ));
+    const finalSurveyUrl = formUrlFinalSurveyTemplate.replace('UID', paramsString);
+    document.getElementById('finalSurveyForm').src = finalSurveyUrl;
+
+    // Show form when task link is clicked and enable Next button
+    document.getElementById('task1Link').addEventListener('click', function() {
+      logTelemetryEvent('start_task', {
+        taskNumber: 1,
+        dataset: finalTask1.dataset,
+        visType: finalTask1.visType,
+        url: task1Url,
+      });
+      document.getElementById('task1FormContainer').classList.add('visible');
+      // Show backup link message
+      const backupLinkDiv = document.getElementById('task1BackupLink');
+      const backupUrlLink = document.getElementById('task1BackupUrl');
+      backupLinkDiv.style.display = 'block';
+      backupUrlLink.href = task1Url;
+      backupUrlLink.textContent = task1Url;
+      task1Started = true;
+      updatePageDisplay();
+    });
+
+    document.getElementById('task2Link').addEventListener('click', function() {
+      logTelemetryEvent('start_task', {
+        taskNumber: 2,
+        dataset: finalTask2.dataset,
+        visType: finalTask2.visType,
+        url: task2Url,
+      });
+      document.getElementById('task2FormContainer').classList.add('visible');
+      // Show backup link message
+      const backupLinkDiv = document.getElementById('task2BackupLink');
+      const backupUrlLink = document.getElementById('task2BackupUrl');
+      backupLinkDiv.style.display = 'block';
+      backupUrlLink.href = task2Url;
+      backupUrlLink.textContent = task2Url;
+      task2Started = true;
+      updatePageDisplay();
+    });
+
+    // Store assignments in localStorage for potential use in the app
+    if (prolificPid) {
+      localStorage.setItem(`user_study_${prolificPid}_task1`, JSON.stringify(finalTask1));
+      localStorage.setItem(`user_study_${prolificPid}_task2`, JSON.stringify(finalTask2));
+    }
+
+    // Initialize progress dots
+    function initializeProgressDots() {
+      const dotsContainer = document.getElementById('progressDots');
+      dotsContainer.innerHTML = '';
+      for (let i = 1; i <= totalPages; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === 1 ? ' active' : '');
+        dot.onclick = () => goToPage(i);
+        dotsContainer.appendChild(dot);
+      }
+    }
+
+    // Update page display
+    function updatePageDisplay() {
+      // Hide all pages
+      for (let i = 1; i <= totalPages; i++) {
+        const page = document.getElementById(`page${i}`);
+        page.classList.remove('active');
+      }
+      
+      // Show current page
+      document.getElementById(`page${currentPage}`).classList.add('active');
+      
+      // Update navigation buttons
+      document.getElementById('prevButton').disabled = currentPage === 1;
+      
+      // Disable Next button if on task pages and task hasn't been started
+      let nextButtonDisabled = currentPage === totalPages;
+      if (currentPage === 2 && !task1Started) {
+        nextButtonDisabled = true;
+      } else if (currentPage === 3 && !task2Started) {
+        nextButtonDisabled = true;
+      }
+      document.getElementById('nextButton').disabled = nextButtonDisabled;
+      
+      // Update progress dots
+      const dots = document.querySelectorAll('.dot');
+      dots.forEach((dot, index) => {
+        if (index + 1 === currentPage) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+        }
+      });
+    }
+
+    // Helper function to get dataset and visType for a page
+    function getPageTaskInfo(page) {
+      if (page === 2) {
+        // Task 1 page
+        return {
+          dataset: finalTask1.dataset,
+          visType: finalTask1.visType,
+        };
+      } else if (page === 3) {
+        // Task 2 page
+        return {
+          dataset: finalTask2.dataset,
+          visType: finalTask2.visType,
+        };
+      }
+      // Page 1 (Overview) or Page 4 (Final Survey) - no task info
+      return {
+        dataset: null,
+        visType: null,
+      };
+    }
+
+    // Navigation functions
+    function nextPage() {
+      if (currentPage < totalPages) {
+        const toPage = currentPage + 1;
+        const fromPageInfo = getPageTaskInfo(currentPage);
+        const toPageInfo = getPageTaskInfo(toPage);
+        
+        logTelemetryEvent('landing_page_nav', {
+          action: 'next',
+          fromPage: currentPage,
+          toPage: toPage,
+          fromDataset: fromPageInfo.dataset,
+          fromVisType: fromPageInfo.visType,
+          toDataset: toPageInfo.dataset,
+          toVisType: toPageInfo.visType,
+        });
+        currentPage = toPage;
+        updatePageDisplay();
+      }
+    }
+
+    function previousPage() {
+      if (currentPage > 1) {
+        const toPage = currentPage - 1;
+        const fromPageInfo = getPageTaskInfo(currentPage);
+        const toPageInfo = getPageTaskInfo(toPage);
+        
+        logTelemetryEvent('landing_page_nav', {
+          action: 'prev',
+          fromPage: currentPage,
+          toPage: toPage,
+          fromDataset: fromPageInfo.dataset,
+          fromVisType: fromPageInfo.visType,
+          toDataset: toPageInfo.dataset,
+          toVisType: toPageInfo.visType,
+        });
+        currentPage = toPage;
+        updatePageDisplay();
+      }
+    }
+
+    function goToPage(page) {
+      if (page >= 1 && page <= totalPages) {
+        const fromPageInfo = getPageTaskInfo(currentPage);
+        const toPageInfo = getPageTaskInfo(page);
+        
+        logTelemetryEvent('landing_page_nav', {
+          action: 'dot_click',
+          fromPage: currentPage,
+          toPage: page,
+          fromDataset: fromPageInfo.dataset,
+          fromVisType: fromPageInfo.visType,
+          toDataset: toPageInfo.dataset,
+          toVisType: toPageInfo.visType,
+        });
+        currentPage = page;
+        updatePageDisplay();
+      }
+    }
+
+    // Initialize on page load
+    initializeProgressDots();
+    updatePageDisplay();
+  </script>
+</body>
+</html>
