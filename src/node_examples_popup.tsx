@@ -136,7 +136,7 @@ class NodeExamplesPopup extends React.Component<Props, State> {
     private buildExamples(promptGroups: PromptGroup[], sentIndices: number[], highlights: Map<number, HighlightGroup[]>): ExampleItem[] {
         const sentIndexSet = new Set(sentIndices);
         const examples: ExampleItem[] = [];
-        let currentSentIdx = 0;
+        let currentSentIdx = -1;
 
         promptGroups.forEach(group => {
             group.generations.forEach(generation => {
@@ -320,7 +320,7 @@ class NodeExamplesPopup extends React.Component<Props, State> {
 
     private getAllSentIndices(promptGroups: PromptGroup[]): number[] {
         const totalGenerations = this.calculateTotalGenerations(promptGroups);
-        return Array.from({ length: totalGenerations }, (_, i) => i + 1);
+        return Array.from({ length: totalGenerations }, (_, i) => i);
     }
 
     private getCommonSentIndices(nodes: NodeDatum[]) {
