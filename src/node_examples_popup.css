@@ -2,24 +2,24 @@
     position: fixed;
     bottom: 20px;
     right: 20px;
-    max-width: 800px;
+    max-width: 30vw;
     max-height: 300px;
     background-color: white;
-    border-radius: 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
     z-index: 1000;
-    background-color:rgba(220, 220, 220, .9) ;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .popup-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #ddd;
-    padding: 6px 10px;
-    border-radius: 8px 8px 0 0;
-    padding-bottom: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 8px 12px;
+    flex: 0 0 auto;
 }
 
 .popup-title {
@@ -31,7 +31,7 @@
 
 .popup-title-main {
     font-weight: bold;
-    font-size: 12px;
+    font-size: 1em;
     color: #333;
     display: flex;
     align-items: center;
@@ -70,14 +70,43 @@
 }
 
 .node-examples-popup.maximized {
-    top: auto;
-    right: 20px;
+    top: 20px;
+    right: 0;
     bottom: 20px;
-    left: 20px;
+    left: auto;
     max-width: none;
     max-height: none;
-    width: auto;
+    width: 30vw;
     height: auto;
+}
+
+.node-examples-popup.maximized .resize-handle,
+.node-examples-popup:not(.minimized):not(.maximized) .resize-handle {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+    z-index: 1;
+}
+
+.node-examples-popup.maximized .resize-handle:hover,
+.node-examples-popup:not(.minimized):not(.maximized) .resize-handle:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.node-examples-popup.maximized .resize-handle::after,
+.node-examples-popup:not(.minimized):not(.maximized) .resize-handle::after {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 24px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 1px;
 }
 
 .node-examples-popup.minimized {
@@ -94,12 +123,13 @@
 }
 
 .popup-content {
-    font-size: 12px;
+    font-size: 0.9em;
     line-height: 1.4;
-    padding: 10px;
+    padding: 0;
     overflow-y: auto;
     flex: 1;
     max-height: 90vh;
+    font-family: monospace;
 }
 
 .node-examples-popup:not(.maximized) .popup-content {
@@ -147,14 +177,13 @@
 }
 
 .example-item {
-    margin-bottom: 6px;
-    padding: 6px 8px;
-    background-color: rgba(255, 255, 255, .7);
-    border-radius: 4px;
+    padding: 6px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    font-family: monospace;
 }
 
 .example-item:last-child {
-    margin-bottom: 0;
+    border-bottom: none;
 }
 
 .example-item b {
@@ -166,5 +195,11 @@
 .no-examples-message {
     font-style: italic;
     color: #555;
+    padding: 12px;
+}
+
+body.popup-resizing {
+    cursor: ew-resize;
+    user-select: none;
 }
 

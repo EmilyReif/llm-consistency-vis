@@ -562,9 +562,8 @@
     const videoExplanationGraph = 'https://drive.google.com/file/d/1DLkEhCWnByYmAWss-LITaVjsHKNCFp1v/preview';
     const videoExplanationRawOutputs = 'https://drive.google.com/file/d/1qOgPwDVBZ1IGEx0cutb88NzZ7Xc6KZi_/preview';
 
-    // Google Form URLs for different conditions (prefilled format)
-    const formUrlCharactersTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSfbOEthQdVxALvWYzARrWYin22J4fsW0WTTy7MsPQhE6rB4Gw/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
-    const formUrlPlacesTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSdLZFiFxcohdSDKzot0ptxDN82Ixx7iPnV1_My0a3WWC4nHWw/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
+    // Google Form URLs (prefilled format)
+    const formUrlTaskTemplate = 'https://docs.google.com/forms/d/e/1AqV4K4564JPTTj9LBwbcYKFTuwe0z51b8XT754f-GWg/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
     const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSd5trytqg1lOWpxhnoSXUduZe7Z8qW4ep688C8S310dNDDzMw/viewform?usp=pp_url&entry.1859965680=UID&embedded=true';
 
     // Function to get video URL based on vis type
@@ -593,21 +592,10 @@
       return params.join('&');
     }
 
-    // Function to get form URL based on dataset, with Prolific parameters prefilled
-    function getFormUrlForDataset(dataset, visType) {
+    // Function to get task form URL with Prolific parameters prefilled (same form for both tasks)
+    function getFormUrlForTask(dataset, visType) {
       const paramsString = encodeURIComponent(getProlificParamsString(dataset, visType));
-      let formUrl;
-      
-      if (dataset === 'user_study_monsters') {
-        formUrl = formUrlCharactersTemplate;
-      } else if (dataset === 'user_study_places') {
-        formUrl = formUrlPlacesTemplate;
-      } else {
-        return '';
-      }
-      
-      // Replace UID with the encoded Prolific parameters string
-      return formUrl.replace('UID', paramsString);
+      return formUrlTaskTemplate.replace('UID', paramsString);
     }
 
     // Function to get URL parameter
@@ -763,14 +751,14 @@
     // Update Task 1 section
     document.getElementById('task1Link').href = task1Url;
     document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
-    document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset, finalTask1.visType);
+    document.getElementById('task1Form').src = getFormUrlForTask(finalTask1.dataset, finalTask1.visType);
     // Update description
     document.getElementById('task1Description').innerHTML = getDescriptionText(finalTask1.visType);
 
     // Update Task 2 section
     document.getElementById('task2Link').href = task2Url;
     document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
-    document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset, finalTask2.visType);
+    document.getElementById('task2Form').src = getFormUrlForTask(finalTask2.dataset, finalTask2.visType);
     // Update description with intro acknowledging similarity
     document.getElementById('task2Description').innerHTML = getTask2Description(finalTask2.visType, finalTask2.dataset, finalTask1.dataset);
 

@@ -34,11 +34,18 @@ interface ExampleItem {
 
 type ViewState = 'minimized' | 'default' | 'maximized';
 
+const MIN_POPUP_WIDTH = 200;
+const MAX_POPUP_WIDTH_RATIO = 0.95;
+const DEFAULT_VIEW_RIGHT_INSET = 20;
+
 interface State {
     examples: ExampleItem[];
     matchingCount: number;
     totalGenerations: number;
     viewState: ViewState;
+    maximizedWidthPx: number | null;
+    defaultWidthPx: number | null;
+    isResizing: boolean;
 }
 
 class NodeExamplesPopup extends React.Component<Props, State> {
@@ -50,7 +57,10 @@ class NodeExamplesPopup extends React.Component<Props, State> {
             examples: [],
             matchingCount: 0,
             totalGenerations: this.calculateTotalGenerations(props.promptGroups),
-            viewState: 'default'
+            viewState: 'default',
+            maximizedWidthPx: null,
+            defaultWidthPx: null,
+            isResizing: false
         };
     }
 
@@ -60,6 +70,42 @@ class NodeExamplesPopup extends React.Component<Props, State> {
             this.updatePopupContent();
         }
     }
+
+    componentWillUnmount() {
+        document.removeEventListener('mousemove', this.handleResizeMouseMove);
+        document.removeEventListener('mouseup', this.handleResizeMouseUp);
+    }
+
+    private handleResizeMouseDown = () => {
+        this.setState({ isResizing: true });
+        document.body.classList.add('popup-resizing');
+        document.addEventListener('mousemove', this.handleResizeMouseMove);
+        document.addEventListener('mouseup', this.handleResizeMouseUp);
+    };
+
+    private handleResizeMouseMove = (e: MouseEvent) => {
+        const { viewState } = this.state;
+        const rightEdge = viewState === 'maximized'
+            ? window.innerWidth
+            : window.innerWidth - DEFAULT_VIEW_RIGHT_INSET;
+        const maxWidth = viewState === 'maximized'
+            ? window.innerWidth * MAX_POPUP_WIDTH_RATIO
+            : window.innerWidth - DEFAULT_VIEW_RIGHT_INSET * 2;
+        const rawWidth = rightEdge - e.clientX;
+        const width = Math.max(MIN_POPUP_WIDTH, Math.min(maxWidth, rawWidth));
+        if (viewState === 'maximized') {
+            this.setState({ maximizedWidthPx: width });
+        } else {
+            this.setState({ defaultWidthPx: width });
+        }
+    };
+
+    private handleResizeMouseUp = () => {
+        this.setState({ isResizing: false });
+        document.body.classList.remove('popup-resizing');
+        document.removeEventListener('mousemove', this.handleResizeMouseMove);
+        document.removeEventListener('mouseup', this.handleResizeMouseUp);
+    };
 
     componentDidUpdate(prevProps: Props) {
         const nodesChanged = !this.areNodeArraysEqual(prevProps.nodes, this.props.nodes);
@@ -419,12 +465,27 @@ class NodeExamplesPopup extends React.Component<Props, State> {
             classNames.push('minimized');
         }
 
+        const widthStyle: React.CSSProperties = viewState === 'maximized' && this.state.maximizedWidthPx != null
+            ? { width: `${this.state.maximizedWidthPx}px` }
+            : viewState === 'default' && this.state.defaultWidthPx != null
+                ? { width: `${this.state.defaultWidthPx}px` }
+                : {};
+
         return (
             <div
                 ref={this.popupRef}
                 className={classNames.join(' ')}
-                style={{ display: isVisible ? 'block' : 'none' }}
+                style={{ display: isVisible ? 'block' : 'none', ...widthStyle }}
             >
+                {(viewState === 'maximized' || viewState === 'default') && (
+                    <div
+                        className="resize-handle"
+                        onMouseDown={this.handleResizeMouseDown}
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label="Resize panel"
+                    />
+                )}
                 <div className="popup-header">
                     <div className="popup-title">
                         <div className="popup-title-main">
