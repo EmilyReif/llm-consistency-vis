@@ -13,6 +13,7 @@ import { telemetry } from "./telemetry";
 
 const DEFAULT_TEXT = Object.keys(examples)[0];
 const SLIDER_WIDTH = 150;
+const MAX_PROMPTS = 10;
 
 interface SingleExampleAppState {
     selectedExample: string;
@@ -149,15 +150,15 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                     <div 
                         className="add-prompt-container" 
                         onClick={() => {
-                            if (state.prompts.length < 3) {
+                            if (state.prompts.length < MAX_PROMPTS) {
                                 state.addPrompt('');
                             }
                         }}
                         style={{
                             backgroundColor: state.getPromptColor(state.prompts.length),
                             borderColor: state.getPromptColor(state.prompts.length),
-                            opacity: state.prompts.length >= 3 ? 0.5 : 1,
-                            cursor: state.prompts.length >= 3 ? 'not-allowed' : 'pointer',
+                            opacity: state.prompts.length >= MAX_PROMPTS ? 0.5 : 1,
+                            cursor: state.prompts.length >= MAX_PROMPTS ? 'not-allowed' : 'pointer',
                         }}
                     >
                         <div className="controls-row" style={{ width: 'fit-content' }}>

@@ -300,18 +300,14 @@ class NodeExamplesPopup extends React.Component<Props, State> {
     }
 
     private getPromptColor(promptId: string) {
-        const match = promptId.match(/_(\d+)_/);
-        const index = match ? parseInt(match[1], 10) : 0;
+        const index = color_utils.getPromptIndexFromId(promptId);
         return color_utils.MILLER_STONE_COLORS[index % color_utils.MILLER_STONE_COLORS.length];
     }
 
     private getNodeDisplayColor(node: NodeDatum, index: number) {
         if (node.origPromptIds && node.origPromptIds.length) {
-            const match = node.origPromptIds[0]?.match(/_(\d+)_/);
-            if (match) {
-                const promptIndex = parseInt(match[1], 10);
-                return color_utils.MILLER_STONE_COLORS[promptIndex % color_utils.MILLER_STONE_COLORS.length];
-            }
+            const promptIndex = color_utils.getPromptIndexFromId(node.origPromptIds[0]);
+            return color_utils.MILLER_STONE_COLORS[promptIndex % color_utils.MILLER_STONE_COLORS.length];
         }
         const wordSignature = node.word.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const colorIndex = (wordSignature + index * 7) % color_utils.MILLER_STONE_COLORS.length;

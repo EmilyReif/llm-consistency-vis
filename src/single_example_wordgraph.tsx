@@ -470,7 +470,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 .attr("gradientUnits", "objectBoundingBox")
 
             // Get stroke color
-            const strokeColor = edgeColors(d.promptId ? d.promptId.match(/_(\d+)_/)?.[1] || '0' : '0');
+            const strokeColor = edgeColors(String(d.promptId ? color_utils.getPromptIndexFromId(d.promptId) : 0));
 
             grad.append("stop")
                 .attr("offset", "0%")

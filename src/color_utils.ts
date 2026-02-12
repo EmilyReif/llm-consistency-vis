@@ -1,6 +1,26 @@
 import * as d3 from "d3";
 import { NodeDatum, LinkDatum } from './single_example_wordgraph';
 
+/** Delimiter used in promptId - unit separator, won't appear in normal prompt text */
+const PROMPT_ID_DELIMITER = '\x01';
+
+/**
+ * Extract the original prompt index from a promptId string.
+ * Handles both formats:
+ * - New: text + delimiter + index + delimiter + modelInfo (unambiguous)
+ * - Legacy: text_index_modelFamily_model (regex fallback for backwards compat)
+ */
+export function getPromptIndexFromId(promptId: string): number {
+    const parts = promptId.split(PROMPT_ID_DELIMITER);
+    if (parts.length >= 2) {
+        const index = parseInt(parts[1], 10);
+        if (!isNaN(index)) return index;
+    }
+    // Legacy format: _index_ (can be ambiguous when prompt text contains _N_)
+    const match = promptId.match(/_(\d+)_/);
+    return match ? parseInt(match[1], 10) : 0;
+}
+
 export const MILLER_STONE_COLORS = [
     "#4f6980", // Blue
     "#f47942", // Orange
@@ -38,10 +58,7 @@ export function getNodeColor(
     const promptCounts: { [originalIndex: string]: number } = {};
     connectedEdges.forEach(edge => {
         if (edge.promptId) {
-            // Extract original prompt index from promptId
-            // Format: ${prompt.text}_${originalIndex}_${prompt.modelFamily}_${prompt.model}
-            const match = edge.promptId.match(/_(\d+)_/);
-            const originalIndex = match ? match[1] : '0';
+            const originalIndex = String(getPromptIndexFromId(edge.promptId));
             promptCounts[originalIndex] = (promptCounts[originalIndex] || 0) + 1;
         }
     });

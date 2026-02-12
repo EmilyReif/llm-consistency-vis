@@ -2,6 +2,7 @@ import React from "react";
 import './single_example.css';
 import { observer } from "mobx-react";
 import { state } from "./state"; // Import your MobX store
+import * as color_utils from "./color_utils";
 import SingleExampleWordtree from './single_example_wordtree';
 import SingleExampleHighlights from "./single_example_highlights";
 import SingleExampleWordGraph from "./single_example_wordgraph";
@@ -17,7 +18,7 @@ class SingleExample extends React.Component {
     disposer?: () => void;
 
     private getPromptGroupKey(prompt: any, originalIndex: number): string {
-        return `${prompt.text}_${originalIndex}_${prompt.modelFamily}_${prompt.model}`;
+        return `${prompt.text}\x01${originalIndex}\x01${prompt.modelFamily}_${prompt.model}`;
     }
 
     render() {
@@ -123,10 +124,7 @@ renderOutputsBasic(firstOnly: boolean = false) {
     return (
         <div className="outputs">
             {this.state.promptGroups.map((group, groupIndex) => {
-                // Extract original prompt index from promptId for consistent coloring
-                // Format: ${prompt.text}_${originalIndex}_${prompt.modelFamily}_${prompt.model}
-                const match = group.promptId.match(/_(\d+)_/);
-                const originalIndex = match ? parseInt(match[1]) : 0;
+                const originalIndex = color_utils.getPromptIndexFromId(group.promptId);
                 const backgroundColor = state.getPromptColor(originalIndex);
                 const promptText = state.prompts[originalIndex]?.text || '';
                 const generationsToShow = firstOnly ? group.generations.slice(0, 1) : group.generations;
@@ -134,13 +132,11 @@ renderOutputsBasic(firstOnly: boolean = false) {
                 return (
                     <div key={`group-${groupIndex}`} className="prompt-output-group" style={{ borderColor: backgroundColor }}>
                         <div className="prompt-output-header"  style={{ backgroundColor: backgroundColor }}>
-                            <div 
-                                className="prompt-text"
-                                style={{
-                                    visibility: urlParams.getBoolean(URLParam.HIDE_PROMPT_TEXT) ? 'hidden' : 'visible'
-                                }}
-                            >
-                                Prompt {originalIndex + 1}: {promptText}
+                            <div className="prompt-text">
+                                Prompt {originalIndex + 1}
+                                {!urlParams.getBoolean(URLParam.HIDE_PROMPT_TEXT) && (
+                                    <>: {promptText}</>
+                                )}
                             </div>
                             <div className="prompt-info">
                                 {!firstOnly && `${group.generations.length} outputs - `}
