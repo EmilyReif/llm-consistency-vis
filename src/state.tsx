@@ -35,7 +35,7 @@ class State {
     shuffle: boolean = false;
     tokenizeMode: TokenizeMode = "space";
     isUserStudy: boolean = false;
-    visType: 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' = 'graph';
+    visType: 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' | 'time_curves' = 'graph';
     generationsCache: { [example: string]: { [temp: number]: { [modelFamily: string]: { [model: string]: string[] } } } } = {};
     // Track which prompts are disabled
     disabledPrompts: number[] = [];
@@ -274,7 +274,7 @@ class State {
         this.selectedModel = modelId;
     });
 
-    setVisType = ((visType: 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights') => {
+    setVisType = ((visType: 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' | 'time_curves') => {
         this.visType = visType;
     });
 

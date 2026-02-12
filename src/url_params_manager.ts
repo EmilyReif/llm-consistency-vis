@@ -6,7 +6,7 @@
 // Enum for all URL parameter keys
 export enum URLParam {
   PROMPT_IDX = 'prompt_idx',
-  VIS_TYPE = 'vis_type', // graph, raw_outputs, first_output, word_tree, highlights
+  VIS_TYPE = 'vis_type', // graph, raw_outputs, first_output, word_tree, highlights, time_curves
   SEPARATE_GRAPHS = 'separate_graphs',
   TOKENIZE_MODE = 'tokenize_mode',
   IS_USER_STUDY = 'is_user_study',
@@ -22,7 +22,7 @@ export enum URLParam {
 }
 
 // Type for vis_type values
-export type VisType = 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights';
+export type VisType = 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' | 'time_curves';
 
 // Type for tokenize mode values
 export type TokenizeMode = 'space' | 'comma' | 'sentence';
@@ -118,7 +118,7 @@ export class URLParamsManager {
     const value = this.get(URLParam.VIS_TYPE);
     if (!value) return null;
     
-    const validTypes: VisType[] = ['graph', 'raw_outputs', 'first_output', 'word_tree', 'highlights'];
+    const validTypes: VisType[] = ['graph', 'raw_outputs', 'first_output', 'word_tree', 'highlights', 'time_curves'];
     return validTypes.includes(value as VisType) ? (value as VisType) : null;
   }
 

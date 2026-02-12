@@ -72,3 +72,54 @@ export async function getEmbeddings(input: string): Promise<number[]> {
     setCachedEmbedding(input, embedding);
     return embedding;
 }
+
+export interface ContextualTokenResult {
+    tokens: string[];
+    embeddings: number[][];
+}
+
+/**
+ * Get contextual token embeddings for a full sentence.
+ * Each token's embedding is computed in the context of the full sentence.
+ * Uses the model's native tokenization (WordPiece); skips [CLS] and [SEP].
+ *
+ * @param sentence The full sentence to embed
+ */
+export async function getContextualTokenEmbeddings(sentence: string): Promise<ContextualTokenResult> {
+    if (!sentence?.trim()) {
+        return { tokens: [], embeddings: [] };
+    }
+
+    if (!extractorCache) {
+        extractorCache = await pipeline('feature-extraction', modelId);
+    }
+
+    // Tokenize to get token IDs (for decoding to strings)
+    const encoded = extractorCache.tokenizer(sentence.trim(), {
+        padding: false,
+        truncation: true,
+        add_special_tokens: true,
+        return_tensor: false,
+    });
+    const inputIds = encoded.input_ids as number[][] | number[];
+    const tokenIds: number[] = Array.isArray(inputIds[0])
+        ? (inputIds[0] as number[])
+        : (inputIds as number[]);
+    const tokenStrings = extractorCache.tokenizer.model.convert_ids_to_tokens(tokenIds);
+
+    // Get token embeddings (pooling: 'none' = no mean pooling, one vector per token)
+    const output = await extractorCache([sentence.trim()], {
+        pooling: 'none',
+        normalize: true,
+    });
+
+    const tokenEmbeddings: number[][] = output.tolist()[0];
+
+    // Skip [CLS] (first) and [SEP] (last) tokens
+    const startIdx = 1;
+    const endIdx = Math.max(1, tokenEmbeddings.length - 1);
+    const tokens = tokenStrings.slice(startIdx, endIdx);
+    const embeddings = tokenEmbeddings.slice(startIdx, endIdx);
+
+    return { tokens, embeddings };
+}

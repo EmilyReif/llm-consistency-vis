@@ -1,0 +1,163 @@
+.time-curves-container {
+    width: 100%;
+    min-height: 600px;
+    height: 85vh;
+    max-height: 1000px;
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 10px;
+    position: relative;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+}
+
+.time-curves-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    padding: 8px 0 12px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 12px;
+}
+
+.time-curves-controls label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.time-curves-controls label input {
+    width: 64px;
+    padding: 4px 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.time-curves-controls label input:focus {
+    outline: none;
+    border-color: #666;
+}
+
+.time-curves-rerun {
+    padding: 6px 14px;
+    font-size: 12px;
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.time-curves-rerun:hover:not(:disabled) {
+    background: #555;
+}
+
+.time-curves-rerun:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.time-curves-interp-slider {
+    width: 120px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.time-curves-view-toggle {
+    display: flex;
+    gap: 4px;
+}
+
+.time-curves-view-toggle button {
+    padding: 6px 12px;
+    font-size: 12px;
+    background: #eee;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.time-curves-view-toggle button.active {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+}
+
+.time-curves-view-toggle button:hover:not(:disabled) {
+    background: #ddd;
+}
+
+.time-curves-view-toggle button.active:hover:not(:disabled) {
+    background: #555;
+}
+
+.time-curves-view-toggle button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.time-curves-multiples {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 12px;
+    overflow: auto;
+    align-content: start;
+}
+
+.time-curves-mini {
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.time-curves-mini-label {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.time-curves-mini-svg {
+    display: block;
+    cursor: grab;
+}
+
+.time-curves-mini-svg:active {
+    cursor: grabbing;
+}
+
+.time-curves-svg-wrap {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+#time-curves-holder {
+    cursor: grab;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#time-curves-holder:active {
+    cursor: grabbing;
+}
+
+.time-curves-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    font-size: 14px;
+}

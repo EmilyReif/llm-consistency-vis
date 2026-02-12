@@ -6,6 +6,7 @@ import * as color_utils from "./color_utils";
 import SingleExampleWordtree from './single_example_wordtree';
 import SingleExampleHighlights from "./single_example_highlights";
 import SingleExampleWordGraph from "./single_example_wordgraph";
+import SingleExampleTimeCurves from "./single_example_time_curves";
 import { reaction } from 'mobx';
 import { telemetry } from "./telemetry";
 import { urlParams, URLParam } from "./url_params_manager";
@@ -53,7 +54,10 @@ class SingleExample extends React.Component {
                 \nClick to pin the highlight - click again or click elsewhere to unpin.
                 \nDrag to pan, scroll to zoom in and out.`
                 break;
-
+            case 'time_curves':
+                vis = this.renderOutputsTimeCurves();
+                instructionText = 'Time curves visualization of LLM outputs.';
+                break;
             case 'highlights':
                 vis = this.renderOutputsHighlights();
                 instructionText = 'Highlighted words are the ones that are present in multiple generated sentences. The bolded output is the text you entered to compare against the LLM outputs (if provided). Color of highlights is not related to the colors used in the graph visualization.'
@@ -69,6 +73,7 @@ class SingleExample extends React.Component {
         }
         const visualizationOptions = [
             { value: 'graph', label: 'Graph' },
+            { value: 'time_curves', label: 'Time Curves' },
             { value: 'raw_outputs', label: 'Raw Outputs' },
             { value: 'first_output', label: 'First Output' },
             ...(!state.isUserStudy ? [
@@ -85,7 +90,7 @@ class SingleExample extends React.Component {
                         id="vis-type-select"
                         value={state.visType}
                         onChange={(e) => {
-                            const visType = e.target.value as 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights';
+                            const visType = e.target.value as 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' | 'time_curves';
                             state.setVisType(visType);
                             telemetry.logVisTypeChange(visType);
                         }}
@@ -114,6 +119,11 @@ class SingleExample extends React.Component {
         return <SingleExampleWordGraph 
             promptGroups={this.state.promptGroups}
         ></SingleExampleWordGraph>;
+    }
+    renderOutputsTimeCurves() {
+        return <SingleExampleTimeCurves 
+            promptGroups={this.state.promptGroups}
+        ></SingleExampleTimeCurves>;
     }
 
 renderOutputsBasic(firstOnly: boolean = false) {
@@ -168,14 +178,14 @@ renderOutputsBasic(firstOnly: boolean = false) {
     }
   componentDidUpdate(prevProps: any, prevState: any) {
     // If user study mode and current visType is hidden, switch to graph
-    if (state.isUserStudy && (state.visType === 'word_tree' || state.visType === 'highlights')) {
+    if (state.isUserStudy && (state.visType === 'word_tree' || state.visType === 'highlights' || state.visType === 'time_curves')) {
       state.setVisType('graph');
     }
   }
 
   componentDidMount() {
     // If user study mode and current visType is hidden, switch to graph
-    if (state.isUserStudy && (state.visType === 'word_tree' || state.visType === 'highlights')) {
+    if (state.isUserStudy && (state.visType === 'word_tree' || state.visType === 'highlights' || state.visType === 'time_curves')) {
       state.setVisType('graph');
     }
 
