@@ -12,6 +12,7 @@ interface PromptGroup {
 
 interface Props {
     nodes: NodeDatum[];
+    hoveredNode: NodeDatum | null;
     promptGroups: PromptGroup[];
     isVisible: boolean;
     onClose: () => void;
@@ -109,10 +110,11 @@ class NodeExamplesPopup extends React.Component<Props, State> {
 
     componentDidUpdate(prevProps: Props) {
         const nodesChanged = !this.areNodeArraysEqual(prevProps.nodes, this.props.nodes);
+        const hoveredNodeChanged = prevProps.hoveredNode !== this.props.hoveredNode;
         const visibilityChanged = prevProps.isVisible !== this.props.isVisible;
         const promptGroupsChanged = prevProps.promptGroups !== this.props.promptGroups;
 
-        if ((this.props.isVisible && (nodesChanged || visibilityChanged || promptGroupsChanged)) ||
+        if ((this.props.isVisible && (nodesChanged || hoveredNodeChanged || visibilityChanged || promptGroupsChanged)) ||
             (!prevProps.isVisible && this.props.isVisible)) {
             this.updatePopupContent();
         }
@@ -125,19 +127,27 @@ class NodeExamplesPopup extends React.Component<Props, State> {
         }
 
         // Always update content when visible, even if visibility didn't change
-        if (this.props.isVisible && (nodesChanged || promptGroupsChanged)) {
+        if (this.props.isVisible && (nodesChanged || hoveredNodeChanged || promptGroupsChanged)) {
             this.updatePopupContent();
         }
     }
 
     private updatePopupContent() {
-        const { nodes, promptGroups } = this.props;
+        const { nodes, hoveredNode, promptGroups } = this.props;
         const totalGenerations = this.calculateTotalGenerations(promptGroups);
+
+        // Nodes to use for highlighting: selected nodes + hovered node (if present and not already selected)
+        const nodesForHighlight = hoveredNode && !nodes.includes(hoveredNode)
+            ? [...nodes, hoveredNode]
+            : nodes;
 
         // If no nodes are selected, show all outputs
         if (!nodes.length) {
             const allSentIndices = this.getAllSentIndices(promptGroups);
-            const examples = this.buildExamples(promptGroups, allSentIndices, new Map());
+            const sentenceHighlightMap = hoveredNode
+                ? this.buildSentenceHighlights([hoveredNode], allSentIndices)
+                : new Map();
+            const examples = this.buildExamples(promptGroups, allSentIndices, sentenceHighlightMap);
             const matchingCount = examples.length;
 
             if (!this.areExamplesEqual(examples, this.state.examples) ||
@@ -164,7 +174,7 @@ class NodeExamplesPopup extends React.Component<Props, State> {
             return;
         }
 
-        const sentenceHighlightMap = this.buildSentenceHighlights(nodes, commonSentIndices);
+        const sentenceHighlightMap = this.buildSentenceHighlights(nodesForHighlight, commonSentIndices);
         const examples = this.buildExamples(promptGroups, commonSentIndices, sentenceHighlightMap);
         const matchingCount = examples.length;
 
@@ -548,14 +558,18 @@ class NodeExamplesPopup extends React.Component<Props, State> {
                                 : 'No outputs available.'}
                         </div>
                     ) : (
-                        examples.map(example => (
-                            <div
-                                key={`${example.promptId}-${example.sentIdx}`}
-                                className="example-item"
-                                style={{ color: example.textColor }}
-                                dangerouslySetInnerHTML={{ __html: example.html }}
-                            />
-                        ))
+                        examples.map(example => {
+                            const hoveredNode = this.props.hoveredNode;
+                            const isDimmed = hoveredNode != null && !hoveredNode.origSentIndices.includes(example.sentIdx);
+                            return (
+                                <div
+                                    key={`${example.promptId}-${example.sentIdx}`}
+                                    className={`example-item${isDimmed ? ' example-item-dimmed' : ''}`}
+                                    style={{ color: example.textColor }}
+                                    dangerouslySetInnerHTML={{ __html: example.html }}
+                                />
+                            );
+                        })
                     )}
                 </div>
             </div>

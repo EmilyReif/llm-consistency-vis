@@ -180,10 +180,15 @@
     padding: 6px 12px;
     border-bottom: 1px solid #f0f0f0;
     font-family: monospace;
+    transition: opacity 0.2s ease;
 }
 
 .example-item:last-child {
     border-bottom: none;
+}
+
+.example-item.example-item-dimmed {
+    opacity: 0.25;
 }
 
 .example-item b {

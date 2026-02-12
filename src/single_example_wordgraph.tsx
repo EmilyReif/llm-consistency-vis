@@ -26,6 +26,7 @@ interface Props {
 
 interface State {
     popupNodes: NodeDatum[];
+    hoveredNode: NodeDatum | null;
     isPopupVisible: boolean;
     similarityThreshold: number;
     minOpacityThreshold: number;
@@ -91,7 +92,6 @@ export interface LinkDatum {
     sentIdx: number;
 }
 class SingleExampleWordGraph extends React.Component<Props, State> {
-    private hoveredNode: NodeDatum | null = null;
     private selectedNodes: Set<NodeDatum> = new Set();
     private fontScale: d3.ScaleLinear<number, number> | null = null;
     private opacityScale: d3.ScalePower<number, number> | null = null;
@@ -113,6 +113,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         
         this.state = {
             popupNodes: [],
+            hoveredNode: null,
             isPopupVisible: true,
             similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
             minOpacityThreshold: DEFAULT_MIN_OPACITY_THRESHOLD,
@@ -151,9 +152,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === 'Escape') {
             this.selectedNodes.clear();
-            this.hoveredNode = null;
-            // Clear popup nodes but keep popup visible
-            this.setState({ popupNodes: [] });
+            this.setState({ popupNodes: [], hoveredNode: null });
             // Trigger a re-render by rebuilding the graph
             this.rebuildGraph();
         }
@@ -309,6 +308,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 {!urlParams.getBoolean(URLParam.HIDE_POPUPS) && (
                     <NodeExamplesPopup
                         nodes={this.state.popupNodes}
+                        hoveredNode={this.state.hoveredNode}
                         promptGroups={this.props.promptGroups}
                         isVisible={true}
                         onClose={() => this.hidePopup()}
@@ -336,9 +336,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Clear selected/filtered words when prompts change
         if (promptGroupsChanged) {
             this.selectedNodes.clear();
-            this.hoveredNode = null;
-            // Keep popup visible but clear selected nodes
-            this.setState({ popupNodes: [] });
+            this.setState({ popupNodes: [], hoveredNode: null });
         }
         
         if (similarityThresholdChanged || tokenizeModeChanged || promptGroupsChanged || separateByPromptChanged) {
@@ -402,11 +400,9 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .on('click', (event: any) => {
                 // Only clear selection if the click was directly on the SVG background
                 if (event.target.tagName === 'svg') {
-                    if (this.nodeSelected() || this.hoveredNode) {
+                    if (this.nodeSelected() || this.state.hoveredNode) {
                         this.selectedNodes.clear();
-                        this.hoveredNode = null;
-                        // Clear popup nodes but keep popup visible
-                        this.setState({ popupNodes: [] });
+                        this.setState({ popupNodes: [], hoveredNode: null });
                         this.updateSimulation();
                         this.update();
                     }
@@ -526,12 +522,10 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .append("g")
             .attr("class", "node")
             .on('mouseover', (event: any, d: NodeDatum) => {
-                this.hoveredNode = d;
-                this.update();
+                this.setState({ hoveredNode: d });
             })
             .on('mouseout', (event: any, d: NodeDatum) => {
-                this.hoveredNode = null;
-                this.update();
+                this.setState({ hoveredNode: null });
             })
             .on('click', (event: any, d: NodeDatum) => {
                 if (!this.nodeIsInSelectedSents(d)) {
@@ -539,10 +533,10 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 }
                 if (this.selectedNodes.has(d)) {  // If clicking a selected node, deselect it
                     this.selectedNodes.delete(d);
-                    this.hoveredNode = null;
+                    this.setState({ hoveredNode: null });
                 } else {  // Otherwise, add it to the selection
                     this.selectedNodes.add(d);
-                    this.hoveredNode = null;
+                    this.setState({ hoveredNode: null });
                 }
                 this.updateSimulation();
                 this.update();
@@ -577,10 +571,10 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             const isNode = (d: any): d is NodeDatum => d.word !== undefined;
             const isInSentsFn = isNode(d) ? (d: NodeDatum) => this.nodeIsInSelectedSents(d) : (d: LinkDatum) => this.linkIsInSents(d);
             // If nothing is selected or hovered, return no blur.
-            if (!this.nodeSelected() && !this.hoveredNode) return '';
+            if (!this.nodeSelected() && !this.state.hoveredNode) return '';
             const fullBlur = blurFn(.2);
             const lightBlur = blurFn(.5);
-            if (this.hoveredNode) {
+            if (this.state.hoveredNode) {
                 return !isInSentsFn(d as any) ? lightBlur : '';
             }
             if (this.nodeSelected()) {
@@ -669,7 +663,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 return opacity(d);
             })
             .style('font-weight', (d: NodeDatum) => {
-                return this.selectedNodes.has(d) || this.hoveredNode === d ? 'bold' : 'normal';
+                return this.selectedNodes.has(d) || this.state.hoveredNode === d ? 'bold' : 'normal';
             });
         
         // Apply filter style directly (CSS will handle the transition)
@@ -763,7 +757,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             // Check if link is in any of the selected nodes' sentences
             return Array.from(this.selectedNodes).some(node => node.origSentIndices.includes(d.sentIdx));
         }
-        const activeNode = this.hoveredNode;
+        const activeNode = this.state.hoveredNode;
         return activeNode?.origSentIndices.includes(d.sentIdx);
     }
 
@@ -776,8 +770,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             });
             return d.origSentIndices.some(sentIdx => selectedSents.has(sentIdx));
         }
-        if (!this.hoveredNode) return false;
-        const activeSents = [...this.hoveredNode.origSentIndices];
+        if (!this.state.hoveredNode) return false;
+        const activeSents = [...this.state.hoveredNode.origSentIndices];
         const sents = d.origSentIndices;
         const sharedElements = activeSents.filter(e => sents.includes(e));
         return sharedElements.length > 0;
