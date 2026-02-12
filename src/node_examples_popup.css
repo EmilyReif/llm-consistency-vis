@@ -181,6 +181,7 @@
     border-bottom: 1px solid #f0f0f0;
     font-family: monospace;
     transition: opacity 0.2s ease;
+    line-height: 1.5;
 }
 
 .example-item:last-child {
@@ -192,8 +193,8 @@
 }
 
 .example-item b {
-    font-weight: 700;
-    padding: 1px 3px;
+    font-weight: normal;
+    padding: 0;
     border-radius: 2px;
 }
 

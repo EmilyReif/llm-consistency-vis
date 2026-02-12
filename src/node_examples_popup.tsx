@@ -13,10 +13,12 @@ interface PromptGroup {
 interface Props {
     nodes: NodeDatum[];
     hoveredNode: NodeDatum | null;
+    hoveredSentIndices: number[] | null;
     promptGroups: PromptGroup[];
     isVisible: boolean;
     onClose: () => void;
     onRemoveNode: (node: NodeDatum) => void;
+    onExampleHover: (sentIdx: number | null) => void;
 }
 
 interface HighlightGroup {
@@ -111,10 +113,13 @@ class NodeExamplesPopup extends React.Component<Props, State> {
     componentDidUpdate(prevProps: Props) {
         const nodesChanged = !this.areNodeArraysEqual(prevProps.nodes, this.props.nodes);
         const hoveredNodeChanged = prevProps.hoveredNode !== this.props.hoveredNode;
+        const hoveredSentIndicesChanged = !this.areHoveredSentIndicesEqual(prevProps.hoveredSentIndices, this.props.hoveredSentIndices);
         const visibilityChanged = prevProps.isVisible !== this.props.isVisible;
         const promptGroupsChanged = prevProps.promptGroups !== this.props.promptGroups;
 
-        if ((this.props.isVisible && (nodesChanged || hoveredNodeChanged || visibilityChanged || promptGroupsChanged)) ||
+        const hoverHighlightChanged = hoveredNodeChanged || hoveredSentIndicesChanged;
+
+        if ((this.props.isVisible && (nodesChanged || hoverHighlightChanged || visibilityChanged || promptGroupsChanged)) ||
             (!prevProps.isVisible && this.props.isVisible)) {
             this.updatePopupContent();
         }
@@ -127,25 +132,33 @@ class NodeExamplesPopup extends React.Component<Props, State> {
         }
 
         // Always update content when visible, even if visibility didn't change
-        if (this.props.isVisible && (nodesChanged || hoveredNodeChanged || promptGroupsChanged)) {
+        if (this.props.isVisible && (nodesChanged || hoverHighlightChanged || promptGroupsChanged)) {
             this.updatePopupContent();
         }
+    }
+
+    private areHoveredSentIndicesEqual(a: number[] | null, b: number[] | null): boolean {
+        if (a === b) return true;
+        if (!a || !b || a.length !== b.length) return false;
+        return a.every((v, i) => v === b[i]);
     }
 
     private updatePopupContent() {
         const { nodes, hoveredNode, promptGroups } = this.props;
         const totalGenerations = this.calculateTotalGenerations(promptGroups);
 
-        // Nodes to use for highlighting: selected nodes + hovered node (if present and not already selected)
-        const nodesForHighlight = hoveredNode && !nodes.includes(hoveredNode)
-            ? [...nodes, hoveredNode]
-            : nodes;
+        // Nodes to use for highlighting: selected nodes + hovered node only (node hover). Never highlight on list/edge hover.
+        let nodesForHighlight = nodes;
+        if (hoveredNode && !nodes.includes(hoveredNode)) {
+            nodesForHighlight = [...nodes, hoveredNode];
+        }
 
         // If no nodes are selected, show all outputs
         if (!nodes.length) {
             const allSentIndices = this.getAllSentIndices(promptGroups);
-            const sentenceHighlightMap = hoveredNode
-                ? this.buildSentenceHighlights([hoveredNode], allSentIndices)
+            const highlightNodes = hoveredNode ? [hoveredNode] : [];
+            const sentenceHighlightMap = highlightNodes.length
+                ? this.buildSentenceHighlights(highlightNodes, allSentIndices)
                 : new Map();
             const examples = this.buildExamples(promptGroups, allSentIndices, sentenceHighlightMap);
             const matchingCount = examples.length;
@@ -306,7 +319,7 @@ class NodeExamplesPopup extends React.Component<Props, State> {
                 result += this.escapeHtml(text.slice(cursor, range.start));
             }
             const segment = this.escapeHtml(text.slice(range.start, range.end));
-            result += `<b style="background-color: ${range.color};">${segment}</b>`;
+            result += `<b style="box-shadow: inset 0 0 0 999px ${range.color};">${segment}</b>`;
             cursor = range.end;
         });
 
@@ -559,13 +572,15 @@ class NodeExamplesPopup extends React.Component<Props, State> {
                         </div>
                     ) : (
                         examples.map(example => {
-                            const hoveredNode = this.props.hoveredNode;
-                            const isDimmed = hoveredNode != null && !hoveredNode.origSentIndices.includes(example.sentIdx);
+                            const { hoveredSentIndices } = this.props;
+                            const isDimmed = hoveredSentIndices != null && !hoveredSentIndices.includes(example.sentIdx);
                             return (
                                 <div
                                     key={`${example.promptId}-${example.sentIdx}`}
                                     className={`example-item${isDimmed ? ' example-item-dimmed' : ''}`}
-                                    style={{ color: example.textColor }}
+                                    style={{ color: example.textColor, cursor: 'pointer' }}
+                                    onMouseEnter={() => this.props.onExampleHover(example.sentIdx)}
+                                    onMouseLeave={() => this.props.onExampleHover(null)}
                                     dangerouslySetInnerHTML={{ __html: example.html }}
                                 />
                             );
