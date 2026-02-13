@@ -21,7 +21,7 @@ const LAYOUT_MARGIN = 60;
 /** Pixel spacing between rows in 1D mode */
 const ROW_SPACING_1D = 36;
 const UNIFORM_FONT_SIZE = 11; // Used when fully untangled (1D view)
-const GRAPH_THRESHOLD = 0.95; // At or above this, use collapsed nodes (one per graph node)
+const GRAPH_THRESHOLD = 1; // At or above this, use collapsed nodes; keep 1 so collapse happens only at end (avoids jump)
 const INTERACT_THRESHOLD = 0.7; // Below this, disable hover/click/select in graph mode
 /** Pixel width per character fallback when measurement unavailable */
 const PX_PER_CHAR_1D = 2;
@@ -679,8 +679,10 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             return '';
         }
         // Use 1 second transition for phase 2 fade-in. During interp animation, update instantly each frame.
+        // At endpoints (0 or 1) use 0 to avoid extra transition after animation completes.
+        const atEndpoint = interp <= 0 || interp >= 1;
         const transitionDuration = firstTime ? 0 : 
-            (interpOverride !== undefined) ? 0 :
+            (interpOverride !== undefined) || atEndpoint ? 0 :
             (this.state.animatingGeneration && this.state.animationPhase === 'all') ? 1000 : 
             TRANSITION_DURATION;
         const isUntangled = interp < INTERACT_THRESHOLD;
@@ -856,9 +858,10 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         } else {
             merged.select("text").call(this.wrapText as any);
         }
+        const nodeFontSize = (d: NodeDisplayDatum) => (getNode(d) as NodeDatum).fontSize;
         merged.select("text")
             .attr("font-size", (d: NodeDisplayDatum) =>
-                useUniformFont ? UNIFORM_FONT_SIZE : (getNode(d) as NodeDatum).fontSize
+                UNIFORM_FONT_SIZE + interp * (nodeFontSize(d) - UNIFORM_FONT_SIZE)
             )
             .attr("text-anchor", "start");
 
@@ -1048,17 +1051,17 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         }
 
         // Use fixed REFERENCE_ROW_WIDTH_1D so spacing looks consistent across different prompts
+        // Y uses fixed row index (0, 1, 2, ...) so lines follow each other with fixed line height
         const xNorm = (v: number) => v / REFERENCE_ROW_WIDTH_1D;
         for (const { sentIdx, path, origWords, xPx } of rowData) {
             const rowIndex = sentIdxs.indexOf(sentIdx);
-            const yNorm = sentIdxs.length > 1 ? rowIndex / (sentIdxs.length - 1) : 0.5;
 
             for (let i = 0; i < path.length; i++) {
                 this.nodeInstances1D.push({
                     node: path[i],
                     sentIdx,
                     x: xNorm(xPx[i]),
-                    y: yNorm,
+                    y: rowIndex,
                     origWord: origWords[i],
                 });
             }
@@ -1069,9 +1072,9 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                 if (link) {
                     this.link1DEndpoints.set(link, {
                         sourceX: xNorm(xPx[i]),
-                        sourceY: yNorm,
+                        sourceY: rowIndex,
                         targetX: xNorm(xPx[i + 1]),
-                        targetY: yNorm,
+                        targetY: rowIndex,
                     });
                 }
             }
@@ -1097,10 +1100,10 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         return el.getComputedTextLength() * MEASURED_WIDTH_SCALE;
     }
 
-    /** Scale normalized 1D coords (0-1) to layout pixel space */
-    private scale1DToLayout(xNorm: number, yNorm: number): { x: number; y: number } {
+    /** Scale 1D coords to layout pixel space; x is normalized 0-1, y is row index for fixed line height */
+    private scale1DToLayout(xNorm: number, yRowIndex: number): { x: number; y: number } {
         const x = LAYOUT_MARGIN + xNorm * (this.width - 2 * LAYOUT_MARGIN);
-        const y = LAYOUT_MARGIN + yNorm * (this.height - 2 * LAYOUT_MARGIN);
+        const y = LAYOUT_MARGIN + yRowIndex * ROW_SPACING_1D;
         return { x, y };
     }
 
