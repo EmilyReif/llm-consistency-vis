@@ -23,10 +23,10 @@ const ROW_SPACING_1D = 36;
 const UNIFORM_FONT_SIZE = 11; // Used when fully untangled (1D view)
 const GRAPH_THRESHOLD = 0.95; // At or above this, use collapsed nodes (one per graph node)
 const INTERACT_THRESHOLD = 0.7; // Below this, disable hover/click/select in graph mode
-/** Character length for layout (strip ## prefix if present) */
-const getCharLen = (t: string) => (t ?? '').replace(/^##/, '').length;
-/** Pixel width per character for UNIFORM_FONT_SIZE, for text-like word positioning */
+/** Pixel width per character fallback when measurement unavailable */
 const PX_PER_CHAR_1D = 2;
+/** Scale measured width to match layout density (measured ~2.5x larger than char*2 at 11px) */
+const MEASURED_WIDTH_SCALE = 0.4;
 /** Gap between words in 1D mode */
 const GAP_PX_1D = 4;
 /** Fixed reference width for 1D layout scale - keeps spacing visually consistent across different prompts/datasets */
@@ -229,15 +229,18 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             const t = Math.min(1, elapsed / UNTANGLE_ANIMATION_DURATION);
             const eased = ease(t);
             const value = start + (target - start) * eased;
-            this.setState({ interpolationFraction: value });
+            // Direct update instead of setState to avoid React re-renders every frame
+            this.updateWithInterp(value);
             if (t < 1) {
                 this.interpAnimationFrame = requestAnimationFrame(step);
             } else {
                 this.interpAnimationFrame = null;
+                this.setState({ interpolationFraction: value });
             }
         };
         this.interpAnimationFrame = requestAnimationFrame(step);
     }
+    private updateWithInterp = (value: number) => this.update(false, value);
 
     private createFontScale() {
         const totalGenerations = this.props.promptGroups.reduce((acc, group) => acc + group.generations.length, 0);
@@ -524,8 +527,8 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                 }
             });
 
-        // Add a group for all content that will be panned
-        const g = svg.append("g");
+        // Add a group for all content that will be panned (will-change hints GPU layer for transforms)
+        const g = svg.append("g").attr("style", "will-change: transform");
         this.mainGroup = g;
 
         // Add zoom behavior
@@ -640,22 +643,27 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
 
         this.links.append('path')
             .attr("class", "link-visible")
-            .attr("fill", "none");
+            .attr("fill", "none")
+            .attr("shape-rendering", "optimizeSpeed");
 
         this.links.append('path')
             .attr("class", "link-hit")
             .attr("fill", "none")
             .attr("stroke", "transparent")
-            .attr("stroke-width", 12);
+            .attr("stroke-width", 12)
+            .attr("shape-rendering", "optimizeSpeed");
 
         // Nodes are created only in update() via the data join - avoids ghost/duplicate text
         // when switching between collapsed (graph) and exploded (1D) views.
         this.nodes = g.selectAll<SVGGElement, NodeDatum>(".node").data([]) as any;
     }
-    private update(firstTime: boolean = false) {
+    /** Update graph; use interpOverride to avoid setState during animation */
+    private update(firstTime: boolean = false, interpOverride?: number) {
         if (!this.links || !this.defs || !this.getLinkEndpoints || !this.mainGroup) {
             return;
         }
+
+        const interp = interpOverride ?? this.state.interpolationFraction;
 
         type NodeDisplayDatum = NodeDatum | (NodeInstance1D & { word: string });
         const getNode = (d: NodeDisplayDatum): NodeDatum => ('origSentIndices' in d ? d : d.node);
@@ -672,11 +680,9 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         }
         // Use 1 second transition for phase 2 fade-in. During interp animation, update instantly each frame.
         const transitionDuration = firstTime ? 0 : 
-            (this.interpAnimationFrame !== null) ? 0 :
+            (interpOverride !== undefined) ? 0 :
             (this.state.animatingGeneration && this.state.animationPhase === 'all') ? 1000 : 
             TRANSITION_DURATION;
-
-        const interp = this.state.interpolationFraction;
         const isUntangled = interp < INTERACT_THRESHOLD;
         const linkPathD = (d: LinkDatum) => {
             const ep = this.getLinkEndpoints!(d);
@@ -749,26 +755,22 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             .style('filter', (d: LinkDatum) => isUntangled ? 'none' : getBlur(d));
         this.links.style('pointer-events', isUntangled ? 'none' : 'auto');
 
-        // Update gradient opacity when selection/hover changes
-        this.links.each((d: LinkDatum, i: number) => {
-            const gradient = this.defs!.select(`#gradient-${i}`);
+        // Update gradient opacity when selection/hover changes (skip when in 1D mode - uses solid stroke)
+        if (interp >= 0.35) {
             const multiplier = .2;
-            const stops = gradient.selectAll("stop");
-            
-            let sourceOpacity = opacity(d.source);
-            let targetOpacity = opacity(d.target);
-            
-            // Phase 1: only show edges between first gen nodes
-            if (this.state.animatingGeneration && this.state.animationPhase === 'first') {
-                if (!this.isInFirstGeneration(d.source) || !this.isInFirstGeneration(d.target)) {
-                    sourceOpacity = 0;
-                    targetOpacity = 0;
+            this.links.each((d: LinkDatum, i: number) => {
+                let sourceOpacity = opacity(d.source);
+                let targetOpacity = opacity(d.target);
+                if (this.state.animatingGeneration && this.state.animationPhase === 'first') {
+                    if (!this.isInFirstGeneration(d.source) || !this.isInFirstGeneration(d.target)) {
+                        sourceOpacity = 0;
+                        targetOpacity = 0;
+                    }
                 }
-            }
-            
-            stops.filter((_: any, j: number) => j === 0).attr("stop-opacity", sourceOpacity * multiplier);
-            stops.filter((_: any, j: number) => j === 1).attr("stop-opacity", targetOpacity * multiplier);
-        });
+                this.defs!.selectAll(`#gradient-${i} stop`)
+                    .attr("stop-opacity", (_: any, j: number) => (j === 0 ? sourceOpacity : targetOpacity) * multiplier);
+            });
+        }
 
         // interp >= GRAPH_THRESHOLD: collapsed (one per graph node). Otherwise: exploded (one per path position).
         const useCollapsed = interp >= GRAPH_THRESHOLD || this.nodeInstances1D.length === 0;
@@ -930,9 +932,9 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                 .id((d: any) => d.word)
                 .strength(.4))
             .force("y", yForce)
-            .force("x", () => selectedNodes.forEach((d: NodeDatum) => d.x = this.getExpectedX(d, selectedNodes)))
-        this.simulation.on("tick", () => this.update());
+            .force("x", () => selectedNodes.forEach((d: NodeDatum) => d.x = this.getExpectedX(d, selectedNodes)));
 
+        // Run convergence without tick handler to avoid 1000s of DOM updates; render once at end
         this.runSimulationToConvergence();
         this.update(firstTime);
     }
@@ -963,7 +965,6 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             );
             iteration++;
         }
-        console.log(`Simulation converged after ${iteration} iterations`);
     }
 
     private linkIsInSents(d: any) {
@@ -1041,7 +1042,7 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             let cumul = 0;
             for (let i = 0; i < origWords.length; i++) {
                 xPx.push(cumul);
-                cumul += getCharLen(origWords[i]) * PX_PER_CHAR_1D + (i < origWords.length - 1 ? GAP_PX_1D : 0);
+                cumul += this.measureTextWidth(origWords[i]) + (i < origWords.length - 1 ? GAP_PX_1D : 0);
             }
             rowData.push({ sentIdx, path, origWords, xPx });
         }
@@ -1075,6 +1076,25 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                 }
             }
         }
+    }
+
+    /** Measure text width for 1D layout; uses SVG for accurate handling of special chars (e.g. hyphen) */
+    private measureTextWidth(text: string): number {
+        const svg = document.getElementById('graph-holder');
+        if (!svg || svg.namespaceURI !== 'http://www.w3.org/2000/svg') {
+            return ((text ?? '').replace(/^##/, '')).length * PX_PER_CHAR_1D;
+        }
+        let el = svg.querySelector('.text-measure-1d') as SVGTextElement | null;
+        if (!el) {
+            el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            el.setAttribute('class', 'text-measure-1d');
+            el.setAttribute('font-size', String(UNIFORM_FONT_SIZE));
+            el.style.visibility = 'hidden';
+            el.style.position = 'absolute';
+            svg.appendChild(el);
+        }
+        el.textContent = text ?? '';
+        return el.getComputedTextLength() * MEASURED_WIDTH_SCALE;
     }
 
     /** Scale normalized 1D coords (0-1) to layout pixel space */
