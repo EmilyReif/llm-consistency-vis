@@ -6,10 +6,11 @@ import * as color_utils from "./color_utils";
 import SingleExampleWordtree from './single_example_wordtree';
 import SingleExampleHighlights from "./single_example_highlights";
 import SingleExampleWordGraph from "./single_example_wordgraph";
+import SingleExampleWordGraphUntangle from "./single_example_wordgraph_untangle";
 import SingleExampleTimeCurves from "./single_example_time_curves";
 import { reaction } from 'mobx';
 import { telemetry } from "./telemetry";
-import { urlParams, URLParam } from "./url_params_manager";
+import { urlParams, URLParam, type VisType } from "./url_params_manager";
 
 
 class SingleExample extends React.Component {
@@ -54,6 +55,12 @@ class SingleExample extends React.Component {
                 \nClick to pin the highlight - click again or click elsewhere to unpin.
                 \nDrag to pan, scroll to zoom in and out.`
                 break;
+            case 'graph_untangle':
+                vis = this.renderOutputsGraphUntangle();
+                instructionText = `Hover over any word or phrase to highlight all sentences containing it. 
+                \nUse the Untangle slider to switch between graph view and table view.
+                \nDrag to pan, scroll to zoom in and out.`
+                break;
             case 'time_curves':
                 vis = this.renderOutputsTimeCurves();
                 instructionText = 'Time curves visualization of LLM outputs.';
@@ -73,6 +80,7 @@ class SingleExample extends React.Component {
         }
         const visualizationOptions = [
             { value: 'graph', label: 'Graph' },
+            { value: 'graph_untangle', label: 'Graph (Untangle)' },
             { value: 'time_curves', label: 'Time Curves' },
             { value: 'raw_outputs', label: 'Raw Outputs' },
             { value: 'first_output', label: 'First Output' },
@@ -90,7 +98,7 @@ class SingleExample extends React.Component {
                         id="vis-type-select"
                         value={state.visType}
                         onChange={(e) => {
-                            const visType = e.target.value as 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' | 'time_curves';
+                            const visType = e.target.value as VisType;
                             state.setVisType(visType);
                             telemetry.logVisTypeChange(visType);
                         }}
@@ -119,6 +127,11 @@ class SingleExample extends React.Component {
         return <SingleExampleWordGraph 
             promptGroups={this.state.promptGroups}
         ></SingleExampleWordGraph>;
+    }
+    renderOutputsGraphUntangle() {
+        return <SingleExampleWordGraphUntangle 
+            promptGroups={this.state.promptGroups}
+        ></SingleExampleWordGraphUntangle>;
     }
     renderOutputsTimeCurves() {
         return <SingleExampleTimeCurves 

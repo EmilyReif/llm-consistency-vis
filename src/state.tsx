@@ -7,7 +7,7 @@ import { getDefaultModelFamily, getDefaultModel } from "./llm/config";
 import { LLM } from "./llm/base";
 import { OpenAILLM } from "./llm/openai";
 import { telemetry } from "./telemetry";
-import { urlParams, URLParam, type TokenizeMode } from "./url_params_manager";
+import { urlParams, URLParam, type TokenizeMode, type VisType } from "./url_params_manager";
 
 
 const DEFAULT_NUM_GENERATIONS = 10;
@@ -35,7 +35,7 @@ class State {
     shuffle: boolean = false;
     tokenizeMode: TokenizeMode = "space";
     isUserStudy: boolean = false;
-    visType: 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' | 'time_curves' = 'graph';
+    visType: VisType = 'graph';
     generationsCache: { [example: string]: { [temp: number]: { [modelFamily: string]: { [model: string]: string[] } } } } = {};
     // Track which prompts are disabled
     disabledPrompts: number[] = [];
@@ -274,7 +274,7 @@ class State {
         this.selectedModel = modelId;
     });
 
-    setVisType = ((visType: 'graph' | 'raw_outputs' | 'first_output' | 'word_tree' | 'highlights' | 'time_curves') => {
+    setVisType = ((visType: VisType) => {
         this.visType = visType;
     });
 
