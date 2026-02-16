@@ -19,14 +19,16 @@ const UNTANGLE_ANIMATION_DURATION = 1000;
 const SLIDER_WIDTH = 150;
 const LAYOUT_MARGIN = 60;
 /** Pixel spacing between rows in 1D mode */
-const ROW_SPACING_1D = 36;
+const ROW_SPACING_1D = 20;
+/** Extra vertical gap between prompt groups in 1D mode (when separate by prompt is unchecked) */
+const PROMPT_SEPARATOR_1D = 24;
 const UNIFORM_FONT_SIZE = 11; // Used when fully untangled (1D view)
 const GRAPH_THRESHOLD = 1; // At or above this, use collapsed nodes; keep 1 so collapse happens only at end (avoids jump)
 const INTERACT_THRESHOLD = 0.7; // Below this, disable hover/click/select in graph mode
 /** Pixel width per character fallback when measurement unavailable */
 const PX_PER_CHAR_1D = 2;
 /** Scale measured width to match layout density (measured ~2.5x larger than char*2 at 11px) */
-const MEASURED_WIDTH_SCALE = 0.4;
+const MEASURED_WIDTH_SCALE = 0.3;
 /** Gap between words in 1D mode */
 const GAP_PX_1D = 4;
 /** Fixed reference width for 1D layout scale - keeps spacing visually consistent across different prompts/datasets */
@@ -403,6 +405,7 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                         hoveredSentIndices={this.state.hoveredSentIndices}
                         promptGroups={this.props.promptGroups}
                         isVisible={true}
+                        defaultViewState="minimized"
                         onClose={() => this.hidePopup()}
                         onRemoveNode={this.removePopupNode}
                         onExampleHover={(sentIdx) => this.setState({
@@ -505,9 +508,12 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         this.build1DLayout();
         this.width = Math.min(window.innerWidth, 5000); // 95% of viewport width, max 5000p;x
         this.height = Math.min(window.innerHeight * 0.8, 800); // 70% of viewport height, max 800px
-        // Ensure height accommodates row spacing in 1D mode
+        // Ensure height accommodates row spacing and prompt gaps in 1D mode
         const totalSents = this.props.promptGroups.reduce((acc, g) => acc + g.generations.length, 0);
-        const minHeight1D = totalSents > 1 ? 2 * LAYOUT_MARGIN + (totalSents - 1) * ROW_SPACING_1D : this.height;
+        const nPrompts = this.props.promptGroups.length;
+        const promptGapRows = (nPrompts > 1 && !this.state.separateByPrompt)
+            ? (nPrompts - 1) * (PROMPT_SEPARATOR_1D / ROW_SPACING_1D) : 0;
+        const minHeight1D = totalSents > 1 ? 2 * LAYOUT_MARGIN + ((totalSents - 1) + promptGapRows) * ROW_SPACING_1D : this.height;
         this.height = Math.max(this.height, minHeight1D);
         const svg = d3.select("#graph-holder")
             .html('')
@@ -775,11 +781,10 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         }
 
         // interp >= GRAPH_THRESHOLD: collapsed (one per graph node). Otherwise: exploded (one per path position).
+        // Use original node refs (not spread copies) so getNodeColor link.source===node matches
         const useCollapsed = interp >= GRAPH_THRESHOLD || this.nodeInstances1D.length === 0;
         const nodeData: NodeDisplayDatum[] = useCollapsed
-            ? this.nodesData
-                .filter((n) => n != null)
-                .map((n) => ({ ...n, word: n.word } as any))
+            ? this.nodesData.filter((n) => n != null)
             : this.nodeInstances1D
                 .filter((ni) => ni?.node != null)
                 .map((ni) => ({ ...ni, word: ni.origWord })); // use original word from generation
@@ -1037,6 +1042,15 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         }
 
         const sentIdxs = [...pathsBySent.keys()].sort((a, b) => a - b);
+        // Map sentIdx -> promptIndex (for extra vertical spacing between prompts when separateByPrompt is false)
+        const sentIdxToPromptIndex = new Map<number, number>();
+        let runningIdx = 0;
+        for (let g = 0; g < this.props.promptGroups.length; g++) {
+            for (let i = 0; i < this.props.promptGroups[g].generations.length; i++) {
+                sentIdxToPromptIndex.set(runningIdx, g);
+                runningIdx++;
+            }
+        }
         const rowData: { sentIdx: number; path: NodeDatum[]; origWords: string[]; xPx: number[] }[] = [];
 
         for (const sentIdx of sentIdxs) {
@@ -1051,17 +1065,23 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         }
 
         // Use fixed REFERENCE_ROW_WIDTH_1D so spacing looks consistent across different prompts
-        // Y uses fixed row index (0, 1, 2, ...) so lines follow each other with fixed line height
+        // Y uses row index + prompt offset so lines follow each other with gaps between prompt groups
         const xNorm = (v: number) => v / REFERENCE_ROW_WIDTH_1D;
+        const nPrompts = this.props.promptGroups.length;
+        const promptOffset = (nPrompts > 1 && !this.state.separateByPrompt)
+            ? PROMPT_SEPARATOR_1D / ROW_SPACING_1D
+            : 0; // extra "logical rows" per prompt boundary
         for (const { sentIdx, path, origWords, xPx } of rowData) {
             const rowIndex = sentIdxs.indexOf(sentIdx);
+            const promptIndex = sentIdxToPromptIndex.get(sentIdx) ?? 0;
+            const yLogical = rowIndex + promptIndex * promptOffset;
 
             for (let i = 0; i < path.length; i++) {
                 this.nodeInstances1D.push({
                     node: path[i],
                     sentIdx,
                     x: xNorm(xPx[i]),
-                    y: rowIndex,
+                    y: yLogical,
                     origWord: origWords[i],
                 });
             }
@@ -1072,9 +1092,9 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                 if (link) {
                     this.link1DEndpoints.set(link, {
                         sourceX: xNorm(xPx[i]),
-                        sourceY: rowIndex,
+                        sourceY: yLogical,
                         targetX: xNorm(xPx[i + 1]),
-                        targetY: rowIndex,
+                        targetY: yLogical,
                     });
                 }
             }

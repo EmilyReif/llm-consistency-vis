@@ -22,6 +22,18 @@ export function getPromptIndexFromId(promptId: string): number {
 }
 
 export const MILLER_STONE_COLORS = [
+    // // Pure red
+    // "#ff0000",
+    // // Pure green
+    // "#00ff00",
+    // // Pure blue
+    // "#0000ff",
+    // // Pure yellow
+    // "#ffff00",
+    // // Pure magenta
+    // "#ff00ff",
+    // // Pure cyan
+    // "#00ffff",
     "#4f6980", // Blue
     "#f47942", // Orange
     "#bfbb60", // Yellow-Green

@@ -19,6 +19,8 @@ interface Props {
     onClose: () => void;
     onRemoveNode: (node: NodeDatum) => void;
     onExampleHover: (sentIdx: number | null) => void;
+    /** Initial view state when mounted */
+    defaultViewState?: ViewState;
 }
 
 interface HighlightGroup {
@@ -60,7 +62,7 @@ class NodeExamplesPopup extends React.Component<Props, State> {
             examples: [],
             matchingCount: 0,
             totalGenerations: this.calculateTotalGenerations(props.promptGroups),
-            viewState: 'default',
+            viewState: props.defaultViewState ?? 'default',
             maximizedWidthPx: null,
             defaultWidthPx: null,
             isResizing: false
