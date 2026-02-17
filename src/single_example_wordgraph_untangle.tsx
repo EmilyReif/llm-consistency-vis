@@ -27,11 +27,9 @@ const GRAPH_THRESHOLD = 1; // At or above this, use collapsed nodes; keep 1 so c
 const INTERACT_THRESHOLD = 0.7; // Below this, disable hover/click/select in graph mode
 /** Pixel width per character fallback when measurement unavailable */
 const PX_PER_CHAR_1D = 2;
-/** Scale measured width to match layout density (measured ~2.5x larger than char*2 at 11px) */
-const MEASURED_WIDTH_SCALE = 0.4;
 /** Gap between words in 1D mode */
 const GAP_PX_1D = 4;
-/** Fixed reference width for 1D layout scale - keeps spacing visually consistent across different prompts/datasets */
+/** Fixed reference width for 1D layout - used for normalization; layout spacing is content-based, not scaled to window */
 const REFERENCE_ROW_WIDTH_1D = 500;
 const DEFAULT_SIMILARITY_THRESHOLD = 0.7;
 const DEFAULT_MIN_OPACITY_THRESHOLD = 0;
@@ -508,9 +506,9 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         this.createFontScale(); // Create font scale based on total generations
         this.addBoundingBoxData(nodesData);
         this.build1DLayout();
-        this.width = Math.min(window.innerWidth, 5000); // 95% of viewport width, max 5000p;x
-        this.height = Math.min(window.innerHeight * 0.8, 800); // 70% of viewport height, max 800px
-        // Ensure height accommodates row spacing and prompt gaps in 1D mode
+        // Canvas is full width; layout/spacing stay fixed (not scaled to window)
+        this.width = Math.min(window.innerWidth, 5000);
+        this.height = Math.min(window.innerHeight * 0.8, 800);
         const totalSents = this.props.promptGroups.reduce((acc, g) => acc + g.generations.length, 0);
         const nPrompts = this.props.promptGroups.length;
         const promptGapRows = (nPrompts > 1 && !this.state.separateByPrompt)
@@ -1103,28 +1101,20 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         }
     }
 
-    /** Measure text width for 1D layout; uses SVG for accurate handling of special chars (e.g. hyphen) */
+    /** Measure text width for 1D layout; font-size-based so it's consistent across window sizes */
     private measureTextWidth(text: string): number {
-        const svg = document.getElementById('graph-holder');
-        if (!svg || svg.namespaceURI !== 'http://www.w3.org/2000/svg') {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
             return ((text ?? '').replace(/^##/, '')).length * PX_PER_CHAR_1D;
         }
-        let el = svg.querySelector('.text-measure-1d') as SVGTextElement | null;
-        if (!el) {
-            el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            el.setAttribute('class', 'text-measure-1d');
-            el.setAttribute('font-size', String(UNIFORM_FONT_SIZE));
-            el.style.visibility = 'hidden';
-            el.style.position = 'absolute';
-            svg.appendChild(el);
-        }
-        el.textContent = text ?? '';
-        return el.getComputedTextLength() * MEASURED_WIDTH_SCALE;
+        ctx.font = `${UNIFORM_FONT_SIZE}px monospace`;
+        return ctx.measureText((text ?? '').replace(/^##/, '')).width;
     }
 
-    /** Scale 1D coords to layout pixel space; x is normalized 0-1, y is row index for fixed line height */
+    /** Scale 1D coords to layout pixel space; font-size-based, no window dependency */
     private scale1DToLayout(xNorm: number, yRowIndex: number): { x: number; y: number } {
-        const x = LAYOUT_MARGIN + xNorm * (this.width - 2 * LAYOUT_MARGIN);
+        const x = LAYOUT_MARGIN + xNorm * REFERENCE_ROW_WIDTH_1D;
         const y = LAYOUT_MARGIN + yRowIndex * ROW_SPACING_1D;
         return { x, y };
     }
