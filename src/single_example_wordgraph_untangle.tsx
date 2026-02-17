@@ -271,19 +271,25 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                 <span id='loader' className="loader"></span>
                 <svg id='graph-holder'></svg>
                 <div className={`graph-controls-overlay${state.isUserStudy ? ' graph-controls-overlay-user-study' : ''}`}>
-                    <div className="checkbox-container">
-                        <label title="Switch between graph view and simple 1D text lines per generation">
-                            <input
-                                type="checkbox"
-                                checked={this.state.isUntangled}
-                                onChange={(e) => {
-                                    const checked = e.target.checked;
-                                    this.setState({ isUntangled: checked });
-                                    telemetry.logSliderChange('interpolation', checked ? 0 : 1);
-                                }}
-                            />
-                            Untangle
-                        </label>
+                    <div className={`toggle-switch-container toggle-state-${this.state.isUntangled ? 'list' : 'graph'}`} title="Switch between graph view and list view">
+                        <span className="toggle-label toggle-label-graph">Graph</span>
+                        <button
+                            type="button"
+                            role="switch"
+                            aria-checked={this.state.isUntangled}
+                            aria-label="Toggle between graph and list view"
+                            className={`toggle-switch ${this.state.isUntangled ? 'toggle-switch-list' : 'toggle-switch-graph'}`}
+                            onClick={() => {
+                                const checked = !this.state.isUntangled;
+                                this.setState({ isUntangled: checked });
+                                telemetry.logSliderChange('interpolation', checked ? 0 : 1);
+                            }}
+                        >
+                            <span className="toggle-switch-track">
+                                <span className="toggle-switch-thumb" />
+                            </span>
+                        </button>
+                        <span className="toggle-label toggle-label-list">List</span>
                     </div>
 
                     {!state.isUserStudy && <>
