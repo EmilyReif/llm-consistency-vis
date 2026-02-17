@@ -8,6 +8,14 @@ function App() {
   const hasSubmittedRef = useRef(false);
 
   useEffect(() => {
+    // Disable browser find (Ctrl+F / Cmd+F)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown, true);
+
     // Log page load immediately
     telemetry.logPageLoad();
 
@@ -60,6 +68,7 @@ function App() {
     window.addEventListener('pagehide', submitOnUnload);
 
     return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
       window.removeEventListener('blur', handleBlur);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('pagehide', submitOnUnload);

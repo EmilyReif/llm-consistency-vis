@@ -32,6 +32,11 @@ text {
     font-family: monospace;
 }
 
+/* In user study mode, header elements are hidden so place controls below top (not overlapping prompt) */
+.graph-controls-overlay.graph-controls-overlay-user-study {
+    top: 10px;
+}
+
 .graph-controls-overlay .slider-container,
 .graph-controls-overlay .dropdown-container,
 .graph-controls-overlay .checkbox-container,

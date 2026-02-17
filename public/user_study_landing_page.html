@@ -353,6 +353,11 @@
   </div>
 
   <script>
+    // Disable browser find (Ctrl+F / Cmd+F)
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') e.preventDefault();
+    }, true);
+
     // ===== TELEMETRY SYSTEM =====
     const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzjSK-bJaYB15HqtNBDNK9kjoDdJS9LDmkxMkoK22ij_kzsdGqtu5B58HIisn-qo5Ls/exec';
     

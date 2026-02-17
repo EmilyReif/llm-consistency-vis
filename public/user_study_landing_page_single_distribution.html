@@ -225,31 +225,9 @@
       <div id="task1Section" class="task-section">
         <h3>Task 1</h3>
         
-        <div class="description" style="margin: 20px 0;">
-          <p>
-            In this task, you'll examine a set of outputs generated from the same prompt. Your goal is to <strong>reason about the distribution</strong> of these outputs—understanding patterns, variety, consistency, and any notable characteristics across the full set of responses.
-          </p>
+        <div id="task1Intro" class="task-intro" style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6;"></div>
         
-          <p>
-            Using the visualization interface, you'll explore groups of LLM outputs and develop an understanding of what this prompt typically generates. Consider questions like:
-          </p>
-        
-          <ul>
-            <li><strong>Variety:</strong> How diverse are the outputs? What range of responses does this prompt produce?</li>
-            <li><strong>Consistency:</strong> Are there common patterns, themes, or stylistic elements across outputs?</li>
-            <li><strong>Quality:</strong> Are the outputs generally appropriate and high-quality?</li>
-            <li><strong>Distribution shape:</strong> Are most outputs similar with a few outliers, or is there broad variation?</li>
-          </ul>
-        
-          <p>
-            There are no right or wrong answers. We're interested in how you reason about these distributions and what the interface reveals about LLM output behavior.
-          </p>
-        </div>
-        
-        <div class="video-container">
-          <h4>Please watch the video below before starting the task</h4>
-          <!-- TODO: Replace with new video for single distribution study -->
-          <div id="task1Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
+        <div id="task1VideoContainer" class="video-container">
           <iframe 
             id="task1Video"
             width="1000" 
@@ -272,7 +250,7 @@
           <p style="margin: 0; word-break: break-all;"><a id="task1BackupUrl" href="#" target="_blank" style="color: #0066cc; text-decoration: underline;"></a></p>
         </div>
 
-        <div id="task1FormContainer" class="form-container">
+        <div id="task1FormContainer" class="form-container visible">
           <h4>Task 1 Questionnaire</h4>
           <p>Please complete the questionnaire after finishing Task 1.</p>
           <iframe id="task1Form" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
@@ -285,31 +263,9 @@
       <div id="task2Section" class="task-section">
         <h3>Task 2</h3>
         
-        <div class="description" style="margin: 20px 0;">
-          <p>
-            In this task, you'll examine another set of outputs generated from a different prompt. As before, your goal is to <strong>reason about the distribution</strong> of these outputs—understanding patterns, variety, consistency, and any notable characteristics across the full set of responses.
-          </p>
+        <div id="task2Intro" class="task-intro" style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6;"></div>
         
-          <p>
-            Using the visualization interface, you'll explore groups of LLM outputs and develop an understanding of what this prompt typically generates. Consider questions like:
-          </p>
-        
-          <ul>
-            <li><strong>Variety:</strong> How diverse are the outputs? What range of responses does this prompt produce?</li>
-            <li><strong>Consistency:</strong> Are there common patterns, themes, or stylistic elements across outputs?</li>
-            <li><strong>Quality:</strong> Are the outputs generally appropriate and high-quality?</li>
-            <li><strong>Distribution shape:</strong> Are most outputs similar with a few outliers, or is there broad variation?</li>
-          </ul>
-        
-          <p>
-            There are no right or wrong answers. We're interested in how you reason about these distributions and what the interface reveals about LLM output behavior.
-          </p>
-        </div>
-        
-        <div class="video-container">
-          <h4>Please watch the video below before starting the task</h4>
-          <!-- TODO: Replace with new video for single distribution study -->
-          <div id="task2Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
+        <div id="task2VideoContainer" class="video-container">
           <iframe 
             id="task2Video"
             width="1000" 
@@ -332,8 +288,9 @@
           <p style="margin: 0; word-break: break-all;"><a id="task2BackupUrl" href="#" target="_blank" style="color: #0066cc; text-decoration: underline;"></a></p>
         </div>
 
-        <div id="task2FormContainer" class="form-container">
+        <div id="task2FormContainer" class="form-container visible">
           <h4>Task 2 Questionnaire</h4>
+          <p>Please complete the questionnaire after finishing Task 2.</p>
           <iframe id="task2Form" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
         </div>
       </div>
@@ -362,6 +319,11 @@
   </div>
 
   <script>
+    // Disable browser find (Ctrl+F / Cmd+F)
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') e.preventDefault();
+    }, true);
+
     // ===== TELEMETRY SYSTEM =====
     const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzjSK-bJaYB15HqtNBDNK9kjoDdJS9LDmkxMkoK22ij_kzsdGqtu5B58HIisn-qo5Ls/exec';
     
@@ -559,19 +521,16 @@
     const NUM_GENERATIONS = 20;
 
     // Google Drive embed URLs
-    const videoExplanationGraph = 'https://drive.google.com/file/d/1DLkEhCWnByYmAWss-LITaVjsHKNCFp1v/preview';
-    const videoExplanationRawOutputs = 'https://drive.google.com/file/d/1qOgPwDVBZ1IGEx0cutb88NzZ7Xc6KZi_/preview';
+    const videoExplanationGraph = 'https://drive.google.com/file/d/1fMjPwSzvwxLNzfmsOyMpYrEY1wTwWcdI/preview';
 
     // Google Form URLs (prefilled format)
-    const formUrlTaskTemplate = 'https://docs.google.com/forms/d/e/1AqV4K4564JPTTj9LBwbcYKFTuwe0z51b8XT754f-GWg/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
+    const formUrlTaskTemplate = 'https://docs.google.com/forms/d/1AqV4K4564JPTTj9LBwbcYKFTuwe0z51b8XT754f-GWg/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
     const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSd5trytqg1lOWpxhnoSXUduZe7Z8qW4ep688C8S310dNDDzMw/viewform?usp=pp_url&entry.1859965680=UID&embedded=true';
 
-    // Function to get video URL based on vis type
+    // Function to get video URL based on vis type (no video for raw_outputs)
     function getVideoUrlForVisType(visType) {
       if (visType === 'graph') {
         return videoExplanationGraph.includes('[PLACEHOLDER') ? '' : videoExplanationGraph;
-      } else if (visType === 'raw_outputs') {
-        return videoExplanationRawOutputs.includes('[PLACEHOLDER') ? '' : videoExplanationRawOutputs;
       }
       return '';
     }
@@ -731,36 +690,63 @@
       return 'Monsters and places';
     }
 
-    // Helper function to get description text based on visualization type
-    function getDescriptionText(visType) {
+    // Combined intro for each task
+    const gistNote = '<strong>You do not need to read every word of every output. These questions are about getting the "gist" of the outputs. The time taken will be measured.</strong>';
+    const buttonInstruction = '<p>Click the button below to see the outputs, and then answer the questions below.</p>';
+
+    function getTask1Intro(visType) {
       if (visType === 'raw_outputs') {
-        return 'This tool shows many outputs generated from the same prompt.<br>Select one or more prompts at the top to compare them.';
-      } else if (visType === 'graph') {
-        return 'This tool shows many outputs generated from the same prompt.<br>Select a prompt at the top to view its outputs.<br>Outputs are summarized as a graph, where each <b>path is one generation</b> and shared words show overlap (larger words appear more often).<br>Click words to filter outputs, simplify the view to highlight common patterns, and use color to compare outputs from different prompts.';
+        return `<p>This tool shows many outputs generated from the same prompt.</p><p>${gistNote}</p>${buttonInstruction}`;
       }
-      return '';
+      if (visType === 'graph') {
+        return `This tool shows many outputs generated from the same prompt
+<ul>
+  <li>Outputs are summarized as a graph</li>
+  <li>Each path is <b>one generation</b></li>
+  <li>Words and phrases that appear multiple times are shown larger.</li>
+  <li>Click words to filter outputs.</li>
+</ul>
+<p>The graph shows a summary at the expense of being able to read each example through easily.</p>
+<p>${gistNote}</p>${buttonInstruction}`;
+      }
+      return `<p>${gistNote}</p>${buttonInstruction}`;
     }
 
-    // Helper function to get Task 2 description with intro acknowledging similarity
-    function getTask2Description(visType, task2Dataset, task1Dataset) {
-      const task2Entity = getEntityTypeText(task2Dataset);
-      const intro = `Now, we are going to be doing something similar, but instead we will be generating ${task2Entity}s.<br><br>`;
-      return intro + getDescriptionText(visType);
+    function getTask2Intro(visType, task2Dataset) {
+      const entity = getEntityTypeText(task2Dataset);
+      const intro = `<p>This task follows the same format, with outputs about ${entity}s.</p>`;
+      if (visType === 'raw_outputs') {
+        return `${intro}<p>This tool shows many outputs generated from the same prompt.</p><p>${gistNote}</p>${buttonInstruction}`;
+      }
+      if (visType === 'graph') {
+        return `${intro}This tool shows many outputs generated from the same prompt
+<ul>
+  <li>Outputs are summarized as a graph</li>
+  <li>Each path is <b>one generation</b></li>
+  <li>Words and phrases that appear multiple times are shown larger.</li>
+  <li>Click words to filter outputs.</li>
+</ul>
+<p>The graph shows a summary at the expense of being able to read each example through easily.</p>
+<p>${gistNote}</p>${buttonInstruction}`;
+      }
+      return `${intro}<p>${gistNote}</p>${buttonInstruction}`;
     }
 
     // Update Task 1 section
     document.getElementById('task1Link').href = task1Url;
-    document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
+    const task1VideoUrl = getVideoUrlForVisType(finalTask1.visType);
+    document.getElementById('task1Video').src = task1VideoUrl;
+    document.getElementById('task1VideoContainer').style.display = task1VideoUrl ? 'block' : 'none';
     document.getElementById('task1Form').src = getFormUrlForTask(finalTask1.dataset, finalTask1.visType);
-    // Update description
-    document.getElementById('task1Description').innerHTML = getDescriptionText(finalTask1.visType);
+    document.getElementById('task1Intro').innerHTML = getTask1Intro(finalTask1.visType);
 
     // Update Task 2 section
     document.getElementById('task2Link').href = task2Url;
-    document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
+    const task2VideoUrl = getVideoUrlForVisType(finalTask2.visType);
+    document.getElementById('task2Video').src = task2VideoUrl;
+    document.getElementById('task2VideoContainer').style.display = task2VideoUrl ? 'block' : 'none';
     document.getElementById('task2Form').src = getFormUrlForTask(finalTask2.dataset, finalTask2.visType);
-    // Update description with intro acknowledging similarity
-    document.getElementById('task2Description').innerHTML = getTask2Description(finalTask2.visType, finalTask2.dataset, finalTask1.dataset);
+    document.getElementById('task2Intro').innerHTML = getTask2Intro(finalTask2.visType, finalTask2.dataset);
 
     // Update Final Survey section
     // Include both tasks' dataset and visType for the final survey

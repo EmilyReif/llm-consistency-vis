@@ -28,7 +28,7 @@ const INTERACT_THRESHOLD = 0.7; // Below this, disable hover/click/select in gra
 /** Pixel width per character fallback when measurement unavailable */
 const PX_PER_CHAR_1D = 2;
 /** Scale measured width to match layout density (measured ~2.5x larger than char*2 at 11px) */
-const MEASURED_WIDTH_SCALE = 0.3;
+const MEASURED_WIDTH_SCALE = 0.4;
 /** Gap between words in 1D mode */
 const GAP_PX_1D = 4;
 /** Fixed reference width for 1D layout scale - keeps spacing visually consistent across different prompts/datasets */
@@ -272,7 +272,7 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                 <span id='loader' className="loader"></span>
                 <svg id='graph-holder'></svg>
-                {!state.isUserStudy && <div className="graph-controls-overlay">
+                <div className={`graph-controls-overlay${state.isUserStudy ? ' graph-controls-overlay-user-study' : ''}`}>
                     <div className="checkbox-container">
                         <label title="Switch between graph view and simple 1D text lines per generation">
                             <input
@@ -288,6 +288,7 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                         </label>
                     </div>
 
+                    {!state.isUserStudy && <>
                     <div className="slider-container">
                         <label>Graph spread</label>
                         <div className="tooltip">
@@ -397,7 +398,8 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                             {this.state.animatingGeneration ? 'Animating...' : 'Animate Generation'}
                         </button>
                     </div>
-                </div>}
+                    </>}
+                </div>
                 {!urlParams.getBoolean(URLParam.HIDE_POPUPS) && (
                     <NodeExamplesPopup
                         nodes={this.state.popupNodes}
