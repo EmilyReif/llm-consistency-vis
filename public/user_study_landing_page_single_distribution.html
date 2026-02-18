@@ -190,6 +190,37 @@
     .dot.active:hover {
       background-color: #2980b9;
     }
+
+    .token-gate {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .token-gate.hidden {
+      display: none;
+    }
+
+    .token-gate-prompt {
+      font-size: 0.75em;
+      color: #555;
+    }
+
+    .token-gate input {
+      padding: 6px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 140px;
+    }
+
+    .nav-next-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
   </style>
 </head>
 <body>
@@ -300,13 +331,22 @@
     </div>
   </div>
 
+  <!-- Shared timer (10-min circular progress) -->
+  <script src="landing_page_timer.js"></script>
+
   <!-- Navigation -->
   <div class="navigation">
     <button id="prevButton" class="nav-button" onclick="previousPage()">← Previous</button>
     
     <div class="progress-dots" id="progressDots"></div>
     
-    <button id="nextButton" class="nav-button" onclick="nextPage()">Next →</button>
+    <div class="nav-next-area">
+      <div id="tokenGate" class="token-gate hidden">
+        <label class="token-gate-prompt" for="tokenInput">Complete survey and paste token to continue:</label>
+        <input id="tokenInput" type="text" placeholder="Token" autocomplete="off" />
+      </div>
+      <button id="nextButton" class="nav-button" onclick="nextPage()">Next →</button>
+    </div>
   </div>
 
   <script>
@@ -377,10 +417,11 @@
       
       // Log leavePage event before submitting
       const timeOnPage = Date.now() - pageStartedAt;
-      logTelemetryEvent('leavePage', {
-        timeOnPage,
-        url: window.location.href,
-      });
+      const leaveData = { timeOnPage, url: window.location.href };
+      if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
+        leaveData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
+      }
+      logTelemetryEvent('leavePage', leaveData);
       
       const data = prepareTelemetryPayload();
       
@@ -418,10 +459,11 @@
       
       // Log leavePage event before submitting
       const timeOnPage = Date.now() - pageStartedAt;
-      logTelemetryEvent('leavePage', {
-        timeOnPage,
-        url: window.location.href,
-      });
+      const leaveData = { timeOnPage, url: window.location.href };
+      if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
+        leaveData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
+      }
+      logTelemetryEvent('leavePage', leaveData);
       
       const data = prepareTelemetryPayload();
       const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
@@ -498,11 +540,16 @@
       url: window.location.href,
       userAgent: navigator.userAgent,
     });
+
+    // Initialize 10-minute task timer
+    LandingPageTimer.init();
+
     // ===== END TELEMETRY SYSTEM =====
     
     // Page navigation state
     let currentPage = 1;
     const totalPages = 4;
+    const SURVEY_TOKEN = 'A89EiVjwLKJ99';
     
     // Track if tasks have been started
     let task1Started = false;
@@ -679,7 +726,7 @@
 
     // Combined intro for each task
     const gistNote = '<strong>You do not need to read every word of every output. These questions are about getting the "gist" of the outputs. The time taken will be measured.</strong>';
-    const buttonInstruction = '<p>Click the button below to see the outputs, and then answer the questions below.</p>';
+    const buttonInstruction = '<p>Click the "Start Task" button below to see the outputs, and then answer the questions below.</p>';
 
     function getTask1Intro(visType) {
       if (visType === 'raw_outputs') {
@@ -693,7 +740,7 @@
   <li>Words and phrases that appear multiple times are shown larger.</li>
   <li>Click words to filter outputs.</li>
 </ul>
-<p>The graph shows a summary at the expense of being able to read each example through easily.</p>
+<p>The graph shows a summary at the expense of being able to read each example through easily. <strong>Think of it as a fancy word cloud</strong>.</p>
 <p>${gistNote}</p>${buttonInstruction}`;
       }
       return `<p>${gistNote}</p>${buttonInstruction}`;
@@ -713,7 +760,7 @@
   <li>Words and phrases that appear multiple times are shown larger.</li>
   <li>Click words to filter outputs.</li>
 </ul>
-<p>The graph shows a summary at the expense of being able to read each example through easily.</p>
+<p>The graph shows a summary at the expense of being able to read each example through easily. <strong>Think of it as a fancy word cloud</strong>.</p>
 <p>${gistNote}</p>${buttonInstruction}`;
       }
       return `${intro}<p>${gistNote}</p>${buttonInstruction}`;
@@ -809,18 +856,26 @@
       
       // Show current page
       document.getElementById(`page${currentPage}`).classList.add('active');
+
+      // Timer only on task pages (2 and 3)
+      if (typeof LandingPageTimer !== 'undefined') {
+        LandingPageTimer.setVisible(currentPage === 2 || currentPage === 3);
+      }
       
       // Update navigation buttons
       document.getElementById('prevButton').disabled = currentPage === 1;
-      
-      // Disable Next button if on task pages and task hasn't been started
-      let nextButtonDisabled = currentPage === totalPages;
-      if (currentPage === 2 && !task1Started) {
-        nextButtonDisabled = true;
-      } else if (currentPage === 3 && !task2Started) {
-        nextButtonDisabled = true;
+
+      // Token gate: show on task pages (2 and 3), hide otherwise
+      const tokenGate = document.getElementById('tokenGate');
+      const tokenInput = document.getElementById('tokenInput');
+      if (currentPage === 2 || currentPage === 3) {
+        tokenGate.classList.remove('hidden');
+      } else {
+        tokenGate.classList.add('hidden');
+        if (tokenInput) tokenInput.value = '';
       }
-      document.getElementById('nextButton').disabled = nextButtonDisabled;
+
+      updateNextButtonState();
       
       // Update progress dots
       const dots = document.querySelectorAll('.dot');
@@ -831,6 +886,18 @@
           dot.classList.remove('active');
         }
       });
+    }
+
+    function updateNextButtonState() {
+      const tokenInput = document.getElementById('tokenInput');
+      const tokenMatch = tokenInput && tokenInput.value.trim() === SURVEY_TOKEN;
+      let nextButtonDisabled = currentPage === totalPages;
+      if (currentPage === 2) {
+        nextButtonDisabled = !task1Started || !tokenMatch;
+      } else if (currentPage === 3) {
+        nextButtonDisabled = !task2Started || !tokenMatch;
+      }
+      document.getElementById('nextButton').disabled = nextButtonDisabled;
     }
 
     // Helper function to get dataset and visType for a page
@@ -861,8 +928,7 @@
         const toPage = currentPage + 1;
         const fromPageInfo = getPageTaskInfo(currentPage);
         const toPageInfo = getPageTaskInfo(toPage);
-        
-        logTelemetryEvent('landing_page_nav', {
+        const navData = {
           action: 'next',
           fromPage: currentPage,
           toPage: toPage,
@@ -870,9 +936,21 @@
           fromVisType: fromPageInfo.visType,
           toDataset: toPageInfo.dataset,
           toVisType: toPageInfo.visType,
-        });
+        };
+        if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
+          navData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
+        }
+        logTelemetryEvent('landing_page_nav', navData);
+        if (typeof LandingPageTimer !== 'undefined' && (toPage === 2 || toPage === 3)) {
+          LandingPageTimer.reset();
+        }
+        if (toPage === 2 || toPage === 3) {
+          const ti = document.getElementById('tokenInput');
+          if (ti) ti.value = '';
+        }
         currentPage = toPage;
         updatePageDisplay();
+        window.scrollTo(0, 0);
       }
     }
 
@@ -881,8 +959,7 @@
         const toPage = currentPage - 1;
         const fromPageInfo = getPageTaskInfo(currentPage);
         const toPageInfo = getPageTaskInfo(toPage);
-        
-        logTelemetryEvent('landing_page_nav', {
+        const navData = {
           action: 'prev',
           fromPage: currentPage,
           toPage: toPage,
@@ -890,7 +967,15 @@
           fromVisType: fromPageInfo.visType,
           toDataset: toPageInfo.dataset,
           toVisType: toPageInfo.visType,
-        });
+        };
+        if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
+          navData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
+        }
+        logTelemetryEvent('landing_page_nav', navData);
+        if (toPage === 2 || toPage === 3) {
+          const ti = document.getElementById('tokenInput');
+          if (ti) ti.value = '';
+        }
         currentPage = toPage;
         updatePageDisplay();
       }
@@ -900,8 +985,7 @@
       if (page >= 1 && page <= totalPages) {
         const fromPageInfo = getPageTaskInfo(currentPage);
         const toPageInfo = getPageTaskInfo(page);
-        
-        logTelemetryEvent('landing_page_nav', {
+        const navData = {
           action: 'dot_click',
           fromPage: currentPage,
           toPage: page,
@@ -909,11 +993,25 @@
           fromVisType: fromPageInfo.visType,
           toDataset: toPageInfo.dataset,
           toVisType: toPageInfo.visType,
-        });
+        };
+        if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
+          navData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
+        }
+        logTelemetryEvent('landing_page_nav', navData);
+        if (page === 2 || page === 3) {
+          const ti = document.getElementById('tokenInput');
+          if (ti) ti.value = '';
+        }
         currentPage = page;
         updatePageDisplay();
       }
     }
+
+    // Token input: enable Next when correct token is entered
+    document.getElementById('tokenInput').addEventListener('input', updateNextButtonState);
+    document.getElementById('tokenInput').addEventListener('paste', function() {
+      setTimeout(updateNextButtonState, 0);
+    });
 
     // Initialize on page load
     initializeProgressDots();

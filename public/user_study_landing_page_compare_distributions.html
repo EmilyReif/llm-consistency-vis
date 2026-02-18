@@ -103,12 +103,13 @@
       display: block;
     }
 
-    .video-container {
+    .demo-container {
       margin: 20px 0;
       text-align: center;
     }
 
-    .video-container iframe {
+    .demo-container iframe,
+    .demo-container img {
       max-width: 100%;
       border: 1px solid #ddd;
       border-radius: 5px;
@@ -189,6 +190,38 @@
     .dot.active:hover {
       background-color: #2980b9;
     }
+
+    .token-gate {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .token-gate.hidden {
+      display: none;
+    }
+
+    .token-gate-prompt {
+      font-size: 0.75em;
+      color: #555;
+      max-width: 140px;
+    }
+
+    .token-gate input {
+      padding: 6px 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 140px;
+    }
+
+    .nav-next-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
   </style>
 </head>
 <body>
@@ -200,21 +233,21 @@
       <div class="description">
         <h2>Study Overview</h2>
         <p>
-          When you change a prompt, the distribution of LLM outputs changes too. A central question is: <strong>What changed between prompt A and prompt B?</strong> Answering this requires comparing two distributions—looking at diversity, typical vs. rare outputs, and what the two sets of outputs share or don't share.
+          Large Language Models (LLMs) are <strong>stochastic</strong>, meaning they don't produce the same output every time. When you change a prompt, the <strong>distribution of possible outputs</strong> changes too. Rather than judging based on a single example, we need to consider the full range of possibilities each prompt can generate.
         </p>
       
         <p>
-          In this study, you'll use a visualization tool to compare outputs from two different prompts. We're interested in how people reason about:
+          In this study, you'll use a visualization tool to <strong>compare outputs from two different prompts</strong> (prompt A and prompt B). Your goal is to explore both sets of outputs and reason about what changed between the two prompts.
         </p>
         
         <ul>
-          <li><strong>Distribution-level questions:</strong> Which prompt has higher diversity? What would you call an "average" output for each? What are rare or unusual outputs for each?</li>
-          <li><strong>Overlap and difference:</strong> What are common elements (e.g., phrases, structure) in both sets of outputs? What elements differ between the two (e.g., phrasing, length, tone)?</li>
-          <li><strong>Specific tasks with ground truth:</strong> Some questions have a verifiable answer (e.g., "What is the most common monster name in the outputs for each prompt?"). You may be asked to answer these and we can compare your answers to the data.</li>
+          <li>What kinds of responses are most common for each prompt?</li>
+          <li>How much variety exists in each set of outputs?</li>
+          <li>What do the two sets share, and what differs?</li>
         </ul>
       
         <p>
-          Your task is to explore the interface, compare the two distributions, and answer questions about how they differ. There are no trick questions—we want to see how the visualization supports this kind of comparison.
+          You'll explore the interface, compare the two distributions, and answer questions about how they differ.
         </p>
       </div>
     </div>
@@ -224,41 +257,13 @@
       <div id="task1Section" class="task-section">
         <h3>Task 1</h3>
         
-        <div class="description" style="margin: 20px 0;">
-          <p>
-            In this task, you'll compare <strong>two distributions</strong> of outputs—one from prompt A and one from prompt B. Your goal is to reason about <strong>what changed between the two prompts</strong> by exploring both sets of outputs in the visualization.
-          </p>
+        <div id="task1Intro" class="task-intro" style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6;"></div>
         
-          <p>
-            As you explore, consider:
-          </p>
-        
-          <ul>
-            <li><strong>Diversity:</strong> Which prompt produces higher diversity in its outputs?</li>
-            <li><strong>Typical vs. rare:</strong> What would you describe as an "average" or representative output for each? What are rare or unusual outputs for each?</li>
-            <li><strong>Common elements:</strong> What phrases, patterns, or structural elements appear in both sets of outputs?</li>
-            <li><strong>Different elements:</strong> What differs between the two sets (e.g., phrasing, length, tone, content)?</li>
-            <li><strong>Specific questions:</strong> You may be asked concrete questions with a right answer (e.g., the most common name or phrase in the outputs for each prompt). Use the tool to find and report these when asked.</li>
-          </ul>
-        
-          <p>
-            Use the interface to select and compare both prompts. There are no right or wrong answers for the qualitative comparisons; for specific factual questions, we're interested in whether the tool helps you find the correct answer.
-          </p>
-        </div>
-        
-        <div class="video-container">
-          <h4>Please watch the video below before starting the task</h4>
-          <!-- TODO: Replace with new video for compare distributions study -->
-          <div id="task1Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
-          <iframe 
-            id="task1Video"
-            width="1000" 
-            height="500" 
-            src="" 
-            frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
-          </iframe>
+        <div id="task1DemoContainer" class="demo-container">
+          <img 
+            id="task1Demo"
+            alt="Graph visualization description" 
+            style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;">
         </div>
 
         <div>
@@ -285,41 +290,13 @@
       <div id="task2Section" class="task-section">
         <h3>Task 2</h3>
         
-        <div class="description" style="margin: 20px 0;">
-          <p>
-            In this task, you'll again compare <strong>two distributions</strong> of outputs from two different prompts (prompt A and prompt B), but with a different dataset and/or visualization. Your goal is the same: reason about <strong>what changed between the two prompts</strong>.
-          </p>
+        <div id="task2Intro" class="task-intro" style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6;"></div>
         
-          <p>
-            As you explore, consider:
-          </p>
-        
-          <ul>
-            <li><strong>Diversity:</strong> Which prompt produces higher diversity in its outputs?</li>
-            <li><strong>Typical vs. rare:</strong> What would you describe as an "average" or representative output for each? What are rare or unusual outputs for each?</li>
-            <li><strong>Common elements:</strong> What phrases, patterns, or structural elements appear in both sets of outputs?</li>
-            <li><strong>Different elements:</strong> What differs between the two sets (e.g., phrasing, length, tone, content)?</li>
-            <li><strong>Specific questions:</strong> You may be asked concrete questions with a right answer. Use the tool to find and report these when asked.</li>
-          </ul>
-        
-          <p>
-            Use the interface to select and compare both prompts. There are no right or wrong answers for the qualitative comparisons; for specific factual questions, we're interested in whether the tool helps you find the correct answer.
-          </p>
-        </div>
-        
-        <div class="video-container">
-          <h4>Please watch the video below before starting the task</h4>
-          <!-- TODO: Replace with new video for compare distributions study -->
-          <div id="task2Description" style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6; text-align: left;"></div>
-          <iframe 
-            id="task2Video"
-            width="1000" 
-            height="500" 
-            src="" 
-            frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
-          </iframe>
+        <div id="task2DemoContainer" class="demo-container">
+          <img 
+            id="task2Demo"
+            alt="Graph visualization description" 
+            style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;">
         </div>
 
         <div>
@@ -335,6 +312,7 @@
 
         <div id="task2FormContainer" class="form-container">
           <h4>Task 2 Questionnaire</h4>
+          <p>Please complete the questionnaire after finishing Task 2.</p>
           <iframe id="task2Form" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
         </div>
       </div>
@@ -353,13 +331,22 @@
     </div>
   </div>
 
+  <!-- Shared timer (10-min circular progress) -->
+  <script src="landing_page_timer.js"></script>
+
   <!-- Navigation -->
   <div class="navigation">
     <button id="prevButton" class="nav-button" onclick="previousPage()">← Previous</button>
     
     <div class="progress-dots" id="progressDots"></div>
     
-    <button id="nextButton" class="nav-button" onclick="nextPage()">Next →</button>
+    <div class="nav-next-area">
+      <div id="tokenGate" class="token-gate hidden">
+        <label class="token-gate-prompt" for="tokenInput">Complete survey and paste token to continue:</label>
+        <input id="tokenInput" type="text" placeholder="Token" autocomplete="off" />
+      </div>
+      <button id="nextButton" class="nav-button" onclick="nextPage()">Next →</button>
+    </div>
   </div>
 
   <script>
@@ -430,10 +417,11 @@
       
       // Log leavePage event before submitting
       const timeOnPage = Date.now() - pageStartedAt;
-      logTelemetryEvent('leavePage', {
-        timeOnPage,
-        url: window.location.href,
-      });
+      const leaveData = { timeOnPage, url: window.location.href };
+      if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
+        leaveData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
+      }
+      logTelemetryEvent('leavePage', leaveData);
       
       const data = prepareTelemetryPayload();
       
@@ -471,10 +459,11 @@
       
       // Log leavePage event before submitting
       const timeOnPage = Date.now() - pageStartedAt;
-      logTelemetryEvent('leavePage', {
-        timeOnPage,
-        url: window.location.href,
-      });
+      const leaveData = { timeOnPage, url: window.location.href };
+      if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
+        leaveData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
+      }
+      logTelemetryEvent('leavePage', leaveData);
       
       const data = prepareTelemetryPayload();
       const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
@@ -551,11 +540,16 @@
       url: window.location.href,
       userAgent: navigator.userAgent,
     });
+
+    // Initialize 10-minute task timer
+    LandingPageTimer.init();
+
     // ===== END TELEMETRY SYSTEM =====
     
     // Page navigation state
     let currentPage = 1;
     const totalPages = 4;
+    const SURVEY_TOKEN = 'A89EiVjwLKJ99';
     
     // Track if tasks have been started
     let task1Started = false;
@@ -564,23 +558,16 @@
     // Number of generations to show in the visualization (passed in task URLs)
     const NUM_GENERATIONS = 20;
 
-    // Google Drive embed URLs
-    const videoExplanationGraph = 'https://drive.google.com/file/d/1DLkEhCWnByYmAWss-LITaVjsHKNCFp1v/preview';
-    const videoExplanationRawOutputs = 'https://drive.google.com/file/d/1qOgPwDVBZ1IGEx0cutb88NzZ7Xc6KZi_/preview';
+    // Static image for graph vis only (nothing for raw_outputs/list)
+    const demoImageUrl = 'annotated_graph.png';
 
     // Google Form URLs for different conditions (prefilled format)
     const formUrlCharactersTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSfbOEthQdVxALvWYzARrWYin22J4fsW0WTTy7MsPQhE6rB4Gw/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
     const formUrlPlacesTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSdLZFiFxcohdSDKzot0ptxDN82Ixx7iPnV1_My0a3WWC4nHWw/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
     const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSd5trytqg1lOWpxhnoSXUduZe7Z8qW4ep688C8S310dNDDzMw/viewform?usp=pp_url&entry.1859965680=UID&embedded=true';
 
-    // Function to get video URL based on vis type
-    function getVideoUrlForVisType(visType) {
-      if (visType === 'graph') {
-        return videoExplanationGraph.includes('[PLACEHOLDER') ? '' : videoExplanationGraph;
-      } else if (visType === 'raw_outputs') {
-        return videoExplanationRawOutputs.includes('[PLACEHOLDER') ? '' : videoExplanationRawOutputs;
-      }
-      return '';
+    function getDemoUrl(visType) {
+      return visType === 'graph' && !demoImageUrl.includes('[PLACEHOLDER') ? demoImageUrl : '';
     }
 
     // Function to get Prolific parameters as a formatted string
@@ -752,36 +739,64 @@
       return 'Monsters and places';
     }
 
-    // Helper function to get description text based on visualization type
-    function getDescriptionText(visType) {
+    // Combined intro for each task (simplified to match single distribution style)
+    const gistNote = '<strong>You do not need to read every word of every output. These questions are about getting the "gist" of the outputs. The time taken will be measured.</strong>';
+    const buttonInstruction = '<p>Click the "Start Task" button below to see the outputs, and then answer the questions below.</p>';
+    const compareNote = ' You will compare outputs from two different prompts (prompt A and prompt B).';
+
+    function getTask1Intro(visType) {
       if (visType === 'raw_outputs') {
-        return 'This tool shows many outputs generated from the same prompt.<br>Select one or more prompts at the top to compare them.';
-      } else if (visType === 'graph') {
-        return 'This tool shows many outputs generated from the same prompt.<br>Select a prompt at the top to view its outputs.<br>Outputs are summarized as a graph, where each <b>path is one generation</b> and shared words show overlap (larger words appear more often).<br>Click words to filter outputs, simplify the view to highlight common patterns, and use color to compare outputs from different prompts.';
+        return `<p>This tool shows many outputs generated from the same prompt.${compareNote}</p><p>${gistNote}</p>${buttonInstruction}`;
       }
-      return '';
+      if (visType === 'graph') {
+        return `This tool shows many outputs generated from the same prompt.${compareNote}
+<ul>
+  <li>Outputs are summarized as a graph</li>
+  <li>Each path is <b>one generation</b></li>
+  <li>Words and phrases that appear multiple times are shown larger.</li>
+  <li>Click words to filter outputs. Select prompts at the top to compare them.</li>
+</ul>
+<p>The graph shows a summary at the expense of being able to read each example through easily. <strong>Think of it as a fancy word cloud</strong>.</p>
+<p>${gistNote}</p>${buttonInstruction}`;
+      }
+      return `<p>${gistNote}</p>${buttonInstruction}`;
     }
 
-    // Helper function to get Task 2 description with intro acknowledging similarity
-    function getTask2Description(visType, task2Dataset, task1Dataset) {
-      const task2Entity = getEntityTypeText(task2Dataset);
-      const intro = `Now, we are going to be doing something similar, but instead we will be generating ${task2Entity}s.<br><br>`;
-      return intro + getDescriptionText(visType);
+    function getTask2Intro(visType, task2Dataset) {
+      const entity = getEntityTypeText(task2Dataset);
+      const intro = `<p>This task follows the same format, but with outputs about ${entity}s.</p>`;
+      if (visType === 'raw_outputs') {
+        return `${intro}<p>This tool shows many outputs generated from the same prompt.${compareNote}</p><p>${gistNote}</p>${buttonInstruction}`;
+      }
+      if (visType === 'graph') {
+        return `${intro}This tool shows many outputs generated from the same prompt.${compareNote}
+<ul>
+  <li>Outputs are summarized as a graph</li>
+  <li>Each path is <b>one generation</b></li>
+  <li>Words and phrases that appear multiple times are shown larger.</li>
+  <li>Click words to filter outputs. Select prompts at the top to compare them.</li>
+</ul>
+<p>The graph shows a summary at the expense of being able to read each example through easily. <strong>Think of it as a fancy word cloud</strong>.</p>
+<p>${gistNote}</p>${buttonInstruction}`;
+      }
+      return `${intro}<p>${gistNote}</p>${buttonInstruction}`;
     }
 
     // Update Task 1 section
     document.getElementById('task1Link').href = task1Url;
-    document.getElementById('task1Video').src = getVideoUrlForVisType(finalTask1.visType);
+    const task1DemoUrl = getDemoUrl(finalTask1.visType);
+    document.getElementById('task1Demo').src = task1DemoUrl;
+    document.getElementById('task1DemoContainer').style.display = task1DemoUrl ? 'block' : 'none';
     document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset, finalTask1.visType);
-    // Update description
-    document.getElementById('task1Description').innerHTML = getDescriptionText(finalTask1.visType);
+    document.getElementById('task1Intro').innerHTML = getTask1Intro(finalTask1.visType);
 
     // Update Task 2 section
     document.getElementById('task2Link').href = task2Url;
-    document.getElementById('task2Video').src = getVideoUrlForVisType(finalTask2.visType);
+    const task2DemoUrl = getDemoUrl(finalTask2.visType);
+    document.getElementById('task2Demo').src = task2DemoUrl;
+    document.getElementById('task2DemoContainer').style.display = task2DemoUrl ? 'block' : 'none';
     document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset, finalTask2.visType);
-    // Update description with intro acknowledging similarity
-    document.getElementById('task2Description').innerHTML = getTask2Description(finalTask2.visType, finalTask2.dataset, finalTask1.dataset);
+    document.getElementById('task2Intro').innerHTML = getTask2Intro(finalTask2.visType, finalTask2.dataset);
 
     // Update Final Survey section
     // Include both tasks' dataset and visType for the final survey
@@ -857,18 +872,26 @@
       
       // Show current page
       document.getElementById(`page${currentPage}`).classList.add('active');
+
+      // Timer only on task pages (2 and 3)
+      if (typeof LandingPageTimer !== 'undefined') {
+        LandingPageTimer.setVisible(currentPage === 2 || currentPage === 3);
+      }
       
       // Update navigation buttons
       document.getElementById('prevButton').disabled = currentPage === 1;
-      
-      // Disable Next button if on task pages and task hasn't been started
-      let nextButtonDisabled = currentPage === totalPages;
-      if (currentPage === 2 && !task1Started) {
-        nextButtonDisabled = true;
-      } else if (currentPage === 3 && !task2Started) {
-        nextButtonDisabled = true;
+
+      // Token gate: show on task pages (2 and 3), hide otherwise
+      const tokenGate = document.getElementById('tokenGate');
+      const tokenInput = document.getElementById('tokenInput');
+      if (currentPage === 2 || currentPage === 3) {
+        tokenGate.classList.remove('hidden');
+      } else {
+        tokenGate.classList.add('hidden');
+        if (tokenInput) tokenInput.value = '';
       }
-      document.getElementById('nextButton').disabled = nextButtonDisabled;
+
+      updateNextButtonState();
       
       // Update progress dots
       const dots = document.querySelectorAll('.dot');
@@ -879,6 +902,18 @@
           dot.classList.remove('active');
         }
       });
+    }
+
+    function updateNextButtonState() {
+      const tokenInput = document.getElementById('tokenInput');
+      const tokenMatch = tokenInput && tokenInput.value.trim() === SURVEY_TOKEN;
+      let nextButtonDisabled = currentPage === totalPages;
+      if (currentPage === 2) {
+        nextButtonDisabled = !task1Started || !tokenMatch;
+      } else if (currentPage === 3) {
+        nextButtonDisabled = !task2Started || !tokenMatch;
+      }
+      document.getElementById('nextButton').disabled = nextButtonDisabled;
     }
 
     // Helper function to get dataset and visType for a page
@@ -909,8 +944,7 @@
         const toPage = currentPage + 1;
         const fromPageInfo = getPageTaskInfo(currentPage);
         const toPageInfo = getPageTaskInfo(toPage);
-        
-        logTelemetryEvent('landing_page_nav', {
+        const navData = {
           action: 'next',
           fromPage: currentPage,
           toPage: toPage,
@@ -918,9 +952,21 @@
           fromVisType: fromPageInfo.visType,
           toDataset: toPageInfo.dataset,
           toVisType: toPageInfo.visType,
-        });
+        };
+        if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
+          navData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
+        }
+        logTelemetryEvent('landing_page_nav', navData);
+        if (typeof LandingPageTimer !== 'undefined' && (toPage === 2 || toPage === 3)) {
+          LandingPageTimer.reset();
+        }
+        if (toPage === 2 || toPage === 3) {
+          const ti = document.getElementById('tokenInput');
+          if (ti) ti.value = '';
+        }
         currentPage = toPage;
         updatePageDisplay();
+        window.scrollTo(0, 0);
       }
     }
 
@@ -929,8 +975,7 @@
         const toPage = currentPage - 1;
         const fromPageInfo = getPageTaskInfo(currentPage);
         const toPageInfo = getPageTaskInfo(toPage);
-        
-        logTelemetryEvent('landing_page_nav', {
+        const navData = {
           action: 'prev',
           fromPage: currentPage,
           toPage: toPage,
@@ -938,7 +983,15 @@
           fromVisType: fromPageInfo.visType,
           toDataset: toPageInfo.dataset,
           toVisType: toPageInfo.visType,
-        });
+        };
+        if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
+          navData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
+        }
+        logTelemetryEvent('landing_page_nav', navData);
+        if (toPage === 2 || toPage === 3) {
+          const ti = document.getElementById('tokenInput');
+          if (ti) ti.value = '';
+        }
         currentPage = toPage;
         updatePageDisplay();
       }
@@ -948,8 +1001,7 @@
       if (page >= 1 && page <= totalPages) {
         const fromPageInfo = getPageTaskInfo(currentPage);
         const toPageInfo = getPageTaskInfo(page);
-        
-        logTelemetryEvent('landing_page_nav', {
+        const navData = {
           action: 'dot_click',
           fromPage: currentPage,
           toPage: page,
@@ -957,11 +1009,25 @@
           fromVisType: fromPageInfo.visType,
           toDataset: toPageInfo.dataset,
           toVisType: toPageInfo.visType,
-        });
+        };
+        if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
+          navData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
+        }
+        logTelemetryEvent('landing_page_nav', navData);
+        if (page === 2 || page === 3) {
+          const ti = document.getElementById('tokenInput');
+          if (ti) ti.value = '';
+        }
         currentPage = page;
         updatePageDisplay();
       }
     }
+
+    // Token input: enable Next when correct token is entered
+    document.getElementById('tokenInput').addEventListener('input', updateNextButtonState);
+    document.getElementById('tokenInput').addEventListener('paste', function() {
+      setTimeout(updateNextButtonState, 0);
+    });
 
     // Initialize on page load
     initializeProgressDots();
