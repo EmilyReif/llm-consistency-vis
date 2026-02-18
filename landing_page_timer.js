@@ -6,10 +6,12 @@
 (function() {
   'use strict';
 
-  const TOTAL_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+  const MINUTE_MS = 60 * 1000;
+
+  const TOTAL_DURATION_MS = 5 * MINUTE_MS; // 5 minutes
   const RADIUS = 36;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-  const YELLOW_THRESHOLD_MS = 2 * 60 * 1000; // Yellow when <= 2 min remaining
+  const YELLOW_THRESHOLD_MS = 2 * MINUTE_MS; // Yellow when <= 2 min remaining
 
   function formatTime(ms) {
     const clamped = Math.max(0, ms);
