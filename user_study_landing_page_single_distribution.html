@@ -103,12 +103,13 @@
       display: block;
     }
 
-    .video-container {
+    .demo-container {
       margin: 20px 0;
       text-align: center;
     }
 
-    .video-container iframe {
+    .demo-container iframe,
+    .demo-container img {
       max-width: 100%;
       border: 1px solid #ddd;
       border-radius: 5px;
@@ -227,16 +228,11 @@
         
         <div id="task1Intro" class="task-intro" style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6;"></div>
         
-        <div id="task1VideoContainer" class="video-container">
-          <iframe 
-            id="task1Video"
-            width="1000" 
-            height="500" 
-            src="" 
-            frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
-          </iframe>
+        <div id="task1DemoContainer" class="demo-container">
+          <img 
+            id="task1Demo"
+            alt="Graph visualization description" 
+            style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;">
         </div>
 
         <div>
@@ -265,16 +261,11 @@
         
         <div id="task2Intro" class="task-intro" style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px; line-height: 1.6;"></div>
         
-        <div id="task2VideoContainer" class="video-container">
-          <iframe 
-            id="task2Video"
-            width="1000" 
-            height="500" 
-            src="" 
-            frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
-          </iframe>
+        <div id="task2DemoContainer" class="demo-container">
+          <img 
+            id="task2Demo"
+            alt="Graph visualization description" 
+            style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;">
         </div>
 
         <div>
@@ -520,19 +511,15 @@
     // Number of generations to show in the visualization (passed in task URLs)
     const NUM_GENERATIONS = 20;
 
-    // Google Drive embed URLs
-    const videoExplanationGraph = 'https://drive.google.com/file/d/1fMjPwSzvwxLNzfmsOyMpYrEY1wTwWcdI/preview';
+    // Static image for graph vis only (nothing for raw_outputs/list)
+    const demoImageUrl = 'annotated_graph.png';
 
     // Google Form URLs (prefilled format)
     const formUrlTaskTemplate = 'https://docs.google.com/forms/d/1AqV4K4564JPTTj9LBwbcYKFTuwe0z51b8XT754f-GWg/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
     const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSd5trytqg1lOWpxhnoSXUduZe7Z8qW4ep688C8S310dNDDzMw/viewform?usp=pp_url&entry.1859965680=UID&embedded=true';
 
-    // Function to get video URL based on vis type (no video for raw_outputs)
-    function getVideoUrlForVisType(visType) {
-      if (visType === 'graph') {
-        return videoExplanationGraph.includes('[PLACEHOLDER') ? '' : videoExplanationGraph;
-      }
-      return '';
+    function getDemoUrl(visType) {
+      return visType === 'graph' && !demoImageUrl.includes('[PLACEHOLDER') ? demoImageUrl : '';
     }
 
     // Function to get Prolific parameters as a formatted string
@@ -734,17 +721,17 @@
 
     // Update Task 1 section
     document.getElementById('task1Link').href = task1Url;
-    const task1VideoUrl = getVideoUrlForVisType(finalTask1.visType);
-    document.getElementById('task1Video').src = task1VideoUrl;
-    document.getElementById('task1VideoContainer').style.display = task1VideoUrl ? 'block' : 'none';
+    const task1DemoUrl = getDemoUrl(finalTask1.visType);
+    document.getElementById('task1Demo').src = task1DemoUrl;
+    document.getElementById('task1DemoContainer').style.display = task1DemoUrl ? 'block' : 'none';
     document.getElementById('task1Form').src = getFormUrlForTask(finalTask1.dataset, finalTask1.visType);
     document.getElementById('task1Intro').innerHTML = getTask1Intro(finalTask1.visType);
 
     // Update Task 2 section
     document.getElementById('task2Link').href = task2Url;
-    const task2VideoUrl = getVideoUrlForVisType(finalTask2.visType);
-    document.getElementById('task2Video').src = task2VideoUrl;
-    document.getElementById('task2VideoContainer').style.display = task2VideoUrl ? 'block' : 'none';
+    const task2DemoUrl = getDemoUrl(finalTask2.visType);
+    document.getElementById('task2Demo').src = task2DemoUrl;
+    document.getElementById('task2DemoContainer').style.display = task2DemoUrl ? 'block' : 'none';
     document.getElementById('task2Form').src = getFormUrlForTask(finalTask2.dataset, finalTask2.visType);
     document.getElementById('task2Intro').innerHTML = getTask2Intro(finalTask2.visType, finalTask2.dataset);
 
