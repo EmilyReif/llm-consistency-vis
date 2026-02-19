@@ -5,3 +5,4 @@ node_modules/*
 ipynb_experiments/venv/*
 ipynb_experiments/.ipynb_checkpoints/*
 ipynb_experiments/__pycache__/*
+user_study_results/*.csv

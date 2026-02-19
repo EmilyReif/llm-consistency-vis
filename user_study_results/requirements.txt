@@ -1,0 +1,4 @@
+pandas
+matplotlib
+seaborn  # optional, for prettier plot styling
+numpy
