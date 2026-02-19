@@ -21,10 +21,23 @@ const datasetMap: { [key: string]: { [key: string]: string[] } } = {
     'user_study_places': examplesUserStudyPlaces,
 };
 
-const datasetParam = urlParams.get(URLParam.DATASET) || 'examples';
-if (datasetParam && !datasetMap[datasetParam]) {
+const datasetParam = urlParams.get(URLParam.DATASET);
+
+let selectedDataset: { [key: string]: string[] };
+if (!datasetParam || datasetParam === '') {
+    // When dataset is unset: combine all datasets into a flattened list
+    const combined: { [key: string]: string[] } = {};
+    for (const dsData of Object.values(datasetMap)) {
+        for (const [promptKey, generations] of Object.entries(dsData)) {
+            combined[promptKey] = generations;
+        }
+    }
+    selectedDataset = combined;
+} else if (!datasetMap[datasetParam]) {
     console.warn(`Unknown dataset parameter: "${datasetParam}". Defaulting to 'examples'. Available options: ${Object.keys(datasetMap).join(', ')}`);
+    selectedDataset = datasetMap['examples'];
+} else {
+    selectedDataset = datasetMap[datasetParam];
 }
-const selectedDataset = datasetMap[datasetParam] || datasetMap['examples'];
 
 export const examples = selectedDataset;
