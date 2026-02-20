@@ -1,6 +1,6 @@
 import { NodeDatum, LinkDatum, OrigSentenceInfo } from './single_example_wordgraph';
 import * as d3 from "d3";
-import { getEmbeddings } from './embed'
+import { getEmbeddings } from './embed';
 import { cosineSimilarity } from "fast-cosine-similarity";
 import { ReachabilityChecker } from './reachability';
 import { TokenizeMode as TokenizeModeType } from './url_params_manager';
@@ -70,17 +70,14 @@ export async function tokenize(
     chunks = chunks.filter(c => c.length > 0);
 
     // wrap into tokenKeys
-    let tokens: string[] = [];
-    
+    const tokens: string[] = [];
+
     for (let i = 0; i < chunks.length; i++) {
         const chunk = chunks[i];
-        const originalChunk = chunk; // Store the original before any cleaning
-
+        const originalChunk = chunk;
         const word = chunk;
+        const tokenKey = word + sentenceIdx + i;
 
-        let tokenKey = word + sentenceIdx + i;
-
-        // Find the previous non-stopword
         let prevWord = '';
         for (let j = i - 1; j >= 0; j--) {
             if (!isStopword(chunks[j])) {
@@ -89,7 +86,6 @@ export async function tokenize(
             }
         }
 
-        // Find the next non-stopword
         let nextWord = '';
         for (let j = i + 1; j < chunks.length; j++) {
             if (!isStopword(chunks[j])) {
@@ -98,24 +94,16 @@ export async function tokenize(
             }
         }
 
-        const embEntry: EmbEntry = {
-            word,
-            prevWord,
-            nextWord,
-            idx: i
-        };
+        const embEntry: EmbEntry = { word, prevWord, nextWord, idx: i };
 
-        // Get embedding if USE_EMBS is enabled
         if (USE_EMBS) {
-            const embedding = await getEmbeddings(word);
-            embEntry.embedding = embedding;
-            const prevWordEmb = await getEmbeddings(prevWord);
-            embEntry.prevWordEmb = prevWordEmb;
-            const nextWordEmb = await getEmbeddings(nextWord);
-            embEntry.nextWordEmb = nextWordEmb;
+            embEntry.embedding = await getEmbeddings(word);
+            embEntry.prevWordEmb = await getEmbeddings(prevWord);
+            embEntry.nextWordEmb = await getEmbeddings(nextWord);
         }
+
         embsDict[tokenKey] = embEntry as EmbEntry;
-        tokensToOrigWord[tokenKey] = originalChunk; // Store the original unmodified word
+        tokensToOrigWord[tokenKey] = originalChunk;
         tokens.push(tokenKey);
     }
 
@@ -188,8 +176,8 @@ function similarity(a: string, b: string): number {
     const areSameWord = stripWhitespaceAndPunctuation(embA.word) === stripWhitespaceAndPunctuation(embB.word);
     if (bothStopwords && !isStartOrEnd && areSameWord) {
         if (USE_EMBS) {
-            const similarityPrevWords = cosineSimilarity(embA.prevWordEmb || [], embB.prevWordEmb || []) ;
-            const similarityNextWords = cosineSimilarity(embA.nextWordEmb || [], embB.nextWordEmb || []) ;
+            const similarityPrevWords = cosineSimilarity(embA.prevWordEmb || [], embB.prevWordEmb || []);
+            const similarityNextWords = cosineSimilarity(embA.nextWordEmb || [], embB.nextWordEmb || []);
             counter += Math.min(similarityPrevWords + similarityNextWords) * stopwordWeight;
         }
         else {

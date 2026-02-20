@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cosine Similarity Tester - LLM Consistency Vis</title>
+  <!-- Redirect to main app with query param so React can render the tester page -->
+  <script>
+    (function() {
+      if (window.location.search.includes('test_cos_sim=1')) return;
+      var path = window.location.pathname;
+      var base = path.replace(/\/?test_cos_sim\.html$/, '') || '/';
+      var basePath = base === '/' ? '/' : base + '/';
+      window.location.replace(window.location.origin + basePath + '?test_cos_sim=1');
+    })();
+  </script>
+</head>
+<body>
+  <p>Redirecting to cosine similarity tester...</p>
+  <noscript><p>Enable JavaScript to use the tester, or add <code>?test_cos_sim=1</code> to the main app URL.</p></noscript>
+</body>
+</html>

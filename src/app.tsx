@@ -1,8 +1,20 @@
 import './app.css';
 import './transformers_config';
 import SingleExampleApp from './single_example_app';
+import TestCosSimPage from './TestCosSimPage';
 import { telemetry, submitSession, clearSessionData, submitSessionOnUnload, shouldSubmitSession } from './telemetry';
 import { useEffect, useRef } from 'react';
+
+const isTestCosSimPage = () => {
+  if (typeof window === 'undefined') return false;
+  const p = window.location.pathname;
+  const q = new URLSearchParams(window.location.search);
+  return (
+    p === '/test_cos_sim.html' ||
+    p.endsWith('/test_cos_sim.html') ||
+    q.get('test_cos_sim') === '1'
+  );
+};
 
 function App() {
   const hasSubmittedRef = useRef(false);
@@ -76,6 +88,9 @@ function App() {
     };
   }, []);
 
+  if (isTestCosSimPage()) {
+    return <TestCosSimPage />;
+  }
   return <SingleExampleApp></SingleExampleApp>;
 }
 

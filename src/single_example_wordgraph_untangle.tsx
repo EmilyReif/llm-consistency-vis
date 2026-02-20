@@ -856,7 +856,7 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
 
         const merged = entered.merge(nodeSelection);
         if (useUniformFont) {
-            // In untangle (1D) mode: no wrapping, single line per word
+            // In untangle (1D) mode: variable font size encodes frequency, single line per word
             merged.select("text").each(function (d: NodeDisplayDatum) {
                 const text = d3.select(this);
                 text.text(null)
@@ -872,7 +872,7 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         const nodeFontSize = (d: NodeDisplayDatum) => (getNode(d) as NodeDatum).fontSize;
         merged.select("text")
             .attr("font-size", (d: NodeDisplayDatum) =>
-                UNIFORM_FONT_SIZE + interp * (nodeFontSize(d) - UNIFORM_FONT_SIZE)
+                useUniformFont ? nodeFontSize(d) : UNIFORM_FONT_SIZE + interp * (nodeFontSize(d) - UNIFORM_FONT_SIZE)
             )
             .attr("text-anchor", "start");
 
@@ -1065,7 +1065,7 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             let cumul = 0;
             for (let i = 0; i < origWords.length; i++) {
                 xPx.push(cumul);
-                cumul += this.measureTextWidth(origWords[i]) + (i < origWords.length - 1 ? GAP_PX_1D : 0);
+                cumul += this.measureTextWidth(origWords[i], path[i].fontSize) + (i < origWords.length - 1 ? GAP_PX_1D : 0);
             }
             rowData.push({ sentIdx, path, origWords, xPx });
         }
@@ -1108,13 +1108,13 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
     }
 
     /** Measure text width for 1D layout; font-size-based so it's consistent across window sizes */
-    private measureTextWidth(text: string): number {
+    private measureTextWidth(text: string, fontSize: number = UNIFORM_FONT_SIZE): number {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         if (!ctx) {
             return ((text ?? '').replace(/^##/, '')).length * PX_PER_CHAR_1D;
         }
-        ctx.font = `${UNIFORM_FONT_SIZE}px monospace`;
+        ctx.font = `${fontSize}px monospace`;
         return ctx.measureText((text ?? '').replace(/^##/, '')).width;
     }
 
