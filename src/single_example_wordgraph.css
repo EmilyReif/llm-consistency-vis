@@ -16,6 +16,10 @@ text {
     transition: filter .5s ease;
 }
 
+.node, .node text {
+    cursor: pointer;
+}
+
 .graph-controls-overlay {
     position: absolute;
     top: -80px;

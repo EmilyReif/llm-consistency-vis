@@ -551,7 +551,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                 this.setState({ hoveredNode: null, hoveredSentIndices: null });
             })
             .on('click', (event: any, d: NodeDatum) => {
-                if (!this.nodeIsInSelectedSents(d)) {
+                // When nodes are selected, only allow clicking nodes in same sentences. First click: allow any node.
+                if (this.nodeSelected() && !this.nodeIsInSelectedSents(d)) {
                     return;
                 }
                 if (this.selectedNodes.has(d)) {  // If clicking a selected node, deselect it
@@ -593,16 +594,10 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             const blurFn = (opacity: number) => `blur(2px) opacity(${opacity})`;
             const isNode = (d: any): d is NodeDatum => d.word !== undefined;
             const isInSentsFn = isNode(d) ? (d: NodeDatum) => this.nodeIsInSelectedSents(d) : (d: LinkDatum) => this.linkIsInSents(d);
-            // If nothing is selected or hovered, return no blur.
+            // Selection: blur non-selected. Hover only: no blur, just bold the token.
             if (!this.nodeSelected() && !this.state.hoveredSentIndices) return '';
-            const fullBlur = blurFn(.2);
-            const lightBlur = blurFn(.5);
-            if (this.state.hoveredSentIndices) {
-                return !isInSentsFn(d as any) ? lightBlur : '';
-            }
-            if (this.nodeSelected()) {
-                return !isInSentsFn(d as any) ? fullBlur : '';
-            }
+            if (this.nodeSelected()) return !isInSentsFn(d as any) ? blurFn(.2) : '';
+            if (this.state.hoveredSentIndices) return ''; // Pure hover: just bold, no blur
             return '';
         }
         // Use 1 second transition for phase 2 fade-in

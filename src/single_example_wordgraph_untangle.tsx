@@ -683,11 +683,10 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             const blurFn = (opacity: number) => `blur(2px) opacity(${opacity})`;
             const isLink = (x: any): x is LinkDatum => x && x.source !== undefined && x.target !== undefined;
             const isInSents = isLink(d) ? this.linkIsInSents(d) : this.nodeIsInSelectedSents(getNode(d as NodeDisplayDatum));
+            // Selection: blur non-selected. Hover only: no blur, just bold the token.
             if (!this.nodeSelected() && !this.state.hoveredSentIndices) return '';
-            const fullBlur = blurFn(.2);
-            const lightBlur = blurFn(.5);
-            if (this.state.hoveredSentIndices) return !isInSents ? lightBlur : '';
-            if (this.nodeSelected()) return !isInSents ? fullBlur : '';
+            if (this.nodeSelected()) return !isInSents ? blurFn(.2) : '';
+            if (this.state.hoveredSentIndices) return ''; // Pure hover: just bold, no blur
             return '';
         }
         // Use 1 second transition for phase 2 fade-in. During interp animation, update instantly each frame.
@@ -816,7 +815,8 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             })
             .on('click', (event: any, d: NodeDisplayDatum) => {
                 const n = getNode(d);
-                if (!this.nodeIsInSelectedSents(n)) return;
+                // When nodes are selected, only allow clicking nodes in same sentences. First click: allow any node.
+                if (this.nodeSelected() && !this.nodeIsInSelectedSents(n)) return;
                 if (this.selectedNodes.has(n)) {
                     this.selectedNodes.delete(n);
                     this.setState({ hoveredNode: null, hoveredSentIndices: null });
