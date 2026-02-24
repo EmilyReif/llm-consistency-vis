@@ -6,6 +6,7 @@
 // Enum for all URL parameter keys
 export enum URLParam {
   PROMPT_IDX = 'prompt_idx',
+  PROMPT_TEMP = 'prompt_temp',
   VIS_TYPE = 'vis_type', // graph, raw_outputs, first_output, word_tree, highlights, time_curves
   SEPARATE_GRAPHS = 'separate_graphs',
   TOKENIZE_MODE = 'tokenize_mode',
@@ -109,6 +110,30 @@ export class URLParamsManager {
       .split(',')
       .map(s => parseInt(s.trim(), 10))
       .filter(n => !isNaN(n));
+  }
+
+  /**
+   * Get per-prompt temperatures as an array (e.g. "0.2,0.4,0.6" -> [0.2, 0.4, 0.6])
+   */
+  getPromptTemps(): number[] {
+    const value = this.get(URLParam.PROMPT_TEMP);
+    if (!value) return [];
+    
+    return value
+      .split(',')
+      .map(s => parseFloat(s.trim()))
+      .filter(n => !isNaN(n) && n >= 0 && n <= 2);
+  }
+
+  /**
+   * Set per-prompt temperatures in URL
+   */
+  setPromptTemps(temps: number[]): void {
+    if (temps.length === 0) {
+      this.remove(URLParam.PROMPT_TEMP);
+      return;
+    }
+    this.set(URLParam.PROMPT_TEMP, temps.map(t => Math.round(t * 10) / 10).join(','));
   }
 
   /**

@@ -198,29 +198,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                 <span id='loader' className="loader"></span>
                 <svg id='graph-holder'></svg>
-                {!state.isUserStudy && <div className="graph-controls-overlay">
-                    <div className="slider-container">
-                        <label>Graph spread</label>
-                        <div className="tooltip">
-                            How spread out the graph is. Higher values means every output is rendered more like standard LTR text, lower values means the graph is more compact.
-                        </div>
-                        <Box sx={{ width: SLIDER_WIDTH }}>
-                            <Slider
-                                size="small"
-                                min={0}
-                                max={1}
-                                step={0.1}
-                                value={this.state.spread}
-                                onChange={(e, value) => {
-                                    this.setState({ spread: value as number });
-                                    telemetry.logSliderChange('spread', value as number);
-                                }}
-                                valueLabelDisplay="off"
-                                aria-label="Graph spread"
-                            />
-                        </Box>
-                    </div>
-
+                <div className={`graph-controls-overlay${state.isUserStudy ? ' graph-controls-overlay-user-study' : ''}`}>
                     <div className="slider-container">
                         <label>Hide Rare Outputs</label>
                         <div className="tooltip">
@@ -239,6 +217,29 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                                 }}
                                 valueLabelDisplay="off"
                                 aria-label="Hide Rare Outputs"
+                            />
+                        </Box>
+                    </div>
+
+                    {!state.isUserStudy && <>
+                    <div className="slider-container">
+                        <label>Graph spread</label>
+                        <div className="tooltip">
+                            How spread out the graph is. Higher values means every output is rendered more like standard LTR text, lower values means the graph is more compact.
+                        </div>
+                        <Box sx={{ width: SLIDER_WIDTH }}>
+                            <Slider
+                                size="small"
+                                min={0}
+                                max={1}
+                                step={0.1}
+                                value={this.state.spread}
+                                onChange={(e, value) => {
+                                    this.setState({ spread: value as number });
+                                    telemetry.logSliderChange('spread', value as number);
+                                }}
+                                valueLabelDisplay="off"
+                                aria-label="Graph spread"
                             />
                         </Box>
                     </div>
@@ -308,7 +309,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                             {this.state.animatingGeneration ? 'Animating...' : 'Animate Generation'}
                         </button>
                     </div>
-                </div>}
+                    </>}
+                </div>
                 {!urlParams.getBoolean(URLParam.HIDE_POPUPS) && (
                     <NodeExamplesPopup
                         nodes={this.state.popupNodes}
@@ -670,6 +672,12 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                     sourceOpacity = 0;
                     targetOpacity = 0;
                 }
+            }
+            
+            // Hide edge entirely when either endpoint node is hidden (no opacity gradient)
+            if (sourceOpacity === 0 || targetOpacity === 0) {
+                sourceOpacity = 0;
+                targetOpacity = 0;
             }
             
             stops.filter((_: any, j: number) => j === 0).attr("stop-opacity", sourceOpacity * multiplier);

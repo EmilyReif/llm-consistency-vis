@@ -294,6 +294,28 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                         <span className="toggle-label toggle-label-list">List</span>
                     </div>
 
+                    <div className="slider-container">
+                        <label>Hide Rare Outputs</label>
+                        <div className="tooltip">
+                            How strongly rare outputs are faded. Higher values hide nodes and edges that appear infrequently across outputs.
+                        </div>
+                        <Box sx={{ width: SLIDER_WIDTH }}>
+                            <Slider
+                                size="small"
+                                min={0}
+                                max={1}
+                                step={0.1}
+                                value={this.state.minOpacityThreshold}
+                                onChange={(e, value) => {
+                                    this.setState({ minOpacityThreshold: value as number });
+                                    telemetry.logSliderChange('minOpacityThreshold', value as number);
+                                }}
+                                valueLabelDisplay="off"
+                                aria-label="Hide Rare Outputs"
+                            />
+                        </Box>
+                    </div>
+
                     {!state.isUserStudy && <>
                     <div className="slider-container">
                         <label>Graph spread</label>
@@ -313,28 +335,6 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                                 }}
                                 valueLabelDisplay="off"
                                 aria-label="Graph spread"
-                            />
-                        </Box>
-                    </div>
-
-                    <div className="slider-container">
-                        <label>Hide Rare Outputs</label>
-                        <div className="tooltip">
-                            How strongly rare outputs are faded. Higher values hide nodes and edges that appear infrequently across outputs.
-                        </div>
-                        <Box sx={{ width: SLIDER_WIDTH }}>
-                            <Slider
-                                size="small"
-                                min={0}
-                                max={1}
-                                step={0.1}
-                                value={this.state.minOpacityThreshold}
-                                onChange={(e, value) => {
-                                    this.setState({ minOpacityThreshold: value as number });
-                                    telemetry.logSliderChange('minOpacityThreshold', value as number);
-                                }}
-                                valueLabelDisplay="off"
-                                aria-label="Hide Rare Outputs"
                             />
                         </Box>
                     </div>
@@ -754,11 +754,14 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             return this.opacityScale(node.count);
         };
         const linkOpacity = (d: LinkDatum) => {
-            const o = (opacity(d.source) + opacity(d.target)) / 2;
+            const so = opacity(d.source);
+            const to = opacity(d.target);
+            // Hide edge entirely when either endpoint node is hidden
+            if (so === 0 || to === 0) return 0;
             if (this.state.animatingGeneration && this.state.animationPhase === 'first') {
                 if (!this.isInFirstGeneration(d.source) || !this.isInFirstGeneration(d.target)) return 0;
             }
-            return o * 0.2; // match gradient multiplier from graph mode
+            return ((so + to) / 2) * 0.2; // match gradient multiplier from graph mode
         };
         this.links.select('.link-visible')
             .attr("stroke", (d: LinkDatum, i: number) => {
@@ -784,6 +787,11 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                         sourceOpacity = 0;
                         targetOpacity = 0;
                     }
+                }
+                // Hide edge entirely when either endpoint node is hidden
+                if (sourceOpacity === 0 || targetOpacity === 0) {
+                    sourceOpacity = 0;
+                    targetOpacity = 0;
                 }
                 this.defs!.selectAll(`#gradient-${i} stop`)
                     .attr("stop-opacity", (_: any, j: number) => (j === 0 ? sourceOpacity : targetOpacity) * multiplier);

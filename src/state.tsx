@@ -1,5 +1,5 @@
 import { makeAutoObservable, action, reaction } from "mobx";
-import { examples } from "./cached_examples";
+import { examples, examplesTempCache } from "./cached_examples";
 import * as color_utils from "./color_utils";
 import * as d3 from 'd3';
 import { createLLM } from "./llm/factory";
@@ -78,15 +78,26 @@ class State {
         }
 
         // Initialize the cache with the examples using the default temperature and model
-        const temp = DEFAULT_TEMP;
         const defaultModelFamily = getDefaultModelFamily();
         const defaultModel = getDefaultModel(defaultModelFamily);
+        const hasTempCache = Object.keys(examplesTempCache).length > 0;
+        const temp = hasTempCache ? 0.2 : DEFAULT_TEMP;
         
         for (const [example, outputs] of Object.entries(examples)) {
             this.generationsCache[example] ??= {};
             this.generationsCache[example][temp] ??= {};
             this.generationsCache[example][temp][defaultModelFamily] ??= {};
             this.generationsCache[example][temp][defaultModelFamily][defaultModel] = outputs;
+        }
+        // Add temp-specific cache entries (for user_study_places_temp, user_study_monsters_temp)
+        for (const [basePrompt, tempOutputs] of Object.entries(examplesTempCache)) {
+            this.generationsCache[basePrompt] ??= {};
+            for (const [tempStr, outputs] of Object.entries(tempOutputs)) {
+                const t = Math.round(parseFloat(tempStr) * 10) / 10;
+                this.generationsCache[basePrompt][t] ??= {};
+                this.generationsCache[basePrompt][t][defaultModelFamily] ??= {};
+                this.generationsCache[basePrompt][t][defaultModelFamily][defaultModel] = outputs;
+            }
         }
         
         // Parse prompt_idx URL parameter to select specific prompts
@@ -95,11 +106,12 @@ class State {
         
         if (indices.length > 0) {
             // Initialize prompts based on the provided indices
+            const defaultTemp = hasTempCache ? 0.2 : DEFAULT_TEMP;
             const validPrompts = indices
                 .filter(idx => idx >= 0 && idx < exampleKeys.length) // Only valid indices
                 .map(idx => ({
                     text: exampleKeys[idx],
-                    temp: DEFAULT_TEMP,
+                    temp: defaultTemp,
                     modelFamily: defaultModelFamily,
                     model: defaultModel
                 }));
@@ -109,7 +121,7 @@ class State {
                 console.warn(`Invalid prompt_idx parameter. Using default prompt.`);
                 this.prompts = [{ 
                     text: exampleKeys[0], 
-                    temp: DEFAULT_TEMP, 
+                    temp: hasTempCache ? 0.2 : DEFAULT_TEMP, 
                     modelFamily: defaultModelFamily, 
                     model: defaultModel 
                 }];
@@ -120,10 +132,19 @@ class State {
             // No prompt_idx parameter, use default prompt (first example)
             this.prompts = [{ 
                 text: exampleKeys[0], 
-                temp: DEFAULT_TEMP, 
+                temp: hasTempCache ? 0.2 : DEFAULT_TEMP, 
                 modelFamily: defaultModelFamily, 
                 model: defaultModel 
             }];
+        }
+
+        // Apply prompt_temp URL parameter (per-prompt temperatures)
+        const urlTemps = urlParams.getPromptTemps();
+        if (urlTemps.length > 0) {
+            this.prompts = this.prompts.map((p, i) => ({
+                ...p,
+                temp: urlTemps[i] ?? p.temp
+            }));
         }
 
         // Set up reactions to sync state changes to URL
@@ -147,6 +168,14 @@ class State {
                 if (indices.length > 0) {
                     urlParams.setPromptIndices(indices);
                 }
+            }
+        );
+
+        // Sync per-prompt temperatures to URL
+        reaction(
+            () => this.prompts.map(p => Math.round(p.temp * 10) / 10),
+            (temps) => {
+                urlParams.setPromptTemps(temps);
             }
         );
 
@@ -319,7 +348,7 @@ class State {
         if (!prompt) return [];
         
         const input = prompt.text;
-        const temp = prompt.temp;
+        const temp = Math.round(prompt.temp * 10) / 10;
         const modelFamily = prompt.modelFamily;
         const model = prompt.model;
         const numGenerations = this.numGenerations;
