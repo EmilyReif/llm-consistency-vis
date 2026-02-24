@@ -178,13 +178,15 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .range([minFontSize, maxFontSize])
             .clamp(true);
 
-        // Create opacity scale where count maps to opacity from 0 to 1
+        // Opacity: gradient by count (rarer=lighter). Slider hides nodes with count≤threshold.
+        // Slider 0=show all, 0.2=hide count≤1, 0.4=hide count≤2, 0.6=hide count≤3, etc.
+        const hideThreshold = Math.min(totalGenerations, Math.floor(this.state.minOpacityThreshold * 5));
+        const minVisibleCount = hideThreshold + 1;
         this.opacityScale = d3.scalePow()
-            .exponent(.5)
-            .domain([(this.state.minOpacityThreshold - .3) * totalGenerations / 2, totalGenerations / 2])
-            .range([0, 1])
-            .clamp(true)
-            .nice();
+            .exponent(0.6)
+            .domain([minVisibleCount, totalGenerations])
+            .range([0.6, 1]) // lowest-visible is faint, highest is full
+            .clamp(true);
 
         this.nodesData.forEach((node) => node.fontSize = this.fontSize(node));
         this.nodesData.forEach((node) => node.textLength = this.textLength(node));
@@ -631,8 +633,11 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             .style('filter', (d: LinkDatum) => getBlur(d));
 
         // Choose opacity based on animation state
+        const totalGen = this.props.promptGroups.reduce((acc, g) => acc + g.generations.length, 0);
+        const hideThreshold = Math.min(totalGen, Math.floor(this.state.minOpacityThreshold * 5));
         const opacity = (d: NodeDatum) => {
             if ((d as any).word === '' || !this.opacityScale) return 0;
+            if (d.count <= hideThreshold) return 0;
             
             if (this.state.animatingGeneration) {
                 if (this.state.animationPhase === 'first') {
