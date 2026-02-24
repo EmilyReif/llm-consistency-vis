@@ -8,7 +8,7 @@ import './single_example_app.css'
 import './loading.css'
 import { examples } from "./cached_examples";
 import Box from '@mui/material/Box';
-import Slider from '@mui/material/Slider';
+import { CommitOnReleaseSlider } from './CommitOnReleaseSlider';
 import { telemetry } from "./telemetry";
 
 const DEFAULT_TEXT = Object.keys(examples)[0];
@@ -30,11 +30,12 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         shuffle: state.shuffle,
     };
 
-    handleSliderChange = (value: number, param: string) => {
-        (this.state as any)[param] = value;
+    handleNumGenerationsCommit = (e: Event | React.SyntheticEvent, value: number | number[]) => {
+        const v = value as number;
+        (this.state as any).numGenerations = v;
         this.setState({} as any);
-        // Log telemetry for slider changes
-        telemetry.logSliderChange(param, value);
+        telemetry.logSliderChange('numGenerations', v);
+        state.setNumGenerations(v);
     };
 
     handleCheckboxChange = (event: any, param: string) => {
@@ -55,17 +56,14 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
         state.updatePromptTempAt(0, this.state.temperature);
         state.setNumGenerations(this.state.numGenerations);
         state.updatePromptTextAt(0, finalPrompt);
-
     };
 
 
     handlePromptSelect = (prompt: string) => {
         this.setState({ selectedExample: prompt });
         state.updatePromptTextAt(0, prompt);
-        // Trigger new generations without clearing the generated prompts
         state.updatePromptTempAt(0, this.state.temperature);
         state.setNumGenerations(this.state.numGenerations);
-        // Fetch new generations for the selected prompt
         state.fetchGenerationsFor(0);
     };
 
@@ -100,14 +98,13 @@ class SingleExampleApp extends React.Component<{}, SingleExampleAppState> {
                                     How many different responses the LLM will generate for each prompt. More generations help visualize the diversity of possible responses.
                                 </div>
                                 <Box sx={{ width: SLIDER_WIDTH }}>
-                                    <Slider
+                                    <CommitOnReleaseSlider
                                         size="small"
                                         min={1}
                                         max={50}
                                         step={1}
                                         value={this.state.numGenerations}
-                                        onChange={(e, value) => this.handleSliderChange(value as number, 'numGenerations')}
-                                        onChangeCommitted={() => state.setNumGenerations(this.state.numGenerations)}
+                                        onChangeCommitted={this.handleNumGenerationsCommit}
                                         valueLabelDisplay="auto"
                                         aria-label="Number of Generations"
                                     />

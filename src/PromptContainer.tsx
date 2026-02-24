@@ -3,7 +3,7 @@ import { state } from "./state";
 import { examples } from "./cached_examples";
 import { PROVIDERS, getModelsForFamily } from "./llm/config";
 import Box from '@mui/material/Box';
-import Slider from '@mui/material/Slider';
+import { CommitOnReleaseSlider } from './CommitOnReleaseSlider';
 import { telemetry } from "./telemetry";
 import { urlParams, URLParam } from "./url_params_manager";
 
@@ -97,13 +97,13 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                                 <div className="slider-container">
                                     <label>Temperature: {prompt.temp}</label>
                                     <Box sx={{ width: 150 }}>
-                                        <Slider
+                                        <CommitOnReleaseSlider
                                             size="small"
                                             min={0}
                                             max={1}
                                             step={0.1}
                                             value={prompt.temp}
-                                            onChange={(e, value) => {
+                                            onChangeCommitted={(e, value) => {
                                                 onUpdateTemp(promptIndex, value as number);
                                                 telemetry.logSliderChange('temperature', value as number, promptIndex);
                                             }}

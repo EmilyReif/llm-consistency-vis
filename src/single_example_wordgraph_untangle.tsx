@@ -10,7 +10,7 @@ import { state } from './state';
 import NodeExamplesPopup from './node_examples_popup';
 import { telemetry } from "./telemetry";
 import Box from '@mui/material/Box';
-import Slider from '@mui/material/Slider';
+import { CommitOnReleaseSlider } from './CommitOnReleaseSlider';
 import { urlParams, URLParam, TokenizeMode } from "./url_params_manager";
 
 const TRANSITION_DURATION = 300;
@@ -300,13 +300,13 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                             How strongly rare outputs are faded. Higher values hide nodes and edges that appear infrequently across outputs.
                         </div>
                         <Box sx={{ width: SLIDER_WIDTH }}>
-                            <Slider
+                            <CommitOnReleaseSlider
                                 size="small"
                                 min={0}
                                 max={1}
                                 step={0.1}
                                 value={this.state.minOpacityThreshold}
-                                onChange={(e, value) => {
+                                onChangeCommitted={(e, value) => {
                                     this.setState({ minOpacityThreshold: value as number });
                                     telemetry.logSliderChange('minOpacityThreshold', value as number);
                                 }}
@@ -323,13 +323,13 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                             How spread out the graph is. Higher values means every output is rendered more like standard LTR text, lower values means the graph is more compact.
                         </div>
                         <Box sx={{ width: SLIDER_WIDTH }}>
-                            <Slider
+                            <CommitOnReleaseSlider
                                 size="small"
                                 min={0}
                                 max={1}
                                 step={0.1}
                                 value={this.state.spread}
-                                onChange={(e, value) => {
+                                onChangeCommitted={(e, value) => {
                                     this.setState({ spread: value as number });
                                     telemetry.logSliderChange('spread', value as number);
                                 }}
@@ -345,13 +345,13 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                             How similar words need to be to be merged in the graph. Lower values merge more words together, higher values keep more words separate.
                         </div>
                         <Box sx={{ width: SLIDER_WIDTH }}>
-                            <Slider
+                            <CommitOnReleaseSlider
                                 size="small"
                                 min={0}
                                 max={1}
                                 step={0.1}
                                 value={this.state.similarityThreshold}
-                                onChange={(e, value) => {
+                                onChangeCommitted={(e, value) => {
                                     this.setState({ similarityThreshold: value as number });
                                     telemetry.logSliderChange('similarityThreshold', value as number);
                                 }}

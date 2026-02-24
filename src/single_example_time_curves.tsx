@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import './single_example_time_curves.css';
 import { observer } from "mobx-react";
+import Box from '@mui/material/Box';
+import { CommitOnReleaseSlider } from './CommitOnReleaseSlider';
 import * as d3 from "d3";
 import { UMAP } from "umap-js";
 import { getContextualTokenEmbeddings } from "./embed";
@@ -34,6 +36,7 @@ interface TimeCurvesState {
     showMultiples: boolean;
     multiplesResults: { minDist: number; spread: number; points: TokenPoint[] }[] | null;
     interpolationFraction: number; // 0 = 1D timeline, 1 = full UMAP projection
+    interpolationDraft: number | null; // during drag; committed on mouse up
 }
 
 const MARGIN = { top: 40, right: 40, bottom: 40, left: 40 };
@@ -277,6 +280,7 @@ class SingleExampleTimeCurves extends React.Component<Props, TimeCurvesState> {
             showMultiples: false,
             multiplesResults: null,
             interpolationFraction: 1,
+            interpolationDraft: null,
         };
     }
 
@@ -296,7 +300,7 @@ class SingleExampleTimeCurves extends React.Component<Props, TimeCurvesState> {
             this.updateRunId++;
             this.setState({ isLoading: true, loadingMessage: this.state.showMultiples ? "Computing small multiples…" : "Re-running UMAP…", error: null });
             this.updateVisualization(this.cachedEmbeddings);
-        } else if (prevState.interpolationFraction !== this.state.interpolationFraction && this.cachedUmapResult && !this.state.showMultiples) {
+        } else if ((prevState.interpolationFraction !== this.state.interpolationFraction || prevState.interpolationDraft !== this.state.interpolationDraft) && this.cachedUmapResult && !this.state.showMultiples) {
             this.redrawWithInterpolation();
         }
     }
@@ -328,7 +332,7 @@ class SingleExampleTimeCurves extends React.Component<Props, TimeCurvesState> {
 
     private redrawWithInterpolation = () => {
         if (!this.svgRef.current || !this.cachedUmapResult) return;
-        const interp = this.state.interpolationFraction;
+        const interp = this.state.interpolationDraft ?? this.state.interpolationFraction;
         renderCurves(this.svgRef.current, this.cachedUmapResult, this.width, this.height, { interpolation: interp });
     };
 
@@ -529,16 +533,21 @@ class SingleExampleTimeCurves extends React.Component<Props, TimeCurvesState> {
                     {(showMultiples || this.cachedUmapResult) && (
                         <label title="Interpolate between 1D timeline (left) and UMAP projection (right)">
                             Interpolation
-                            <input
-                                type="range"
-                                min={0}
-                                max={1}
-                                step={0.02}
-                                value={this.state.interpolationFraction}
-                                onChange={e => this.setState({ interpolationFraction: +e.target.value })}
-                                disabled={isLoading}
-                                className="time-curves-interp-slider"
-                            />
+                            <Box sx={{ width: 120, display: 'inline-block', ml: 0.5, verticalAlign: 'middle' }} className="time-curves-interp-slider">
+                                <CommitOnReleaseSlider
+                                    size="small"
+                                    min={0}
+                                    max={1}
+                                    step={0.02}
+                                    value={this.state.interpolationFraction}
+                                    onChange={(e, v) => this.setState({ interpolationDraft: v as number })}
+                                    onChangeCommitted={(e, v) => {
+                                        this.setState({ interpolationFraction: v as number, interpolationDraft: null });
+                                    }}
+                                    valueLabelDisplay="off"
+                                    disabled={isLoading}
+                                />
+                            </Box>
                         </label>
                     )}
                     {!showMultiples && (
@@ -603,7 +612,7 @@ class SingleExampleTimeCurves extends React.Component<Props, TimeCurvesState> {
                                     label={`minDist=${r.minDist} spread=${r.spread}`}
                                     width={miniSize}
                                     height={miniSize}
-                                    interpolation={this.state.interpolationFraction}
+                                    interpolation={this.state.interpolationDraft ?? this.state.interpolationFraction}
                                 />
                             ))}
                         </div>
