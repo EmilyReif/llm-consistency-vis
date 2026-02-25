@@ -14,6 +14,16 @@
     margin-top: 1rem;
 }
 
+/* User study with exactly 2 prompts: 50%/50% side by side */
+.outputs.outputs-user-study-two-prompts {
+    flex-direction: row;
+}
+
+.outputs.outputs-user-study-two-prompts .prompt-output-group {
+    flex: 1;
+    min-width: 0;
+}
+
 .instruction-text {
     text-align: left;
     color: #666;

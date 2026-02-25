@@ -476,10 +476,10 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
 
     }
 
-    private toggleLoading(isLoading = false) {
+    private toggleLoading(isLoading = false, hasRealData = false) {
         d3.select("#graph-holder").classed('hidden', isLoading);
         d3.select("#loader").classed('hidden', !isLoading);
-        if (!isLoading && state.isUserStudy) {
+        if (!isLoading && state.isUserStudy && hasRealData) {
             telemetry.logGraphVisLoaded('graph_untangle');
         }
     }
@@ -497,7 +497,8 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
 
             // Create the simulation.
             this.updateSimulation(true);
-            this.toggleLoading(false);
+            const hasRealData = this.props.promptGroups.some(g => g.generations && g.generations.length > 0);
+            this.toggleLoading(false, hasRealData);
         }, 0);
     }
 

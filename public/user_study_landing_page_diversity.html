@@ -348,9 +348,7 @@
       <div class="task-section">
         <h3>Final Survey</h3>
         <p>Thank you for completing the comparisons! Please complete this questionnaire about each interface and how they compare.</p>
-        <!-- TODO: Replace with actual Google Forms URL -->
         <iframe id="finalSurveyForm" src="about:blank" width="100%" height="800" frameborder="0" marginheight="0" marginwidth="0" style="margin-top: 20px;">Loading…</iframe>
-        <p style="margin-top: 15px; font-size: 0.9em; color: #7f8c8d;"><strong>TODO:</strong> Add Google Forms URL for final questionnaire (per-interface and comparison questions).</p>
       </div>
     </div>
   </div>
@@ -452,9 +450,17 @@
     // ===== CONFIG =====
     const TASK_DURATION_SECONDS = 180; // use 180 for real study (3 min)
     const NUM_GENERATIONS = 20;
-    const TEMP_PAIRS = [[0.1, 0.3], [0.2, 0.4], [0.3, 0.5], [0.4, 0.6], [0.5, 0.7], [0.6, 0.8], [0.7, 0.9], [0.8, 1.0]];
+    const TEMP_DIFF = 0.1; // difference between low and high in each pair
+    const TEMP_MIN = 0.1, TEMP_MAX = 1.0;
+    const TEMP_PAIRS = (() => {
+      const pairs = [];
+      for (let low = TEMP_MIN; low <= TEMP_MAX - TEMP_DIFF; low += TEMP_DIFF) {
+        pairs.push([low, low + TEMP_DIFF]);
+      }
+      return pairs;
+    })();
     const PROMPT_COUNT = 3; // places_temp and monsters_temp each have 3 base prompts
-    const MAX_QUESTIONS_PER_BLOCK = 30;
+    const MAX_QUESTIONS_PER_BLOCK = 100;
 
     function getUrlParam(name) {
       return new URLSearchParams(window.location.search).get(name);
@@ -611,6 +617,10 @@
         document.getElementById('timeUp2').classList.remove('visible');
         loadQuestion2();
       }
+      if (p === 6) {
+        const paramsString = encodeURIComponent(getProlificParamsStringForSurvey());
+        document.getElementById('finalSurveyForm').src = formUrlFinalSurveyTemplate.replace('UID', paramsString);
+      }
 
       updateNextButton();
       updatePairNavButtons();
@@ -654,6 +664,8 @@
       const elapsed = Date.now() - questionStartTime;
 
       if (q && answer) {
+        const correct = answer === q.groundTruth;
+        console.log(correct ? 'correct' : 'incorrect');
         logTelemetryEvent('diversity_comparison_answer', {
           block: blockNum,
           questionIndex: isBlock1 ? block1QuestionIdx : block2QuestionIdx,
@@ -664,7 +676,7 @@
           temp2: q.temp2,
           groundTruth: q.groundTruth,
           userAnswer: answer,
-          correct: answer === q.groundTruth,
+          correct,
           timeMs: elapsed,
           url: buildVisUrl(q),
         });
@@ -822,9 +834,17 @@
       dotsContainer.appendChild(dot);
     }
 
-    // TODO: Final survey Google Form URL
-    // const FORM_URL = 'https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?usp=pp_url&entry.XXX=UID&embedded=true';
-    // document.getElementById('finalSurveyForm').src = FORM_URL.replace('UID', encodeURIComponent(/* params */));
+    // Final survey Google Form URL (same url params as other user studies: prolific_pid, session_id, study_id, dataset, vis_type)
+    const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSdbZExs24Eij_axclID1CtcHMrqg0Ikzu-k7v8X45MUbb5rvQ/viewform?usp=pp_url&entry.1859965680=UID&embedded=true';
+    function getProlificParamsStringForSurvey() {
+      const params = [];
+      if (prolificPid) params.push(`prolific_pid=${prolificPid}`);
+      if (sessionId) params.push(`session_id=${sessionId}`);
+      if (studyId) params.push(`study_id=${studyId}`);
+      params.push(`dataset=${half1.dataset},${half2.dataset}`);
+      params.push(`vis_type=${half1.visType},${half2.visType}`);
+      return params.join('&');
+    }
 
     goToPage(1);
   </script>

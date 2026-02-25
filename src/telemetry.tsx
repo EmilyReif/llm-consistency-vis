@@ -328,7 +328,14 @@ export const telemetry = {
   // Graph visualization finished loading and is viewable (for excluding load time from experiment analysis)
   logGraphVisLoaded: (visType: 'graph' | 'graph_untangle') => {
     const timeSincePageLoadMs = typeof performance !== 'undefined' ? performance.now() : 0;
+    console.log('graph loaded', timeSincePageLoadMs);
     logEvent('graph_vis_loaded', { visType, timeSincePageLoadMs });
+  },
+
+  // List (raw_outputs) visualization finished loading and is viewable (for excluding load time from experiment analysis)
+  logListVisLoaded: () => {
+    const timeSincePageLoadMs = typeof performance !== 'undefined' ? performance.now() : 0;
+    logEvent('list_vis_loaded', { visType: 'raw_outputs', timeSincePageLoadMs });
   },
 
   // Visualization type change

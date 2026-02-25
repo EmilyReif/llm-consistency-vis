@@ -18,6 +18,7 @@ class SingleExample extends React.Component {
         promptGroups: [] as { promptId: string, generations: string[] }[]
     };
     disposer?: () => void;
+    private hasLoggedListLoadRef = false;
 
     private getPromptGroupKey(prompt: any, originalIndex: number): string {
         return `${prompt.text}\x01${originalIndex}\x01${prompt.modelFamily}_${prompt.model}`;
@@ -144,8 +145,11 @@ renderOutputsBasic(firstOnly: boolean = false) {
         return <div className="outputs">No outputs available</div>;
     }
 
+    const isUserStudyTwoPrompts = state.isUserStudy && this.state.promptGroups.length === 2;
+    const outputsClassName = `outputs${isUserStudyTwoPrompts ? ' outputs-user-study-two-prompts' : ''}`;
+
     return (
-        <div className="outputs">
+        <div className={outputsClassName}>
             {this.state.promptGroups.map((group, groupIndex) => {
                 const originalIndex = color_utils.getPromptIndexFromId(group.promptId);
                 const backgroundColor = state.getPromptColor(originalIndex);
@@ -194,12 +198,32 @@ renderOutputsBasic(firstOnly: boolean = false) {
     if (state.isUserStudy && (state.visType === 'word_tree' || state.visType === 'highlights' || state.visType === 'time_curves')) {
       state.setVisType('graph');
     }
+
+    // Log list load time when raw_outputs/first_output is displayed with real final data (mirrors graph_vis_loaded)
+    const isListVis = state.visType === 'raw_outputs' || state.visType === 'first_output';
+    const hasRealData = this.state.promptGroups.some(g => g.generations && g.generations.length > 0);
+    if (state.isUserStudy && isListVis && hasRealData && !this.hasLoggedListLoadRef) {
+      this.hasLoggedListLoadRef = true;
+      requestAnimationFrame(() => {
+        telemetry.logListVisLoaded();
+      });
+    }
   }
 
   componentDidMount() {
     // If user study mode and current visType is hidden, switch to graph
     if (state.isUserStudy && (state.visType === 'word_tree' || state.visType === 'highlights' || state.visType === 'time_curves')) {
       state.setVisType('graph');
+    }
+
+    // Log list load time when raw_outputs/first_output is displayed with real final data (mirrors graph_vis_loaded)
+    const isListVis = state.visType === 'raw_outputs' || state.visType === 'first_output';
+    const hasRealData = this.state.promptGroups.some(g => g.generations && g.generations.length > 0);
+    if (state.isUserStudy && isListVis && hasRealData && !this.hasLoggedListLoadRef) {
+      this.hasLoggedListLoadRef = true;
+      requestAnimationFrame(() => {
+        telemetry.logListVisLoaded();
+      });
     }
 
     // react to changes in observable MobX state

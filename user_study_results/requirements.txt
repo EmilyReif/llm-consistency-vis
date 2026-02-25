@@ -2,3 +2,4 @@ pandas
 matplotlib
 seaborn  # optional, for prettier plot styling
 numpy
+altair  # for event dots timeline (Vega-Lite)
