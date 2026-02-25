@@ -452,7 +452,15 @@
     // ===== CONFIG =====
     const TASK_DURATION_SECONDS = 180; // use 180 for real study (3 min)
     const NUM_GENERATIONS = 10;
-    const TEMP_PAIRS = [[0.1, 0.3], [0.2, 0.4], [0.3, 0.5], [0.4, 0.6], [0.5, 0.7], [0.6, 0.8], [0.7, 0.9], [0.8, 1.0]];
+    const TEMP_DIFF = 0.1; // difference between low and high in each pair
+    const TEMP_MIN = 0.1, TEMP_MAX = 1.0;
+    const TEMP_PAIRS = (() => {
+      const pairs = [];
+      for (let low = TEMP_MIN; low <= TEMP_MAX - TEMP_DIFF; low += TEMP_DIFF) {
+        pairs.push([low, low + TEMP_DIFF]);
+      }
+      return pairs;
+    })();
     const PROMPT_COUNT = 3; // places_temp and monsters_temp each have 3 base prompts
     const MAX_QUESTIONS_PER_BLOCK = 30;
 
