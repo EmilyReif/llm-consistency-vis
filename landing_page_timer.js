@@ -1,17 +1,27 @@
 /**
- * Shared 5-minute count-down circular progress timer for user study landing pages.
+ * Shared count-down circular progress timer for user study landing pages.
  * Only visible on task pages. Resets when user hits Next.
+ *
  * Usage: LandingPageTimer.init(); then call setVisible(), reset() from landing page.
+ *
+ * Options:
+ *   durationMs - Total timer duration (default: 5 min)
+ *   yellowThresholdMs - Remaining time below which to show yellow warning (default: 2 min or 40% of duration, whichever is less)
+ *   overtimeMessage - Message when time runs out (default: "Please move to the next task as soon as possible.")
+ *   onElapsedChange - Callback(elapsed, remaining) called each tick
  */
 (function() {
   'use strict';
 
   const MINUTE_MS = 60 * 1000;
+  const DEFAULT_DURATION_MS = 5 * MINUTE_MS;
+  const DEFAULT_YELLOW_MS = 2 * MINUTE_MS;
 
-  const TOTAL_DURATION_MS = 5 * MINUTE_MS; // 5 minutes
+  let totalDurationMs = DEFAULT_DURATION_MS;
+  let yellowThresholdMs = DEFAULT_YELLOW_MS;
+  let overtimeMessage = 'Please move to the next task as soon as possible.';
   const RADIUS = 36;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-  const YELLOW_THRESHOLD_MS = 2 * MINUTE_MS; // Yellow when <= 2 min remaining
 
   function formatTime(ms) {
     const clamped = Math.max(0, ms);
@@ -23,12 +33,12 @@
 
   function getColorState(remainingMs) {
     if (remainingMs <= 0) return 'red';
-    if (remainingMs <= YELLOW_THRESHOLD_MS) return 'yellow';
+    if (remainingMs <= yellowThresholdMs) return 'yellow';
     return 'green';
   }
 
   function getProgressFraction(remainingMs) {
-    return Math.min(1, Math.max(0, remainingMs / TOTAL_DURATION_MS));
+    return Math.min(1, Math.max(0, remainingMs / totalDurationMs));
   }
 
   let startTime = null;
@@ -39,7 +49,7 @@
   function update() {
     if (!startTime || !containerEl) return;
     const elapsed = Date.now() - startTime;
-    const remaining = TOTAL_DURATION_MS - elapsed;
+    const remaining = totalDurationMs - elapsed;
     const color = getColorState(remaining);
     const fraction = getProgressFraction(remaining);
     const timeStr = formatTime(remaining);
@@ -67,6 +77,7 @@
     const msgEl = containerEl.querySelector('.timer-overtime-msg');
     if (msgEl) {
       msgEl.style.display = isOvertime ? 'block' : 'none';
+      msgEl.textContent = overtimeMessage;
     }
 
     // Update container class for color state
@@ -74,7 +85,7 @@
     containerEl.classList.add(color === 'green' ? 'timer-green' : color === 'yellow' ? 'timer-yellow' : 'timer-red');
 
     if (onElapsedChangeCallback) {
-      onElapsedChangeCallback(elapsed);
+      onElapsedChangeCallback(elapsed, remaining);
     }
   }
 
@@ -107,7 +118,7 @@
             '<circle class="timer-progress-circle" cx="40" cy="40" r="' + RADIUS + '" fill="none" stroke-width="6" stroke="#4caf50" stroke-linecap="round" transform="rotate(-90 40 40)" stroke-dasharray="' + CIRCUMFERENCE + '" stroke-dashoffset="' + CIRCUMFERENCE + '" />' +
           '</svg>' +
           '<div class="timer-inner">' +
-            '<span class="timer-time">00:00</span>' +
+            '<span class="timer-time">' + formatTime(totalDurationMs) + '</span>' +
           '</div>' +
         '</div>' +
         '<div class="timer-overtime-msg" style="display: none;">Please move to the next task as soon as possible.</div>' +
@@ -118,6 +129,11 @@
   window.LandingPageTimer = {
     init: function(options) {
       options = options || {};
+      totalDurationMs = options.durationMs || DEFAULT_DURATION_MS;
+      yellowThresholdMs = options.yellowThresholdMs !== undefined
+        ? options.yellowThresholdMs
+        : Math.min(DEFAULT_YELLOW_MS, totalDurationMs * 0.4);
+      overtimeMessage = options.overtimeMessage || overtimeMessage;
       onElapsedChangeCallback = options.onElapsedChange || null;
       startTime = Date.now();
 
@@ -155,13 +171,13 @@
     },
 
     getRemainingMs: function() {
-      return startTime ? Math.max(0, TOTAL_DURATION_MS - (Date.now() - startTime)) : TOTAL_DURATION_MS;
+      return startTime ? Math.max(0, totalDurationMs - (Date.now() - startTime)) : totalDurationMs;
     },
 
     getStartTime: function() {
       return startTime;
     },
 
-    TOTAL_DURATION_MS: TOTAL_DURATION_MS
+    get TOTAL_DURATION_MS() { return totalDurationMs; }
   };
 })();
