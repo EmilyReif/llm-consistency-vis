@@ -198,7 +198,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                 <span id='loader' className="loader"></span>
                 <svg id='graph-holder'></svg>
-                <div className={`graph-controls-overlay${state.isUserStudy ? ' graph-controls-overlay-user-study' : ''}`}>
+                {!state.isUserStudy ? (
+                <div className="graph-controls-overlay">
                     <div className="slider-container">
                         <label>Hide Rare Outputs</label>
                         <div className="tooltip">
@@ -220,8 +221,6 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                             />
                         </Box>
                     </div>
-
-                    {!state.isUserStudy && <>
                     <div className="slider-container">
                         <label>Graph spread</label>
                         <div className="tooltip">
@@ -309,8 +308,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                             {this.state.animatingGeneration ? 'Animating...' : 'Animate Generation'}
                         </button>
                     </div>
-                    </>}
                 </div>
+                ) : null}
                 {!urlParams.getBoolean(URLParam.HIDE_POPUPS) && (
                     <NodeExamplesPopup
                         nodes={this.state.popupNodes}
@@ -370,6 +369,9 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
     private toggleLoading(isLoading = false) {
         d3.select("#graph-holder").classed('hidden', isLoading);
         d3.select("#loader").classed('hidden', !isLoading);
+        if (!isLoading && state.isUserStudy) {
+            telemetry.logGraphVisLoaded('graph');
+        }
     }
 
     private async rebuildGraph() {

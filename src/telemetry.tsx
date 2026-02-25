@@ -324,7 +324,13 @@ export const telemetry = {
   logGraphZoom: (scale: number, translateX: number, translateY: number) => {
     logEvent('graph_zoom', { scale, translateX, translateY });
   },
-  
+
+  // Graph visualization finished loading and is viewable (for excluding load time from experiment analysis)
+  logGraphVisLoaded: (visType: 'graph' | 'graph_untangle') => {
+    const timeSincePageLoadMs = typeof performance !== 'undefined' ? performance.now() : 0;
+    logEvent('graph_vis_loaded', { visType, timeSincePageLoadMs });
+  },
+
   // Visualization type change
   logVisTypeChange: (visType: string) => {
     logEvent('vis_type_change', { visType });

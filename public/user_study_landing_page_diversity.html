@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Study - Diversity Comparison</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      color: #34495e;
+      border-bottom: 2px solid #ecf0f1;
+      padding-bottom: 10px;
+    }
+
+    .page-container {
+      min-height: 500px;
+      position: relative;
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(10px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .description {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid #3498db;
+    }
+
+    .task-section {
+      background-color: #ffffff;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .task-section h3 {
+      color: #2c3e50;
+      margin-top: 0;
+    }
+
+    .demo-container {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .demo-container img {
+      max-width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .comparison-block {
+      margin: 25px 0;
+    }
+
+    .comparison-block.pair-transition {
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .vis-link,
+    .vis-button {
+      display: inline-block;
+      background-color: #3498db;
+      color: white !important;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin: 15px 0;
+      font-weight: 500;
+      transition: background-color 0.3s;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .vis-link:hover,
+    .vis-button:hover {
+      background-color: #2980b9;
+    }
+
+    .vis-link.clicked,
+    .vis-button.clicked {
+      background-color: #27ae60;
+    }
+
+    .radio-group {
+      margin: 25px 0;
+      padding: 20px;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #95a5a6;
+    }
+
+    .radio-group.disabled {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .radio-group.enabled {
+      border-left-color: #3498db;
+    }
+
+    .radio-group label {
+      display: block;
+      margin: 10px 0;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .radio-group input[type="radio"] {
+      margin-right: 10px;
+    }
+
+    .color-swatch {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+
+    .color-swatch.orange { background-color: #f47942; }
+    .color-swatch.blue { background-color: #4f6980; }
+
+    .time-up-banner {
+      display: none;
+      padding: 20px;
+      background-color: #d32f2f;
+      color: white;
+      border-radius: 8px;
+      font-weight: 600;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .time-up-banner.visible { display: block; }
+
+    .question-counter {
+      font-size: 0.9em;
+      color: #7f8c8d;
+      margin-bottom: 15px;
+    }
+
+    .pair-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0;
+      padding-top: 15px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .pair-nav-button {
+      background-color: #95a5a6;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .pair-nav-button:hover:not(:disabled) {
+      background-color: #7f8c8d;
+    }
+
+    .pair-nav-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pair-nav-spacer {
+      width: 100px;
+    }
+
+    .navigation {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid #ecf0f1;
+    }
+
+    .nav-button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .nav-button:hover:not(:disabled) {
+      background-color: #2980b9;
+    }
+
+    .nav-button:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .progress-dots {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: #bdc3c7;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .dot.active {
+      background-color: #3498db;
+      transform: scale(1.2);
+    }
+  </style>
+</head>
+<body>
+  <h1>LLM Output Diversity Study</h1>
+
+  <div class="page-container">
+    <!-- Page 1: Overview -->
+    <div id="page1" class="page active">
+      <div class="description">
+        <h2>Study Overview</h2>
+        <p>
+          Large Language Models (LLMs) are <strong>stochastic</strong>—they don't produce the same output every time. When you give an LLM the same prompt multiple times, you get a <strong>distribution of possible outputs</strong>. Higher "temperature" settings typically produce more diverse outputs, while lower temperatures produce more similar ones.
+        </p>
+        <p>
+          In this study, you'll compare two sets of outputs from the <strong>same prompt</strong> but generated with different temperature settings. Your task is to determine <strong>which set has higher diversity</strong> (orange vs. blue). You'll do this using two different visualization interfaces.
+        </p>
+        <ul>
+          <li>You'll see a link that opens a visualization showing both sets side-by-side.</li>
+          <li>After viewing, select whether orange or blue has higher diversity.</li>
+          <li>You'll have 3 minutes per interface to answer as many comparison questions as you can.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Page 2: Interface 1 Explanation -->
+    <div id="page2" class="page">
+      <div class="task-section">
+        <h3>Interface 1</h3>
+        <div id="interface1Intro" class="description" style="margin-top: 15px;"></div>
+        <div id="interface1DemoContainer" class="demo-container">
+          <img id="interface1Demo" alt="Graph visualization preview" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 3: Interface 1 Comparison Block -->
+    <div id="page3" class="page">
+      <div class="task-section">
+        <h3>Interface 1 – Diversity Comparisons</h3>
+        <p>Open the visualization and answer which set (orange or blue) has higher diversity.</p>
+        <div class="question-counter" id="questionCounter1"></div>
+        <div class="time-up-banner" id="timeUp1">Time is up! Click Next to continue to the next interface.</div>
+        <div class="comparison-block">
+          <button type="button" id="visLink1" class="vis-button">Open visualization (opens in new tab) →</button>
+          <div id="radioGroup1" class="radio-group disabled">
+            <p style="margin-top: 0;">Which set has <strong>higher diversity</strong>? (Click the button above first)</p>
+            <label><input type="radio" name="answer1" value="blue" /> <span class="color-swatch blue"></span> Blue</label>
+            <label><input type="radio" name="answer1" value="orange" /> <span class="color-swatch orange"></span> Orange</label>
+          </div>
+          <div class="pair-nav">
+            <span class="pair-nav-spacer"></span>
+            <button id="nextPair1" class="pair-nav-button">Next pair →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 4: Interface 2 Explanation -->
+    <div id="page4" class="page">
+      <div class="task-section">
+        <h3>Interface 2</h3>
+        <div id="interface2Intro" class="description" style="margin-top: 15px;"></div>
+        <div id="interface2DemoContainer" class="demo-container">
+          <img id="interface2Demo" alt="Graph visualization preview" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px;" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 5: Interface 2 Comparison Block -->
+    <div id="page5" class="page">
+      <div class="task-section">
+        <h3>Interface 2 – Diversity Comparisons</h3>
+        <p>Open the visualization and answer which set (orange or blue) has higher diversity.</p>
+        <div class="question-counter" id="questionCounter2"></div>
+        <div class="time-up-banner" id="timeUp2">Time is up! Click Next to continue to the questionnaire.</div>
+        <div class="comparison-block">
+          <button type="button" id="visLink2" class="vis-button">Open visualization (opens in new tab) →</button>
+          <div id="radioGroup2" class="radio-group disabled">
+            <p style="margin-top: 0;">Which set has <strong>higher diversity</strong>? (Click the button above first)</p>
+            <label><input type="radio" name="answer2" value="blue" /> <span class="color-swatch blue"></span> Blue</label>
+            <label><input type="radio" name="answer2" value="orange" /> <span class="color-swatch orange"></span> Orange</label>
+          </div>
+          <div class="pair-nav">
+            <span class="pair-nav-spacer"></span>
+            <button id="nextPair2" class="pair-nav-button">Next pair →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 6: Final Questionnaire -->
+    <div id="page6" class="page">
+      <div class="task-section">
+        <h3>Final Survey</h3>
+        <p>Thank you for completing the comparisons! Please complete this questionnaire about each interface and how they compare.</p>
+        <!-- TODO: Replace with actual Google Forms URL -->
+        <iframe id="finalSurveyForm" src="about:blank" width="100%" height="800" frameborder="0" marginheight="0" marginwidth="0" style="margin-top: 20px;">Loading…</iframe>
+        <p style="margin-top: 15px; font-size: 0.9em; color: #7f8c8d;"><strong>TODO:</strong> Add Google Forms URL for final questionnaire (per-interface and comparison questions).</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="landing_page_timer.js"></script>
+
+  <div class="navigation">
+    <button id="prevButton" class="nav-button" onclick="previousPage()">← Previous</button>
+    <div class="progress-dots" id="progressDots"></div>
+    <button id="nextButton" class="nav-button">Next →</button>
+  </div>
+
+  <script>
+    document.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') e.preventDefault();
+    }, true);
+
+    // ===== TELEMETRY =====
+    const TELEMETRY_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzjSK-bJaYB15HqtNBDNK9kjoDdJS9LDmkxMkoK22ij_kzsdGqtu5B58HIisn-qo5Ls/exec';
+    let telemetryEvents = [];
+    let pageStartedAt = Date.now();
+    let hasSubmitted = false;
+
+    function getTelemetryUrlParam(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
+
+    function getTelemetryMetadata() {
+      return {
+        interfaceVersion: 'landing_page_diversity',
+        startedAt: pageStartedAt,
+        prolificPid: getTelemetryUrlParam('prolific_pid') || undefined,
+        sessionId: getTelemetryUrlParam('session_id') || undefined,
+        studyId: getTelemetryUrlParam('study_id') || undefined,
+      };
+    }
+
+    function logTelemetryEvent(type, data) {
+      telemetryEvents.push({
+        timestamp: Date.now(),
+        type,
+        data,
+        ...getTelemetryMetadata(),
+      });
+    }
+
+    function getParticipantId() {
+      const parts = ['prolific_pid', 'session_id', 'study_id']
+        .map(k => getTelemetryUrlParam(k))
+        .filter(Boolean);
+      return parts.join('_');
+    }
+
+    async function submitTelemetryAsync() {
+      if (hasSubmitted || telemetryEvents.length === 0) return false;
+      const data = JSON.stringify({
+        participantId: getParticipantId(),
+        interfaceVersion: 'landing_page_diversity',
+        telemetry: telemetryEvents,
+      });
+      try {
+        const r = await fetch(TELEMETRY_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: data });
+        if (r.ok && (await r.json()).status === 'ok') {
+          hasSubmitted = true;
+          return true;
+        }
+      } catch (e) { console.error(e); }
+      return false;
+    }
+
+    function submitTelemetrySync() {
+      if (hasSubmitted || telemetryEvents.length === 0) return;
+      const data = JSON.stringify({
+        participantId: getParticipantId(),
+        interfaceVersion: 'landing_page_diversity',
+        telemetry: telemetryEvents,
+      });
+      const blob = new Blob([data], { type: 'text/plain;charset=utf-8' });
+      navigator.sendBeacon(TELEMETRY_ENDPOINT, blob) || fetch(TELEMETRY_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: data, keepalive: true }).catch(() => {});
+      hasSubmitted = true;
+    }
+
+    let hasSubmittedRef = false;
+    const handleAutoSubmit = async () => {
+      if (hasSubmittedRef || hasSubmitted || telemetryEvents.length === 0) return;
+      hasSubmittedRef = true;
+      if (!(await submitTelemetryAsync())) hasSubmittedRef = false;
+    };
+    window.addEventListener('blur', handleAutoSubmit);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) handleAutoSubmit(); });
+    const submitOnUnload = () => {
+      if (!hasSubmittedRef && !hasSubmitted && telemetryEvents.length > 0) { hasSubmittedRef = true; submitTelemetrySync(); }
+    };
+    window.onbeforeunload = submitOnUnload;
+    window.addEventListener('pagehide', submitOnUnload);
+
+    logTelemetryEvent('page_load', { url: window.location.href, userAgent: navigator.userAgent });
+
+    // ===== CONFIG =====
+    const TASK_DURATION_SECONDS = 180; // use 180 for real study (3 min)
+    const NUM_GENERATIONS = 20;
+    const TEMP_PAIRS = [[0.1, 0.3], [0.2, 0.4], [0.3, 0.5], [0.4, 0.6], [0.5, 0.7], [0.6, 0.8], [0.7, 0.9], [0.8, 1.0]];
+    const PROMPT_COUNT = 3; // places_temp and monsters_temp each have 3 base prompts
+    const MAX_QUESTIONS_PER_BLOCK = 30;
+
+    function getUrlParam(name) {
+      return new URLSearchParams(window.location.search).get(name);
+    }
+
+    function getBaseUrl() {
+      const path = window.location.pathname;
+      return window.location.origin + path.substring(0, path.lastIndexOf('/') + 1);
+    }
+
+    const prolificPid = getUrlParam('prolific_pid') || '';
+    const sessionId = getUrlParam('session_id') || '';
+    const studyId = getUrlParam('study_id') || '';
+
+    function seededRandom(seed) {
+      let v = seed;
+      return function() {
+        v = (v * 9301 + 49297) % 233280;
+        return v / 233280;
+      };
+    }
+
+    const seed = prolificPid ? prolificPid.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : Date.now();
+    const random = seededRandom(seed);
+
+    function shuffleArray(arr, rng) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // Task assignments: {list/graph} x {monsters/places} for half 1, other combo for half 2
+    const datasets = ['user_study_places_temp', 'user_study_monsters_temp'];
+    const visTypes = ['graph', 'raw_outputs'];
+    const combos = [];
+    datasets.forEach(d => visTypes.forEach(v => combos.push({ dataset: d, visType: v })));
+    const shuffled = shuffleArray(combos, random);
+    const half1 = shuffled[0];
+    const half2 = combos.find(c => c.dataset !== half1.dataset && c.visType !== half1.visType);
+
+    // Build question pool for a block
+    function buildQuestionPool(dataset, visType) {
+      const pool = [];
+      for (let p = 0; p < PROMPT_COUNT; p++) {
+        for (const [tLow, tHigh] of TEMP_PAIRS) {
+          const swap = random() < 0.5;
+          const temp1 = swap ? tHigh : tLow;
+          const temp2 = swap ? tLow : tHigh;
+          const groundTruth = swap ? 'blue' : 'orange'; // first=blue, second=orange
+          pool.push({
+            dataset,
+            visType,
+            promptIdx: p,
+            temp1,
+            temp2,
+            groundTruth,
+          });
+        }
+      }
+      return shuffleArray(pool, random).slice(0, MAX_QUESTIONS_PER_BLOCK);
+    }
+
+    const pool1 = buildQuestionPool(half1.dataset, half1.visType);
+    const pool2 = buildQuestionPool(half2.dataset, half2.visType);
+
+    function buildVisUrl(q) {
+      const params = new URLSearchParams({
+        is_user_study: 'true',
+        hide_popups: 'true',
+        separate_graphs: q.visType === 'graph' ? 'true' : 'false',
+        num_generations: NUM_GENERATIONS.toString(),
+        dataset: q.dataset,
+        vis_type: q.visType,
+        prompt_idx: q.promptIdx + ',' + q.promptIdx,
+        prompt_temp: q.temp1 + ',' + q.temp2,
+      });
+      if (prolificPid) params.set('prolific_pid', prolificPid);
+      if (sessionId) params.set('session_id', sessionId);
+      if (studyId) params.set('study_id', studyId);
+      return getBaseUrl() + 'index.html?' + params.toString();
+    }
+
+    // Interface intros (from single distribution user study)
+    function getInterfaceIntro(visType, isSecond) {
+      const gist = '<strong>You do not need to read every word. These questions are about getting the "gist" of the outputs.</strong>';
+      const btn = '<p>Click the link on each question page to open the visualization, then select which set (orange or blue) has higher diversity.</p>';
+      if (visType === 'raw_outputs') {
+        return '<p>This tool shows many outputs generated from the same prompt.</p><p>' + gist + '</p>' + btn;
+      }
+      if (visType === 'graph') {
+        return 'This tool shows many outputs generated from the same prompt.<ul><li>Outputs are summarized as a graph</li><li>Each path is <b>one generation</b></li><li>Words and phrases that appear multiple times are shown larger.</li><li>Click words to filter outputs.</li></ul><p>The graph shows a summary at the expense of being able to read each example through easily. <strong>Think of it as a fancy word cloud</strong>.</p><p>' + gist + '</p>' + btn;
+      }
+      return '<p>' + gist + '</p>' + btn;
+    }
+
+    document.getElementById('interface1Intro').innerHTML = getInterfaceIntro(half1.visType, false);
+    document.getElementById('interface2Intro').innerHTML = getInterfaceIntro(half2.visType, true);
+
+    // Demo images for graph interface (from single distribution study)
+    const demoImageUrl = 'annotated_graph.png';
+    function getDemoUrl(visType) {
+      return visType === 'graph' && demoImageUrl ? demoImageUrl : '';
+    }
+    const interface1DemoUrl = getDemoUrl(half1.visType);
+    const interface2DemoUrl = getDemoUrl(half2.visType);
+    document.getElementById('interface1Demo').src = interface1DemoUrl;
+    document.getElementById('interface1DemoContainer').style.display = interface1DemoUrl ? 'block' : 'none';
+    document.getElementById('interface2Demo').src = interface2DemoUrl;
+    document.getElementById('interface2DemoContainer').style.display = interface2DemoUrl ? 'block' : 'none';
+
+    // State
+    let currentPage = 1;
+    let lastPage = 0;
+    const totalPages = 6;
+    let block1QuestionIdx = 0;
+    let block2QuestionIdx = 0;
+    let block1TimeUp = false;
+    let block2TimeUp = false;
+    let currentQuestion1 = null;
+    let currentQuestion2 = null;
+    let questionStartTime = 0;
+
+    function goToPage(p) {
+      lastPage = currentPage;
+      currentPage = p;
+      for (let i = 1; i <= totalPages; i++) {
+        document.getElementById('page' + i).classList.toggle('active', i === p);
+      }
+      document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i + 1 === p));
+      document.getElementById('prevButton').disabled = p === 1;
+
+      const isBlock1 = p === 3;
+      const isBlock2 = p === 5;
+      if (typeof LandingPageTimer !== 'undefined') {
+        LandingPageTimer.setVisible(isBlock1 || isBlock2);
+      }
+      // Only reset timer when first entering block from intro page (not when navigating back)
+      if (isBlock1) {
+        if (lastPage === 2) {
+          LandingPageTimer.reset();
+          block1TimeUp = false;
+        }
+        document.getElementById('timeUp1').classList.remove('visible');
+        loadQuestion1();
+      }
+      if (isBlock2) {
+        if (lastPage === 4) {
+          LandingPageTimer.reset();
+          block2TimeUp = false;
+        }
+        document.getElementById('timeUp2').classList.remove('visible');
+        loadQuestion2();
+      }
+
+      updateNextButton();
+      updatePairNavButtons();
+    }
+
+    function loadQuestion1() {
+      if (block1TimeUp || block1QuestionIdx >= pool1.length) return;
+      currentQuestion1 = pool1[block1QuestionIdx];
+      questionStartTime = Date.now();
+      const btn = document.getElementById('visLink1');
+      btn.classList.remove('clicked');
+      btn.textContent = 'Open visualization (opens in new tab) →';
+      const rg = document.getElementById('radioGroup1');
+      rg.classList.add('disabled');
+      rg.classList.remove('enabled');
+      rg.querySelectorAll('input').forEach(i => { i.checked = false; i.disabled = true; });
+      document.getElementById('questionCounter1').textContent = 'Pair ' + (block1QuestionIdx + 1) + ' of ' + pool1.length;
+      updatePairNavButtons();
+    }
+
+    function loadQuestion2() {
+      if (block2TimeUp || block2QuestionIdx >= pool2.length) return;
+      currentQuestion2 = pool2[block2QuestionIdx];
+      questionStartTime = Date.now();
+      const btn = document.getElementById('visLink2');
+      btn.classList.remove('clicked');
+      btn.textContent = 'Open visualization (opens in new tab) →';
+      const rg = document.getElementById('radioGroup2');
+      rg.classList.add('disabled');
+      rg.classList.remove('enabled');
+      rg.querySelectorAll('input').forEach(i => { i.checked = false; i.disabled = true; });
+      document.getElementById('questionCounter2').textContent = 'Pair ' + (block2QuestionIdx + 1) + ' of ' + pool2.length;
+      updatePairNavButtons();
+    }
+
+    function recordCurrentAnswer(blockNum) {
+      const isBlock1 = blockNum === 1;
+      const q = isBlock1 ? currentQuestion1 : currentQuestion2;
+      const answerInput = document.querySelector('input[name="answer' + blockNum + '"]:checked');
+      const answer = answerInput ? answerInput.value : null;
+      const elapsed = Date.now() - questionStartTime;
+
+      if (q && answer) {
+        logTelemetryEvent('diversity_comparison_answer', {
+          block: blockNum,
+          questionIndex: isBlock1 ? block1QuestionIdx : block2QuestionIdx,
+          dataset: q.dataset,
+          visType: q.visType,
+          promptIdx: q.promptIdx,
+          temp1: q.temp1,
+          temp2: q.temp2,
+          groundTruth: q.groundTruth,
+          userAnswer: answer,
+          correct: answer === q.groundTruth,
+          timeMs: elapsed,
+          url: buildVisUrl(q),
+        });
+      }
+    }
+
+    function goToNextPair(blockNum) {
+      const isBlock1 = blockNum === 1;
+      recordCurrentAnswer(blockNum);
+      if (isBlock1) {
+        if (block1QuestionIdx >= pool1.length - 1) return;
+        block1QuestionIdx++;
+        const block = document.querySelector('#page3 .comparison-block');
+        block.classList.remove('pair-transition');
+        void block.offsetWidth; // force reflow to retrigger animation
+        loadQuestion1();
+        block.classList.add('pair-transition');
+      } else {
+        if (block2QuestionIdx >= pool2.length - 1) return;
+        block2QuestionIdx++;
+        const block = document.querySelector('#page5 .comparison-block');
+        block.classList.remove('pair-transition');
+        void block.offsetWidth; // force reflow to retrigger animation
+        loadQuestion2();
+        block.classList.add('pair-transition');
+      }
+    }
+
+    function updateNextButton() {
+      const p = currentPage;
+      let disabled = p === totalPages;
+      if (p === 3 || p === 5) {
+        // Global Next only enabled when time has run out
+        const remaining = typeof LandingPageTimer !== 'undefined' ? LandingPageTimer.getRemainingMs() : 0;
+        disabled = remaining > 0;
+      }
+      document.getElementById('nextButton').disabled = disabled;
+    }
+
+    function hasAnswer(blockNum) {
+      return !!document.querySelector('input[name="answer' + blockNum + '"]:checked');
+    }
+
+    function updatePairNavButtons() {
+      if (currentPage === 3) {
+        document.getElementById('nextPair1').disabled = block1QuestionIdx >= pool1.length - 1 || block1TimeUp || !hasAnswer(1);
+      }
+      if (currentPage === 5) {
+        document.getElementById('nextPair2').disabled = block2QuestionIdx >= pool2.length - 1 || block2TimeUp || !hasAnswer(2);
+      }
+    }
+
+    function nextPage() {
+      // For pages 1, 2, 4, 6: simple advance (block pages 3, 5 are handled by the button's addEventListener)
+      if (currentPage < totalPages) goToPage(currentPage + 1);
+      window.scrollTo(0, 0);
+    }
+
+    function previousPage() {
+      if (currentPage > 1) {
+        goToPage(currentPage - 1);
+        window.scrollTo(0, 0);
+      }
+    }
+
+    // Open vis in new tab when button clicked (URL not visible to user)
+    document.getElementById('visLink1').addEventListener('click', function() {
+      if (currentQuestion1) {
+        window.open(buildVisUrl(currentQuestion1), '_blank', 'noopener');
+      }
+      this.classList.add('clicked');
+      const rg = document.getElementById('radioGroup1');
+      rg.classList.remove('disabled');
+      rg.classList.add('enabled');
+      rg.querySelectorAll('input').forEach(i => { i.disabled = false; });
+      updatePairNavButtons();
+    });
+
+    document.getElementById('visLink2').addEventListener('click', function() {
+      if (currentQuestion2) {
+        window.open(buildVisUrl(currentQuestion2), '_blank', 'noopener');
+      }
+      this.classList.add('clicked');
+      const rg = document.getElementById('radioGroup2');
+      rg.classList.remove('disabled');
+      rg.classList.add('enabled');
+      rg.querySelectorAll('input').forEach(i => { i.disabled = false; });
+      updatePairNavButtons();
+    });
+
+    // Update Next pair button when radio selection changes
+    document.querySelectorAll('input[name="answer1"]').forEach(el => el.addEventListener('change', updatePairNavButtons));
+    document.querySelectorAll('input[name="answer2"]').forEach(el => el.addEventListener('change', updatePairNavButtons));
+
+    // Global Next button: on block pages, only advances when time has run out; otherwise call nextPage
+    document.getElementById('nextButton').addEventListener('click', function() {
+      if (currentPage === 3) {
+        const remaining = typeof LandingPageTimer !== 'undefined' ? LandingPageTimer.getRemainingMs() : 0;
+        if (remaining <= 0) {
+          block1TimeUp = true;
+          document.getElementById('timeUp1').classList.add('visible');
+          document.getElementById('nextPair1').disabled = true;
+          logTelemetryEvent('block_timer_elapsed', { block: 1, elapsedMs: LandingPageTimer.getElapsedMs() });
+          goToPage(4);
+        }
+        window.scrollTo(0, 0);
+        return;
+      }
+      if (currentPage === 5) {
+        const remaining = typeof LandingPageTimer !== 'undefined' ? LandingPageTimer.getRemainingMs() : 0;
+        if (remaining <= 0) {
+          block2TimeUp = true;
+          document.getElementById('timeUp2').classList.add('visible');
+          document.getElementById('nextPair2').disabled = true;
+          logTelemetryEvent('block_timer_elapsed', { block: 2, elapsedMs: LandingPageTimer.getElapsedMs() });
+          goToPage(6);
+        }
+        window.scrollTo(0, 0);
+        return;
+      }
+      nextPage();
+    });
+
+    // Pair navigation buttons
+    document.getElementById('nextPair1').addEventListener('click', () => goToNextPair(1));
+    document.getElementById('nextPair2').addEventListener('click', () => goToNextPair(2));
+
+    // Timer callback: when time runs out, show banner and enable global Next
+    LandingPageTimer.init({
+      durationMs: TASK_DURATION_SECONDS * 1000,
+      overtimeMessage: 'Time is up! Click Next to continue.',
+      onElapsedChange: function(elapsed, remaining) {
+        if (remaining !== undefined && remaining <= 0) {
+          if (currentPage === 3) {
+            document.getElementById('timeUp1').classList.add('visible');
+            document.getElementById('nextPair1').disabled = true;
+            block1TimeUp = true;
+          }
+          if (currentPage === 5) {
+            document.getElementById('timeUp2').classList.add('visible');
+            document.getElementById('nextPair2').disabled = true;
+            block2TimeUp = true;
+          }
+          updateNextButton();
+        }
+      }
+    });
+
+    // Progress dots
+    const dotsContainer = document.getElementById('progressDots');
+    for (let i = 1; i <= totalPages; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (i === 1 ? ' active' : '');
+      dot.onclick = () => { currentPage = i; goToPage(i); };
+      dotsContainer.appendChild(dot);
+    }
+
+    // TODO: Final survey Google Form URL
+    // const FORM_URL = 'https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?usp=pp_url&entry.XXX=UID&embedded=true';
+    // document.getElementById('finalSurveyForm').src = FORM_URL.replace('UID', encodeURIComponent(/* params */));
+
+    goToPage(1);
+  </script>
+</body>
+</html>

@@ -22,6 +22,8 @@ const LAYOUT_MARGIN = 60;
 const ROW_SPACING_1D = 20;
 /** Extra vertical gap between prompt groups in 1D mode (when separate by prompt is unchecked) */
 const PROMPT_SEPARATOR_1D = 24;
+/** Max height used for graph-mode y-force when separating by prompt; avoids graphs being too far apart with many generations */
+const MAX_GRAPH_LAYOUT_HEIGHT = 500;
 const UNIFORM_FONT_SIZE = 11; // Used when fully untangled (1D view)
 const GRAPH_THRESHOLD = 1; // At or above this, use collapsed nodes; keep 1 so collapse happens only at end (avoids jump)
 const INTERACT_THRESHOLD = 0.7; // Below this, disable hover/click/select in graph mode
@@ -294,6 +296,7 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                         <span className="toggle-label toggle-label-list">List</span>
                     </div>
 
+                    {!state.isUserStudy && <>
                     <div className="slider-container">
                         <label>Hide Rare Outputs</label>
                         <div className="tooltip">
@@ -315,8 +318,6 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
                             />
                         </Box>
                     </div>
-
-                    {!state.isUserStudy && <>
                     <div className="slider-container">
                         <label>Graph spread</label>
                         <div className="tooltip">
@@ -478,6 +479,9 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
     private toggleLoading(isLoading = false) {
         d3.select("#graph-holder").classed('hidden', isLoading);
         d3.select("#loader").classed('hidden', !isLoading);
+        if (!isLoading && state.isUserStudy) {
+            telemetry.logGraphVisLoaded('graph_untangle');
+        }
     }
 
     private async rebuildGraph() {
@@ -937,14 +941,17 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             });
             
             const numPrompts = this.props.promptGroups.length;
-            const spacing = this.height / numPrompts;
+            // Cap layout height so graphs stay reasonably close when SVG is tall (many generations in 1D mode)
+            const layoutHeight = Math.min(this.height, MAX_GRAPH_LAYOUT_HEIGHT);
+            const spacing = layoutHeight / numPrompts;
+            const baseY = 0; // keep graphs at top of SVG
             
             yForce = d3.forceY((d: any) => {
                 // Get the first prompt ID from the node's origPromptIds
                 const firstPromptId = d.origPromptIds?.[0];
                 if (firstPromptId && promptIdToIndex.has(firstPromptId)) {
                     const promptIndex = promptIdToIndex.get(firstPromptId)!;
-                    return spacing * (promptIndex + 0.5);
+                    return baseY + spacing * (promptIndex + 0.5);
                 }
                 return this.height / 2;
             }).strength(0.5);
