@@ -450,8 +450,8 @@
     logTelemetryEvent('page_load', { url: window.location.href, userAgent: navigator.userAgent });
 
     // ===== CONFIG =====
-    const TASK_DURATION_SECONDS = 180; // use 180 for real study (3 min)
-    const NUM_GENERATIONS = 10;
+    const TASK_DURATION_SECONDS = 60; // use 180 for real study (3 min)
+    const NUM_GENERATIONS = 20;
     const TEMP_DIFF = 0.1; // difference between low and high in each pair
     const TEMP_MIN = 0.1, TEMP_MAX = 1.0;
     const TEMP_PAIRS = (() => {
@@ -662,6 +662,8 @@
       const elapsed = Date.now() - questionStartTime;
 
       if (q && answer) {
+        const correct = answer === q.groundTruth;
+        console.log(correct ? 'correct' : 'incorrect');
         logTelemetryEvent('diversity_comparison_answer', {
           block: blockNum,
           questionIndex: isBlock1 ? block1QuestionIdx : block2QuestionIdx,
@@ -672,7 +674,7 @@
           temp2: q.temp2,
           groundTruth: q.groundTruth,
           userAnswer: answer,
-          correct: answer === q.groundTruth,
+          correct,
           timeMs: elapsed,
           url: buildVisUrl(q),
         });
