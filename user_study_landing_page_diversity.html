@@ -348,9 +348,7 @@
       <div class="task-section">
         <h3>Final Survey</h3>
         <p>Thank you for completing the comparisons! Please complete this questionnaire about each interface and how they compare.</p>
-        <!-- TODO: Replace with actual Google Forms URL -->
         <iframe id="finalSurveyForm" src="about:blank" width="100%" height="800" frameborder="0" marginheight="0" marginwidth="0" style="margin-top: 20px;">Loading…</iframe>
-        <p style="margin-top: 15px; font-size: 0.9em; color: #7f8c8d;"><strong>TODO:</strong> Add Google Forms URL for final questionnaire (per-interface and comparison questions).</p>
       </div>
     </div>
   </div>
@@ -450,7 +448,7 @@
     logTelemetryEvent('page_load', { url: window.location.href, userAgent: navigator.userAgent });
 
     // ===== CONFIG =====
-    const TASK_DURATION_SECONDS = 60; // use 180 for real study (3 min)
+    const TASK_DURATION_SECONDS = 120; // use 180 for real study (3 min)
     const NUM_GENERATIONS = 20;
     const TEMP_DIFF = 0.1; // difference between low and high in each pair
     const TEMP_MIN = 0.1, TEMP_MAX = 1.0;
@@ -618,6 +616,10 @@
         }
         document.getElementById('timeUp2').classList.remove('visible');
         loadQuestion2();
+      }
+      if (p === 6) {
+        const paramsString = encodeURIComponent(getProlificParamsStringForSurvey());
+        document.getElementById('finalSurveyForm').src = formUrlFinalSurveyTemplate.replace('UID', paramsString);
       }
 
       updateNextButton();
@@ -832,9 +834,18 @@
       dotsContainer.appendChild(dot);
     }
 
-    // TODO: Final survey Google Form URL
-    // const FORM_URL = 'https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?usp=pp_url&entry.XXX=UID&embedded=true';
-    // document.getElementById('finalSurveyForm').src = FORM_URL.replace('UID', encodeURIComponent(/* params */));
+    // Final survey Google Form URL (same url params as other user studies: prolific_pid, session_id, study_id, dataset, vis_type)
+    const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/12l5CXFDr-CjC-PtGD1HSLVR8v3fzN7KtlZoF9OD9a4s/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
+
+    function getProlificParamsStringForSurvey() {
+      const params = [];
+      if (prolificPid) params.push(`prolific_pid=${prolificPid}`);
+      if (sessionId) params.push(`session_id=${sessionId}`);
+      if (studyId) params.push(`study_id=${studyId}`);
+      params.push(`dataset=${half1.dataset},${half2.dataset}`);
+      params.push(`vis_type=${half1.visType},${half2.visType}`);
+      return params.join('&');
+    }
 
     goToPage(1);
   </script>
