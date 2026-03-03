@@ -25,6 +25,8 @@ const PROMPT_SEPARATOR_1D = 24;
 /** Max height used for graph-mode y-force when separating by prompt; avoids graphs being too far apart with many generations */
 const MAX_GRAPH_LAYOUT_HEIGHT = 500;
 const UNIFORM_FONT_SIZE = 11; // Used when fully untangled (1D view)
+/** When true, all text in linear (List) mode uses UNIFORM_FONT_SIZE. When false, uses same variable scale as graph (font size encodes frequency). */
+const UNIFORM_FONT_IN_LINEAR_MODE = true;
 const GRAPH_THRESHOLD = 1; // At or above this, use collapsed nodes; keep 1 so collapse happens only at end (avoids jump)
 const INTERACT_THRESHOLD = 0.7; // Below this, disable hover/click/select in graph mode
 /** Pixel width per character fallback when measurement unavailable */
@@ -874,7 +876,7 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
 
         const merged = entered.merge(nodeSelection);
         if (useUniformFont) {
-            // In untangle (1D) mode: variable font size encodes frequency, single line per word
+            // In untangle (1D) mode: single line per word; font size is uniform or variable per UNIFORM_FONT_IN_LINEAR_MODE
             merged.select("text").each(function (d: NodeDisplayDatum) {
                 const text = d3.select(this);
                 text.text(null)
@@ -890,7 +892,9 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
         const nodeFontSize = (d: NodeDisplayDatum) => (getNode(d) as NodeDatum).fontSize;
         merged.select("text")
             .attr("font-size", (d: NodeDisplayDatum) =>
-                useUniformFont ? nodeFontSize(d) : UNIFORM_FONT_SIZE + interp * (nodeFontSize(d) - UNIFORM_FONT_SIZE)
+                useUniformFont
+                    ? (UNIFORM_FONT_IN_LINEAR_MODE ? UNIFORM_FONT_SIZE : nodeFontSize(d))
+                    : UNIFORM_FONT_SIZE + interp * (nodeFontSize(d) - UNIFORM_FONT_SIZE)
             )
             .attr("text-anchor", "start");
 
@@ -1086,7 +1090,8 @@ class SingleExampleWordGraphUntangle extends React.Component<Props, State> {
             let cumul = 0;
             for (let i = 0; i < origWords.length; i++) {
                 xPx.push(cumul);
-                cumul += this.measureTextWidth(origWords[i], path[i].fontSize) + (i < origWords.length - 1 ? GAP_PX_1D : 0);
+                const fs = UNIFORM_FONT_IN_LINEAR_MODE ? UNIFORM_FONT_SIZE : path[i].fontSize;
+                cumul += this.measureTextWidth(origWords[i], fs) + (i < origWords.length - 1 ? GAP_PX_1D : 0);
             }
             rowData.push({ sentIdx, path, origWords, xPx });
         }
