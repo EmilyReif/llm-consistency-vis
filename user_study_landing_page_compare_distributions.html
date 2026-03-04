@@ -174,21 +174,14 @@
       height: 12px;
       border-radius: 50%;
       background-color: #bdc3c7;
-      cursor: pointer;
+      cursor: default;
+      pointer-events: none;
       transition: background-color 0.3s, transform 0.2s;
     }
 
     .dot.active {
       background-color: #3498db;
       transform: scale(1.2);
-    }
-
-    .dot:hover {
-      background-color: #95a5a6;
-    }
-
-    .dot.active:hover {
-      background-color: #2980b9;
     }
 
     .token-gate {
@@ -217,6 +210,94 @@
       width: 140px;
     }
 
+    .embedded-form-block {
+      margin: 25px 0;
+      padding: 24px;
+      background: transparent;
+      border-radius: 8px;
+      text-align: left;
+    }
+
+    .embedded-form-block label {
+      display: block;
+      margin: 10px 0;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .embedded-form-block input[type="radio"] {
+      margin-right: 10px;
+    }
+
+    .embedded-form-block input[type="text"],
+    .embedded-form-block textarea {
+      width: 100%;
+      max-width: 500px;
+      padding: 8px 12px;
+      margin-top: 4px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    .embedded-form-block textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .embedded-form-block .question-label {
+      font-size: 1.1em;
+      font-weight: 600;
+      color: #202124;
+      margin-bottom: 12px;
+      display: block;
+      line-height: 1.4;
+    }
+
+    .embedded-form-block .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 8px 0;
+    }
+    .embedded-form-block .slider-value {
+      min-width: 40px;
+      font-weight: 500;
+    }
+    .embedded-form-block label.option-sentence {
+      display: block;
+      margin: 8px 0;
+      padding: 8px 0;
+      padding-left: 24px;
+      position: relative;
+    }
+    .embedded-form-block label.option-sentence input {
+      position: absolute;
+      left: 0;
+      top: 10px;
+    }
+    .prompt-1 { color: #4f6980; font-weight: 600; }
+    .prompt-2 { color: #f47942; font-weight: 600; }
+    .embedded-form-block .question-card {
+      background: #f8f9fa;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .embedded-form-block .question-card:first-child {
+      margin-top: 0;
+    }
+    .embedded-form-block .sentence-block {
+      margin: 12px 0;
+      padding: 12px 16px;
+      background-color: #fff;
+      border-left: 4px solid #3498db;
+      border-radius: 4px;
+      font-style: italic;
+    }
+
     .nav-next-area {
       display: flex;
       align-items: center;
@@ -237,7 +318,7 @@
         </p>
       
         <p>
-          In this study, you'll use a visualization tool to <strong>compare outputs from two different prompts</strong> (prompt A and prompt B). Your goal is to explore both sets of outputs and reason about what changed between the two prompts.
+          In this study, you'll use a visualization tool to <strong>compare outputs from two different prompts</strong> (<span class="prompt-1">Prompt 1</span> and <span class="prompt-2">Prompt 2</span>). Your goal is to explore both sets of outputs and reason about what changed between the two prompts.
         </p>
         
         <ul>
@@ -280,7 +361,8 @@
         <div id="task1FormContainer" class="form-container">
           <h4>Task 1 Questionnaire</h4>
           <p>Please complete the questionnaire after finishing Task 1.</p>
-          <iframe id="task1Form" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+          <div id="task1EmbeddedForm" class="embedded-form-block"><!-- Populated by JS from compare_distributions_questions.json --></div>
+          <button type="button" id="task1FormNext" class="nav-button" style="margin-top: 20px;" disabled>Next →</button>
         </div>
       </div>
     </div>
@@ -313,7 +395,8 @@
         <div id="task2FormContainer" class="form-container">
           <h4>Task 2 Questionnaire</h4>
           <p>Please complete the questionnaire after finishing Task 2.</p>
-          <iframe id="task2Form" src="" width="100%" height="1248" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+          <div id="task2EmbeddedForm" class="embedded-form-block"><!-- Populated by JS from compare_distributions_questions.json --></div>
+          <button type="button" id="task2FormNext" class="nav-button" style="margin-top: 20px;" disabled>Next →</button>
         </div>
       </div>
     </div>
@@ -336,15 +419,9 @@
 
   <!-- Navigation -->
   <div class="navigation">
-    <button id="prevButton" class="nav-button" onclick="previousPage()">← Previous</button>
-    
     <div class="progress-dots" id="progressDots"></div>
     
     <div class="nav-next-area">
-      <div id="tokenGate" class="token-gate hidden">
-        <label class="token-gate-prompt" for="tokenInput">Complete survey and paste token to continue:</label>
-        <input id="tokenInput" type="text" placeholder="Token" autocomplete="off" />
-      </div>
       <button id="nextButton" class="nav-button" onclick="nextPage()">Next →</button>
     </div>
   </div>
@@ -368,10 +445,13 @@
       return urlParams.get(name);
     }
     
+    const USER_STUDY_NAME = 'compare_distributions';
+
     // Get metadata for events
     function getTelemetryMetadata() {
       return {
         interfaceVersion: 'landing_page_compare_distributions',
+        user_study_name: USER_STUDY_NAME,
         startedAt: pageStartedAt,
         prolificPid: getTelemetryUrlParam('prolific_pid') || undefined,
         sessionId: getTelemetryUrlParam('session_id') || undefined,
@@ -405,6 +485,7 @@
       return JSON.stringify({
         participantId: getParticipantId(),
         interfaceVersion: 'landing_page_compare_distributions',
+        user_study_name: USER_STUDY_NAME,
         telemetry: telemetryEvents,
       });
     }
@@ -541,19 +622,20 @@
       userAgent: navigator.userAgent,
     });
 
-    // Initialize 10-minute task timer
-    LandingPageTimer.init();
+    // Initialize task timer (5 sec for testing; use 600000 for 10 min in production)
+    LandingPageTimer.init({ durationMs: 5000 });
 
     // ===== END TELEMETRY SYSTEM =====
     
     // Page navigation state
     let currentPage = 1;
     const totalPages = 4;
-    const SURVEY_TOKEN = 'A89EiVjwLKJ99';
     
     // Track if tasks have been started
     let task1Started = false;
     let task2Started = false;
+    let task1Completed = false;
+    let task2Completed = false;
 
     // Number of generations to show in the visualization (passed in task URLs)
     const NUM_GENERATIONS = 20;
@@ -561,10 +643,8 @@
     // Static image for graph vis only (nothing for raw_outputs/list)
     const demoImageUrl = 'annotated_graph.png';
 
-    // Google Form URLs for different conditions (prefilled format)
-    const formUrlCharactersTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSfbOEthQdVxALvWYzARrWYin22J4fsW0WTTy7MsPQhE6rB4Gw/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
-    const formUrlPlacesTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSdLZFiFxcohdSDKzot0ptxDN82Ixx7iPnV1_My0a3WWC4nHWw/viewform?usp=pp_url&entry.1989528029=UID&embedded=true';
-    const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSd5trytqg1lOWpxhnoSXUduZe7Z8qW4ep688C8S310dNDDzMw/viewform?usp=pp_url&entry.1859965680=UID&embedded=true';
+    // Final survey Google Form (compare distributions qualitative responses)
+    const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/1mgoviofNcV9GpY1NrHPlRmZg09iAUqDcCIjOnPyrmGw/viewform?embedded=true';
 
     function getDemoUrl(visType) {
       return visType === 'graph' && !demoImageUrl.includes('[PLACEHOLDER') ? demoImageUrl : '';
@@ -586,23 +666,6 @@
       return params.join('&');
     }
 
-    // Function to get form URL based on dataset, with Prolific parameters prefilled
-    function getFormUrlForDataset(dataset, visType) {
-      const paramsString = encodeURIComponent(getProlificParamsString(dataset, visType));
-      let formUrl;
-      
-      if (dataset === 'user_study_monsters') {
-        formUrl = formUrlCharactersTemplate;
-      } else if (dataset === 'user_study_places') {
-        formUrl = formUrlPlacesTemplate;
-      } else {
-        return '';
-      }
-      
-      // Replace UID with the encoded Prolific parameters string
-      return formUrl.replace('UID', paramsString);
-    }
-
     // Function to get URL parameter
     function getUrlParam(name) {
       const urlParams = new URLSearchParams(window.location.search);
@@ -622,8 +685,8 @@
     const sessionId = getUrlParam('session_id');
     const studyId = getUrlParam('study_id');
 
-    // All possible task combinations
-    const datasets = ['user_study_places', 'user_study_monsters'];
+    // All possible task combinations (compare mode: two prompts from temp datasets)
+    const datasets = ['user_study_places_temp', 'user_study_monsters_temp'];
     const visTypes = ['graph', 'raw_outputs'];
     const allCombinations = [];
     
@@ -680,27 +743,29 @@
 
     // Build URLs for Task 1 and Task 2
     const baseUrl = getBaseUrl();
-    
-    // For compare-distributions study: pick two distinct prompt indices (0-5) with seeded random
-    function pickTwoPromptIndices(rng) {
-      const indices = [0, 1, 2, 3, 4, 5];
-      const shuffled = shuffleArray(indices, rng);
-      return [shuffled[0], shuffled[1]];
-    }
-    const promptIndices = pickTwoPromptIndices(random);
-    const promptIdxParam = promptIndices.join(',');
-    
+
+    // Per-dataset config (parsed from provided URLs)
+    // Places: prompt_idx 0,2, temp 0.3,0.3
+    // Monsters: prompt_idx 0,1, temp 0.3,0.3
+    const DATASET_CONFIG = {
+      user_study_places_temp: { promptIdx: '0,2', promptTemp: '0.3,0.3' },
+      user_study_monsters_temp: { promptIdx: '0,1', promptTemp: '0.3,0.3' },
+    };
+
     function buildTaskUrl(task, taskNum) {
+      const config = DATASET_CONFIG[task.dataset] || DATASET_CONFIG.user_study_monsters_temp;
       const params = new URLSearchParams({
         is_user_study: 'true',
         hide_popups: 'true',
+        hide_prompt_text: 'true',
         separate_graphs: 'true',
         num_generations: NUM_GENERATIONS.toString(),
         user_id: prolificPid || '',
         dataset: task.dataset,
         vis_type: task.visType,
         task_number: taskNum.toString(),
-        prompt_idx: promptIdxParam
+        prompt_idx: config.promptIdx,
+        prompt_temp: config.promptTemp
       });
       // Add Prolific parameters if present
       if (prolificPid) {
@@ -712,14 +777,143 @@
       if (studyId) {
         params.set('study_id', studyId);
       }
+      params.set('user_study_name', USER_STUDY_NAME);
       return `${baseUrl}index.html?${params.toString()}`;
     }
 
     const task1Url = buildTaskUrl(finalTask1, 1);
     const task2Url = buildTaskUrl(finalTask2, 2);
 
+    // Questions config (embedded). Based on actual outputs from places_temp and monsters_temp.
+    const questionsConfig = {
+      datasets: {
+        user_study_places_temp: {
+          questions: [
+            { id: 'diversity', question: 'Which set has <strong>higher diversity</strong> (more variety across all outputs)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_2' },
+            { id: 'more_whispering_glade', question: 'Which set of outputs more frequently describes <strong>"The Whispering Glade"</strong>?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'more_crystal_caverns', question: 'Which set of outputs more frequently describes <strong>"The Crystal Caverns"</strong>?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_2' },
+            { id: 'more_celestial_glade', question: 'Which set of outputs more frequently describes <strong>"The Celestial Glade"</strong>?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_2' },
+            { id: 'more_luminous_glade', question: 'Which set of outputs more frequently describes <strong>"The Luminous Glade"</strong>?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_2' },
+            { id: 'name_percentage', question: 'In <span class="prompt-1">Prompt 1</span>\'s outputs, approximately what percentage were about <strong>"The Whispering Glade"</strong>? (1–100%)', type: 'slider', sliderMin: 1, sliderMax: 100, sliderDefault: 50, groundTruth: 100 },
+            { id: 'name_percentage_prompt2', question: 'In <span class="prompt-2">Prompt 2</span>\'s outputs, approximately what percentage were about <strong>"The Whispering Glade"</strong>? (1–100%)', type: 'slider', sliderMin: 1, sliderMax: 100, sliderDefault: 50, groundTruth: 65 },
+            { id: 'phrase_listen_hear', question: 'In which set do the outputs more frequently include <strong>"those who listen closely can hear"</strong> (or similar wording)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'phrase_carried_wind', question: 'In which set do the outputs more frequently include <strong>"secrets carried by the wind"</strong> (or similar wording)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'phrase_echoes_past', question: 'In which set do the outputs more frequently include <strong>"echoes of the past"</strong> (or similar wording)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'phrase_ethereal_voices', question: 'In which set do the outputs more frequently include <strong>"seek guidance from the ethereal voices"</strong> (or similar wording)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'phrase_rustling_leaves', question: 'In which set do the outputs more frequently include <strong>"through the rustling leaves"</strong> (or similar wording)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'possible_cyberspace', question: 'Would the following be possible under either prompt with 1000 generations?', sentence: 'A place that exists only in cyberspace', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }, { value: 'both', label: 'Both' }, { value: 'neither', label: 'Neither' }], groundTruth: 'neither' },
+            { id: 'possible_shopping_mall', question: 'Would the following be possible under either prompt with 1000 generations?', sentence: 'A luxury shopping mall in the magical realm', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }, { value: 'both', label: 'Both' }, { value: 'neither', label: 'Neither' }], groundTruth: 'neither' },
+            { id: 'possible_crystal_cavern', question: 'Would the following be possible under either prompt with 1000 generations?', sentence: 'A crystal cavern with glowing formations', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }, { value: 'both', label: 'Both' }, { value: 'neither', label: 'Neither' }], groundTruth: 'both' },
+            { id: 'possible_forest_clearing', question: 'Would the following be possible under either prompt with 1000 generations?', sentence: 'An ancient forest clearing where trees hold memories', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }, { value: 'both', label: 'Both' }, { value: 'neither', label: 'Neither' }], groundTruth: 'both' },
+            { id: 'sentence_likelihood', question: 'Is this output more likely from <strong><span class="prompt-1">Prompt 1</span></strong> or <strong><span class="prompt-2">Prompt 2</span></strong>?', sentence: 'A serene forest clearing where ancient trees murmur secrets of the past, believed to be the resting place of a long-lost civilization\'s oracle.', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'same_distribution', question: 'Do <span class="prompt-1">Prompt 1</span> and <span class="prompt-2">Prompt 2</span> appear to sample from the <strong>same underlying distribution</strong>? That is, are they likely the same prompt?', options: [{ value: 'same', label: 'Same distribution' }, { value: 'different', label: 'Different distributions' }, { value: 'unsure', label: 'Unsure' }], groundTruth: 'different' },
+            { id: 'overlap_semantic', question: 'Which best describes a <strong>theme or structure shared by BOTH sets</strong> (beyond specific place names)?', options: [{ value: 'sacred_wisdom', label: 'Sacred natural spaces where ancient wisdom or secrets are accessible' }, { value: 'forest_trees', label: 'Forest clearings where trees hold or share knowledge' }, { value: 'druids_spirits', label: 'Places associated with druids or nature spirits' }, { value: 'luminescent', label: 'Luminescent or glowing elements (crystals, flora)' }, { value: 'urban', label: 'Urban or man-made structures' }], groundTruth: 'forest_trees' },
+            { id: 'unique_to_a', question: 'Which output could <strong><span class="prompt-1">Prompt 1</span></strong> have generated but <strong><span class="prompt-2">Prompt 2</span></strong> likely would not?', options: [{ value: 'a', label: 'The Whispering Glade is an ancient forest where the trees are said to hold the memories of the world, and travelers seek its wisdom to uncover forgotten secrets and prophecies.' }, { value: 'b', label: 'The Crystal Caverns: A labyrinth of shimmering tunnels filled with luminescent crystals that emit a soft, magical glow, rumored to be the resting place of an ancient dragon.' }, { value: 'c', label: 'The Celestial Glade is a serene meadow where ancient star spirits once descended to share their wisdom.' }, { value: 'd', label: 'The Luminous Glade is a mystical forest where ancient, glowing trees were planted by the Elders to guide lost souls.' }], groundTruth: 'a' },
+            { id: 'unique_to_b', question: 'Which output could <strong><span class="prompt-2">Prompt 2</span></strong> have generated but <strong><span class="prompt-1">Prompt 1</span></strong> likely would not?', options: [{ value: 'a', label: 'The Whispering Glade is an ancient forest where the trees are said to hold the memories of the world, and travelers seek its wisdom to uncover forgotten secrets and prophecies.' }, { value: 'b', label: 'The Crystal Caverns: A labyrinth of shimmering tunnels filled with luminescent crystals that emit a soft, magical glow, rumored to be the resting place of an ancient dragon.' }, { value: 'c', label: 'The Celestial Glade is a serene meadow where ancient star spirits once descended to share their wisdom.' }, { value: 'd', label: 'The Luminous Glade is a mystical forest where ancient, glowing trees were planted by the Elders to guide lost souls.' }], groundTruth: 'b' },
+          ],
+        },
+        user_study_monsters_temp: {
+          questions: [
+            { id: 'diversity', question: 'Which set has <strong>higher diversity</strong> (more variety across all outputs)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'more_lumivine', question: 'Which set of outputs has more creatures called <strong>"Lumivine"</strong>?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'more_lumigloom', question: 'Which set of outputs has more creatures called <strong>"Lumigloom"</strong>?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'more_glimmerwing_moth', question: 'Which set of outputs has more creatures called <strong>"Glimmerwing Moth"</strong>?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_2' },
+            { id: 'more_lumivores', question: 'Which set of outputs has more creatures called <strong>"Lumivores"</strong>?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'more_luminoids', question: 'Which set of outputs has more creatures called <strong>"Luminoids"</strong>?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'name_percentage', question: 'In <span class="prompt-1">Prompt 1</span>\'s outputs, approximately what percentage were about the <strong>"Lumivine"</strong>? (1–100%)', type: 'slider', sliderMin: 1, sliderMax: 100, sliderDefault: 50, groundTruth: 90 },
+            { id: 'name_percentage_prompt2', question: 'In <span class="prompt-2">Prompt 2</span>\'s outputs, approximately what percentage were about the <strong>"Lumivine"</strong>? (1–100%)', type: 'slider', sliderMin: 1, sliderMax: 100, sliderDefault: 50, groundTruth: 5 },
+            { id: 'phrase_drain_life', question: 'In which set do the outputs more frequently describe the creatures as <strong>"draining their life force"</strong> (or similar wording)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'phrase_ensnares', question: 'In which set do the outputs more frequently describe the creatures as <strong>"ensnaring travelers"</strong> (or similar wording)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'phrase_glowing_tendrils', question: 'In which set do the outputs more frequently describe the creatures as having <strong>"glowing tendrils"</strong> (or similar wording)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_1' },
+            { id: 'phrase_attract_mates', question: 'In which set do the outputs more frequently describe the creatures as <strong>"attracting mates and warding off predators"</strong> (or similar wording)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_2' },
+            { id: 'phrase_evolved_bioluminescent', question: 'In which set do the outputs more frequently describe the creatures as having <strong>"evolved bioluminescent"</strong> (or similar wording)?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_2' },
+            { id: 'possible_nuclear_plant', question: 'Would the following be possible under either prompt with 1000 generations?', sentence: 'A creature that evolved in a nuclear power plant', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }, { value: 'both', label: 'Both' }, { value: 'neither', label: 'Neither' }], groundTruth: 'neither' },
+            { id: 'possible_social_media', question: 'Would the following be possible under either prompt with 1000 generations?', sentence: 'A modern social media influencer', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }, { value: 'both', label: 'Both' }, { value: 'neither', label: 'Neither' }], groundTruth: 'neither' },
+            { id: 'possible_lumivine', question: 'Would the following be possible under either prompt with 1000 generations?', sentence: 'A bioluminescent vine creature cursed by dark magic', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }, { value: 'both', label: 'Both' }, { value: 'neither', label: 'Neither' }], groundTruth: 'both' },
+            { id: 'possible_evolved_forest', question: 'Would the following be possible under either prompt with 1000 generations?', sentence: 'A creature that evolved in a magical forest', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }, { value: 'both', label: 'Both' }, { value: 'neither', label: 'Neither' }], groundTruth: 'prompt_2' },
+            { id: 'sentence_likelihood', question: 'Is this output more likely from <strong><span class="prompt-1">Prompt 1</span></strong> or <strong><span class="prompt-2">Prompt 2</span></strong>?', sentence: 'A glowing creature born from the remnants of fallen stars, known to lead travelers astray with its enchanting light.', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }], groundTruth: 'prompt_2' },
+            { id: 'same_distribution', question: 'Do <span class="prompt-1">Prompt 1</span> and <span class="prompt-2">Prompt 2</span> appear to sample from the <strong>same underlying distribution</strong>? That is, are they likely the same prompt?', options: [{ value: 'same', label: 'Same distribution' }, { value: 'different', label: 'Different distributions' }, { value: 'unsure', label: 'Unsure' }], groundTruth: 'different' },
+            { id: 'overlap_semantic', question: 'Which best describes a <strong>theme or structure shared by BOTH sets</strong> (beyond specific creature names)?', options: [{ value: 'bioluminescent_forest', label: 'Bioluminescent creatures in a magical forest setting' }, { value: 'light_communication', label: 'Creatures that use light for communication or survival' }, { value: 'curse_evolution', label: 'A narrative of transformation (curse, evolution, or fall from grace)' }, { value: 'urban', label: 'Urban creatures living among humans' }], groundTruth: 'bioluminescent_forest' },
+            { id: 'unique_to_a', question: 'Which output could <strong><span class="prompt-1">Prompt 1</span></strong> have generated but <strong><span class="prompt-2">Prompt 2</span></strong> likely would not?', options: [{ value: 'a', label: 'The Lumivine is a bioluminescent vine creature that once thrived in harmony with the magical world, but after a dark curse, it now ensnares travelers to drain their life force.' }, { value: 'b', label: 'In the Luminescent Forest, the Glimmerwing Moth evolved bioluminescent wings to communicate and navigate the dense, shadowy woods.' }, { value: 'c', label: 'The Lumivores are ethereal creatures that feed on light and were once benevolent guardians of the magical world, but a curse twisted their nature.' }, { value: 'd', label: 'In the Lumina Forest, the Glimmerfox evolved to emit bioluminescent patterns on its fur to communicate and navigate the dense, magical woods.' }], groundTruth: 'a' },
+            { id: 'unique_to_b', question: 'Which output could <strong><span class="prompt-2">Prompt 2</span></strong> have generated but <strong><span class="prompt-1">Prompt 1</span></strong> likely would not?', options: [{ value: 'a', label: 'The Lumivine is a bioluminescent vine creature that once thrived in harmony with the magical world, but after a dark curse, it now ensnares travelers to drain their life force.' }, { value: 'b', label: 'In the Luminescent Forest, the Glimmerwing Moth evolved bioluminescent wings to communicate and navigate the dense, shadowy woods.' }, { value: 'c', label: 'The Lumivores are ethereal creatures that feed on light and were once benevolent guardians of the magical world, but a curse twisted their nature.' }, { value: 'd', label: 'In the Lumina Forest, the Glimmerfox evolved to emit bioluminescent patterns on its fur to communicate and navigate the dense, magical woods.' }], groundTruth: 'b' },
+          ],
+        },
+      },
+      preferenceQuestions: [
+        { id: 'production_use', question: 'For a fantasy game where you need varied, creative content: which set would you prefer to use in production?', options: [{ value: 'prompt_1', label: '<span class="prompt-1">Prompt 1</span>' }, { value: 'prompt_2', label: '<span class="prompt-2">Prompt 2</span>' }, { value: 'no_preference', label: 'No strong preference' }] },
+      ],
+    };
+
+    function buildQuestionHtml(prefix, question, index) {
+      const name = prefix + '_' + question.id;
+      let html = '<p class="question-label">' + question.question + '</p>';
+      if (question.sentence) {
+        html += '<div class="sentence-block">"' + question.sentence.replace(/"/g, '&quot;') + '"</div>';
+      }
+      if (question.type === 'slider') {
+        const min = question.sliderMin || 1;
+        const max = question.sliderMax || 100;
+        const def = question.sliderDefault != null ? question.sliderDefault : 50;
+        html += '<div class="slider-row"><input type="range" id="' + name + '" name="' + name + '" min="' + min + '" max="' + max + '" value="' + def + '" style="flex:1; min-width:150px;" /><span class="slider-value" data-for="' + name + '">' + def + '%</span></div>';
+      } else if (question.options) {
+        const longLabels = question.options.some(o => o.label && o.label.length > 80);
+        const labelClass = longLabels ? ' class="option-sentence"' : '';
+        for (const opt of question.options) {
+          html += '<label' + labelClass + '><input type="radio" name="' + name + '" value="' + opt.value + '" /> ' + opt.label + '</label>';
+        }
+      }
+      return '<div class="question-card">' + html + '</div>';
+    }
+
+    function buildTaskForm(containerId, dataset) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const dsConfig = questionsConfig.datasets[dataset];
+      if (!dsConfig) return;
+      let html = '';
+      dsConfig.questions.forEach((q, i) => {
+        html += buildQuestionHtml(containerId === 'task1EmbeddedForm' ? 'task1' : 'task2', q, i);
+      });
+      questionsConfig.preferenceQuestions.forEach((q) => {
+        const prefix = containerId === 'task1EmbeddedForm' ? 'task1' : 'task2';
+        const name = prefix + '_' + q.id;
+        html += '<div class="question-card"><p class="question-label">' + q.question + '</p>';
+        for (const opt of q.options) {
+          html += '<label><input type="radio" name="' + name + '" value="' + opt.value + '" /> ' + opt.label + '</label>';
+        }
+        html += '</div>';
+      });
+      html += '<div class="question-card"><p class="question-label">Any additional comments? (optional)</p>';
+      html += '<textarea id="' + (containerId === 'task1EmbeddedForm' ? 'task1' : 'task2') + '_comments" rows="3" placeholder="Optional feedback..."></textarea></div>';
+      container.innerHTML = html;
+    }
+
+    function getRequiredQuestionIds(dataset) {
+      const dsConfig = questionsConfig.datasets[dataset];
+      if (!dsConfig) return [];
+      const ids = dsConfig.questions.map(q => q.id);
+      questionsConfig.preferenceQuestions.forEach(q => ids.push(q.id));
+      return ids;
+    }
+
+    buildTaskForm('task1EmbeddedForm', finalTask1.dataset);
+    buildTaskForm('task2EmbeddedForm', finalTask2.dataset);
+    document.querySelectorAll('#task1EmbeddedForm input, #task2EmbeddedForm input').forEach(el => {
+      el.addEventListener('change', updateTaskFormNextButtons);
+      el.addEventListener('input', function() {
+        if (el.type === 'range') {
+          const span = document.querySelector('.slider-value[data-for="' + el.name + '"]');
+          if (span) span.textContent = el.value + '%';
+          updateTaskFormNextButtons();
+        }
+      });
+    });
+    updateTaskFormNextButtons();
+
     // Helper function to display dataset name nicely
     function getDatasetDisplayName(dataset) {
+      if (dataset === 'user_study_monsters_temp') return 'Monsters';
+      if (dataset === 'user_study_places_temp') return 'Places';
       if (dataset === 'user_study_monsters') return 'Monsters';
       if (dataset === 'user_study_places') return 'Stories';
       return dataset;
@@ -727,8 +921,8 @@
 
     // Helper function to get entity type text based on dataset
     function getEntityTypeText(dataset) {
-      if (dataset === 'user_study_monsters') return 'monster';
-      if (dataset === 'user_study_places') return 'place';
+      if (dataset === 'user_study_monsters_temp' || dataset === 'user_study_monsters') return 'monster';
+      if (dataset === 'user_study_places_temp' || dataset === 'user_study_places') return 'place';
       return 'monster or place';
     }
 
@@ -742,7 +936,7 @@
     // Combined intro for each task (simplified to match single distribution style)
     const gistNote = '<strong>You do not need to read every word of every output. These questions are about getting the "gist" of the outputs. The time taken will be measured.</strong>';
     const buttonInstruction = '<p>Click the "Start Task" button below to see the outputs, and then answer the questions below.</p>';
-    const compareNote = ' You will compare outputs from two different prompts (prompt A and prompt B).';
+    const compareNote = ' You will compare outputs from two different prompts (<span class="prompt-1">Prompt 1</span> and <span class="prompt-2">Prompt 2</span>).';
 
     function getTask1Intro(visType) {
       if (visType === 'raw_outputs') {
@@ -787,7 +981,6 @@
     const task1DemoUrl = getDemoUrl(finalTask1.visType);
     document.getElementById('task1Demo').src = task1DemoUrl;
     document.getElementById('task1DemoContainer').style.display = task1DemoUrl ? 'block' : 'none';
-    document.getElementById('task1Form').src = getFormUrlForDataset(finalTask1.dataset, finalTask1.visType);
     document.getElementById('task1Intro').innerHTML = getTask1Intro(finalTask1.visType);
 
     // Update Task 2 section
@@ -795,19 +988,18 @@
     const task2DemoUrl = getDemoUrl(finalTask2.visType);
     document.getElementById('task2Demo').src = task2DemoUrl;
     document.getElementById('task2DemoContainer').style.display = task2DemoUrl ? 'block' : 'none';
-    document.getElementById('task2Form').src = getFormUrlForDataset(finalTask2.dataset, finalTask2.visType);
     document.getElementById('task2Intro').innerHTML = getTask2Intro(finalTask2.visType, finalTask2.dataset);
 
     // Update Final Survey section
-    // Include both tasks' dataset and visType for the final survey
-    const paramsString = encodeURIComponent(getProlificParamsString(
-      `${finalTask1.dataset},${finalTask2.dataset}`,
-      `${finalTask1.visType},${finalTask2.visType}`
-    ));
-    const finalSurveyUrl = formUrlFinalSurveyTemplate.replace('UID', paramsString);
-    document.getElementById('finalSurveyForm').src = finalSurveyUrl;
+    document.getElementById('finalSurveyForm').src = formUrlFinalSurveyTemplate;
 
-    // Show form when task link is clicked and enable Next button
+    // Track timing for task form pages
+    let task1PageArrivedAt = null;
+    let task2PageArrivedAt = null;
+    let task1AnswerEditTimestamps = {};
+    let task2AnswerEditTimestamps = {};
+
+    // Show form when task link is clicked
     document.getElementById('task1Link').addEventListener('click', function() {
       logTelemetryEvent('start_task', {
         taskNumber: 1,
@@ -816,7 +1008,6 @@
         url: task1Url,
       });
       document.getElementById('task1FormContainer').classList.add('visible');
-      // Show backup link message
       const backupLinkDiv = document.getElementById('task1BackupLink');
       const backupUrlLink = document.getElementById('task1BackupUrl');
       backupLinkDiv.style.display = 'block';
@@ -834,7 +1025,6 @@
         url: task2Url,
       });
       document.getElementById('task2FormContainer').classList.add('visible');
-      // Show backup link message
       const backupLinkDiv = document.getElementById('task2BackupLink');
       const backupUrlLink = document.getElementById('task2BackupUrl');
       backupLinkDiv.style.display = 'block';
@@ -844,20 +1034,135 @@
       updatePageDisplay();
     });
 
+    // Track answer edits for timing
+    function setupAnswerEditTracking(taskNum) {
+      const prefix = taskNum === 1 ? 'task1' : 'task2';
+      const timestamps = taskNum === 1 ? task1AnswerEditTimestamps : task2AnswerEditTimestamps;
+      const inputs = document.querySelectorAll(`#${prefix}EmbeddedForm input, #${prefix}EmbeddedForm textarea`);
+      inputs.forEach((el, i) => {
+        const key = el.name || el.id || ('q' + i);
+        el.addEventListener('change', function() {
+          timestamps[key] = timestamps[key] || Date.now();
+        });
+        el.addEventListener('input', function() {
+          if (el.tagName === 'TEXTAREA') timestamps[key] = timestamps[key] || Date.now();
+        });
+      });
+    }
+
+    // Collect form answers and submit telemetry when form Next is clicked
+    function collectTaskFormAnswers(taskNum) {
+      const prefix = taskNum === 1 ? 'task1' : 'task2';
+      const task = taskNum === 1 ? finalTask1 : finalTask2;
+      const pageArrivedAt = taskNum === 1 ? task1PageArrivedAt : task2PageArrivedAt;
+      const editTimestamps = taskNum === 1 ? task1AnswerEditTimestamps : task2AnswerEditTimestamps;
+      const answers = {};
+      const dsConfig = questionsConfig && questionsConfig.datasets && questionsConfig.datasets[task.dataset];
+      document.querySelectorAll(`#${prefix}EmbeddedForm input[type="radio"]:checked`).forEach(el => {
+        const qid = el.name.replace(prefix + '_', '');
+        answers[qid] = el.value;
+      });
+      document.querySelectorAll(`#${prefix}EmbeddedForm input[type="range"]`).forEach(el => {
+        const qid = el.name.replace(prefix + '_', '');
+        answers[qid] = parseInt(el.value, 10);
+      });
+      const commentsEl = document.getElementById(prefix + '_comments');
+      if (commentsEl && commentsEl.value.trim()) answers.comments = commentsEl.value.trim();
+      const answersWithGroundTruth = {};
+      if (dsConfig) {
+        for (const q of dsConfig.questions) {
+          const val = answers[q.id];
+          const gt = q.groundTruth;
+          let correct = null;
+          if (gt != null && val != null) {
+            if (q.type === 'slider' && typeof gt === 'number') {
+              correct = Math.abs(parseInt(val, 10) - gt) <= 15;
+            } else {
+              correct = (val === gt || (typeof val === 'number' && val === gt));
+            }
+          }
+          answersWithGroundTruth[q.id] = {
+            value: val,
+            groundTruth: gt,
+            correct: correct,
+          };
+        }
+      }
+      for (const q of (questionsConfig && questionsConfig.preferenceQuestions) || []) {
+        if (answers[q.id]) answersWithGroundTruth[q.id] = { value: answers[q.id] };
+      }
+      if (answers.comments) answersWithGroundTruth.comments = answers.comments;
+      return {
+        taskNumber: taskNum,
+        dataset: task.dataset,
+        visType: task.visType,
+        pageArrivedAt,
+        nextClickedAt: Date.now(),
+        timeOnPageMs: pageArrivedAt ? Date.now() - pageArrivedAt : null,
+        answerEditTimestamps: { ...editTimestamps },
+        answers: answersWithGroundTruth,
+      };
+    }
+
+    function isTaskFormComplete(taskNum) {
+      const prefix = taskNum === 1 ? 'task1' : 'task2';
+      const task = taskNum === 1 ? finalTask1 : finalTask2;
+      const requiredIds = getRequiredQuestionIds(task.dataset);
+      const dsConfig = questionsConfig && questionsConfig.datasets && questionsConfig.datasets[task.dataset];
+      if (requiredIds.length === 0) return true;
+      for (const qid of requiredIds) {
+        const q = dsConfig && dsConfig.questions.find(x => x.id === qid);
+        if (q && q.type === 'slider') {
+          if (!document.querySelector(`input[name="${prefix}_${qid}"]`)) return false;
+        } else {
+          if (!document.querySelector(`input[name="${prefix}_${qid}"]:checked`)) return false;
+        }
+      }
+      return true;
+    }
+
+    function updateTaskFormNextButtons() {
+      const btn1 = document.getElementById('task1FormNext');
+      const btn2 = document.getElementById('task2FormNext');
+      if (btn1) btn1.disabled = !isTaskFormComplete(1);
+      if (btn2) btn2.disabled = !isTaskFormComplete(2);
+    }
+
+    document.getElementById('task1FormNext').addEventListener('click', function() {
+      if (!isTaskFormComplete(1)) return;
+      const formData = collectTaskFormAnswers(1);
+      logTelemetryEvent('task_form_submit', formData);
+      task1Completed = true;
+      currentPage = 3;
+      if (typeof LandingPageTimer !== 'undefined') LandingPageTimer.reset();
+      updatePageDisplay();
+      window.scrollTo(0, 0);
+    });
+
+    document.getElementById('task2FormNext').addEventListener('click', function() {
+      if (!isTaskFormComplete(2)) return;
+      const formData = collectTaskFormAnswers(2);
+      logTelemetryEvent('task_form_submit', formData);
+      task2Completed = true;
+      currentPage = 4;
+      if (typeof LandingPageTimer !== 'undefined') LandingPageTimer.setVisible(false);
+      updatePageDisplay();
+      window.scrollTo(0, 0);
+    });
+
     // Store assignments in localStorage for potential use in the app
     if (prolificPid) {
       localStorage.setItem(`user_study_${prolificPid}_task1`, JSON.stringify(finalTask1));
       localStorage.setItem(`user_study_${prolificPid}_task2`, JSON.stringify(finalTask2));
     }
 
-    // Initialize progress dots
+    // Initialize progress dots (non-clickable, show progress only)
     function initializeProgressDots() {
       const dotsContainer = document.getElementById('progressDots');
       dotsContainer.innerHTML = '';
       for (let i = 1; i <= totalPages; i++) {
         const dot = document.createElement('div');
         dot.className = 'dot' + (i === 1 ? ' active' : '');
-        dot.onclick = () => goToPage(i);
         dotsContainer.appendChild(dot);
       }
     }
@@ -878,20 +1183,24 @@
         LandingPageTimer.setVisible(currentPage === 2 || currentPage === 3);
       }
       
-      // Update navigation buttons
-      document.getElementById('prevButton').disabled = currentPage === 1;
-
-      // Token gate: show on task pages (2 and 3), hide otherwise
-      const tokenGate = document.getElementById('tokenGate');
-      const tokenInput = document.getElementById('tokenInput');
-      if (currentPage === 2 || currentPage === 3) {
-        tokenGate.classList.remove('hidden');
-      } else {
-        tokenGate.classList.add('hidden');
-        if (tokenInput) tokenInput.value = '';
+      // Set page-arrived timestamps when first showing task pages
+      if (currentPage === 2 && task1PageArrivedAt === null) {
+        task1PageArrivedAt = Date.now();
+        logTelemetryEvent('task_page_arrived', { taskNumber: 1, pageArrivedAt: task1PageArrivedAt });
+        setupAnswerEditTracking(1);
+      }
+      if (currentPage === 3 && task2PageArrivedAt === null) {
+        task2PageArrivedAt = Date.now();
+        logTelemetryEvent('task_page_arrived', { taskNumber: 2, pageArrivedAt: task2PageArrivedAt });
+        setupAnswerEditTracking(2);
       }
 
-      updateNextButtonState();
+      // Hide main Next on task pages (form has its own Next); show on overview and final
+      const nextBtn = document.getElementById('nextButton');
+      nextBtn.style.display = (currentPage === 2 || currentPage === 3) ? 'none' : '';
+      if (currentPage !== 2 && currentPage !== 3) {
+        nextBtn.disabled = currentPage === totalPages;
+      }
       
       // Update progress dots
       const dots = document.querySelectorAll('.dot');
@@ -902,18 +1211,6 @@
           dot.classList.remove('active');
         }
       });
-    }
-
-    function updateNextButtonState() {
-      const tokenInput = document.getElementById('tokenInput');
-      const tokenMatch = tokenInput && tokenInput.value.trim() === SURVEY_TOKEN;
-      let nextButtonDisabled = currentPage === totalPages;
-      if (currentPage === 2) {
-        nextButtonDisabled = !task1Started || !tokenMatch;
-      } else if (currentPage === 3) {
-        nextButtonDisabled = !task2Started || !tokenMatch;
-      }
-      document.getElementById('nextButton').disabled = nextButtonDisabled;
     }
 
     // Helper function to get dataset and visType for a page
@@ -960,40 +1257,9 @@
         if (typeof LandingPageTimer !== 'undefined' && (toPage === 2 || toPage === 3)) {
           LandingPageTimer.reset();
         }
-        if (toPage === 2 || toPage === 3) {
-          const ti = document.getElementById('tokenInput');
-          if (ti) ti.value = '';
-        }
         currentPage = toPage;
         updatePageDisplay();
         window.scrollTo(0, 0);
-      }
-    }
-
-    function previousPage() {
-      if (currentPage > 1) {
-        const toPage = currentPage - 1;
-        const fromPageInfo = getPageTaskInfo(currentPage);
-        const toPageInfo = getPageTaskInfo(toPage);
-        const navData = {
-          action: 'prev',
-          fromPage: currentPage,
-          toPage: toPage,
-          fromDataset: fromPageInfo.dataset,
-          fromVisType: fromPageInfo.visType,
-          toDataset: toPageInfo.dataset,
-          toVisType: toPageInfo.visType,
-        };
-        if (typeof LandingPageTimer !== 'undefined' && (currentPage === 2 || currentPage === 3)) {
-          navData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
-        }
-        logTelemetryEvent('landing_page_nav', navData);
-        if (toPage === 2 || toPage === 3) {
-          const ti = document.getElementById('tokenInput');
-          if (ti) ti.value = '';
-        }
-        currentPage = toPage;
-        updatePageDisplay();
       }
     }
 
@@ -1014,24 +1280,15 @@
           navData.taskTimerElapsedMs = LandingPageTimer.getElapsedMs();
         }
         logTelemetryEvent('landing_page_nav', navData);
-        if (page === 2 || page === 3) {
-          const ti = document.getElementById('tokenInput');
-          if (ti) ti.value = '';
-        }
         currentPage = page;
         updatePageDisplay();
       }
     }
 
-    // Token input: enable Next when correct token is entered
-    document.getElementById('tokenInput').addEventListener('input', updateNextButtonState);
-    document.getElementById('tokenInput').addEventListener('paste', function() {
-      setTimeout(updateNextButtonState, 0);
-    });
-
     // Initialize on page load
     initializeProgressDots();
     updatePageDisplay();
+    updateTaskFormNextButtons();
   </script>
 </body>
 </html>
