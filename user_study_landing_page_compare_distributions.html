@@ -645,7 +645,8 @@
     const demoImageUrl = 'annotated_graph.png';
 
     // Final survey Google Form (compare distributions qualitative responses)
-    const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/1mgoviofNcV9GpY1NrHPlRmZg09iAUqDcCIjOnPyrmGw/viewform?embedded=true';
+    const formUrlFinalSurveyTemplate = 'https://docs.google.com/forms/d/e/1FAIpQLSfJBOxLRCdKtbOF3buKob5t55accLkeF-NEkHN77uc8-1K2Hg/viewform?usp=pp_url&entry.1859965680=UID&embedded=true';
+    
 
     function getDemoUrl(visType) {
       return visType === 'graph' && !demoImageUrl.includes('[PLACEHOLDER') ? demoImageUrl : '';
@@ -986,7 +987,8 @@
     document.getElementById('task2Intro').innerHTML = getTask2Intro(finalTask2.visType, finalTask2.dataset);
 
     // Update Final Survey section
-    document.getElementById('finalSurveyForm').src = formUrlFinalSurveyTemplate;
+    const paramsString = getProlificParamsString(finalTask1.dataset, finalTask1.visType);
+    document.getElementById('finalSurveyForm').src = formUrlFinalSurveyTemplate.replace('UID', encodeURIComponent(paramsString));
 
     // Track timing for task form pages
     let task1PageArrivedAt = null;
