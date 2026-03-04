@@ -17,6 +17,7 @@ export interface Event {
   prolificPid?: string;
   sessionId?: string;
   studyId?: string;
+  user_study_name?: string;
 }
 
 interface UrlParams {
@@ -25,6 +26,7 @@ interface UrlParams {
   studyId: string | null;
   interfaceVersion: string | null;
   dataset: string | null;
+  userStudyName: string | null;
 }
 
 // In-memory storage for events (only for current page load)
@@ -40,6 +42,7 @@ function parseTelemetryUrlParams(): UrlParams {
     studyId: urlParams.get(URLParam.STUDY_ID),
     interfaceVersion: urlParams.get(URLParam.VIS_TYPE),
     dataset: urlParams.get(URLParam.DATASET),
+    userStudyName: urlParams.get(URLParam.USER_STUDY_NAME),
   };
 }
 
@@ -51,6 +54,7 @@ function getEventMetadata(): {
   prolificPid?: string;
   sessionId?: string;
   studyId?: string;
+  user_study_name?: string;
 } {
   const params = parseTelemetryUrlParams();
   
@@ -66,6 +70,7 @@ function getEventMetadata(): {
     prolificPid: params.prolificPid || undefined,
     sessionId: params.sessionId || undefined,
     studyId: params.studyId || undefined,
+    user_study_name: params.userStudyName || undefined,
   };
 }
 
@@ -127,11 +132,16 @@ function prepareSubmissionPayload(): string {
   
   console.log('PREPARING SUBMISSION PAYLOAD', participantId);
   
-  return JSON.stringify({
+  const params = parseTelemetryUrlParams();
+  const payload: Record<string, unknown> = {
     participantId,
     interfaceVersion,
     telemetry: events,
-  });
+  };
+  if (params.userStudyName) {
+    payload.user_study_name = params.userStudyName;
+  }
+  return JSON.stringify(payload);
 }
 
 // Check if there are events to submit

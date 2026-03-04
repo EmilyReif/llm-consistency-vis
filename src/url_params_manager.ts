@@ -20,6 +20,7 @@ export enum URLParam {
   SESSION_ID = 'session_id',
   STUDY_ID = 'study_id',
   DATASET = 'dataset',
+  USER_STUDY_NAME = 'user_study_name',
 }
 
 // Type for vis_type values
