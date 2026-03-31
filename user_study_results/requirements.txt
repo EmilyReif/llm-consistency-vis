@@ -3,3 +3,4 @@ matplotlib
 seaborn  # optional, for prettier plot styling
 numpy
 altair  # for event dots timeline (Vega-Lite)
+pingouin  # Wilcoxon signed-rank test with effect size

@@ -112,6 +112,8 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
         // Parse URL parameter for separate_graphs using URLParamsManager
         const separateByPrompt = urlParams.getBoolean(URLParam.SEPARATE_GRAPHS);
         
+        const urlSpread = urlParams.getNumber(URLParam.GRAPH_SPREAD);
+        
         this.state = {
             popupNodes: [],
             hoveredNode: null,
@@ -119,7 +121,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
             isPopupVisible: true,
             similarityThreshold: DEFAULT_SIMILARITY_THRESHOLD,
             minOpacityThreshold: DEFAULT_MIN_OPACITY_THRESHOLD,
-            spread: DEFAULT_SPREAD,
+            spread: urlSpread ?? DEFAULT_SPREAD,
             tokenizeMode: state.tokenizeMode,
             separateByPrompt,
             animatingGeneration: false,
@@ -235,6 +237,7 @@ class SingleExampleWordGraph extends React.Component<Props, State> {
                                 value={this.state.spread}
                                 onChangeCommitted={(e, value) => {
                                     this.setState({ spread: value as number });
+                                    urlParams.set(URLParam.GRAPH_SPREAD, value as number);
                                     telemetry.logSliderChange('spread', value as number);
                                 }}
                                 valueLabelDisplay="off"

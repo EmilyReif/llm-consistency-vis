@@ -21,6 +21,7 @@ export enum URLParam {
   STUDY_ID = 'study_id',
   DATASET = 'dataset',
   USER_STUDY_NAME = 'user_study_name',
+  GRAPH_SPREAD = 'graph_spread',
 }
 
 // Type for vis_type values
