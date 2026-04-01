@@ -9,6 +9,7 @@ import { examplesUserStudyMonsters as examplesUserStudyMonstersDuplicates} from 
 import { examplesUserStudyPlaces as examplesUserStudyPlacesTemp } from "./cached_data/places_temp";
 import { examplesUserStudyMonsters as examplesUserStudyMonstersTemp } from "./cached_data/monsters_temp";
 import { examplesPresidents } from "./cached_data/presidents";
+import { examplesRewardMathResponses } from "./cached_data/reward_math";
 import { urlParams, URLParam } from "./url_params_manager";
 
 /** Round temp to avoid float key collisions (e.g. 0.7000000000000001 -> 0.7) */
@@ -51,6 +52,7 @@ const datasetMap: { [key: string]: { [key: string]: string[] } } = {
     'qalign': examplesQalign,
     'olmo_trace': exampleOlmoTrace,
     'presidents': examplesPresidents,
+    'reward_math': examplesRewardMathResponses,
     'user_study_monsters_duplicates': examplesUserStudyMonstersDuplicates,
     'user_study_places_duplicates': examplesUserStudyPlacesDuplicates,
     'user_study_monsters': examplesUserStudyMonsters,
