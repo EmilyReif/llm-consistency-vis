@@ -1,4 +1,6 @@
 node_modules/*
+interactive_article/node_modules
+interactive_article/build
 .DS_Store
 /build
 /llm-consistency-vis
