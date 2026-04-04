@@ -35,6 +35,20 @@
   font-size: 1.1rem;
 }
 
+.article-formative-findings {
+  margin: 0.75rem 0 1.5rem;
+  padding-left: 1.25rem;
+}
+
+.article-formative-findings li {
+  margin-bottom: 1rem;
+  line-height: 1.55;
+}
+
+.article-formative-findings li:last-child {
+  margin-bottom: 0;
+}
+
 .article-placeholder-end {
   margin-top: 2rem;
   padding: 1rem;

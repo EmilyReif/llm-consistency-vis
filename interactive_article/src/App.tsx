@@ -206,9 +206,57 @@ export default function App() {
       <section className="article-below-scrolly" aria-label="User studies">
         <h2>User studies</h2>
         <p className="article-section-lede">
-          <em>[TODO: protocol summary, tasks, and takeaway bullets.]</em> Ut enim ad minim veniam, quis nostrud
-          exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+          In a formative semi-structured interview study, we spoke with thirteen researchers in NLP and HCI who use
+          language models on open-ended tasks. Sessions lasted about half an hour and covered when stochasticity matters in
+          their work, how they sample and inspect many completions, what they mean by &ldquo;diversity&rdquo; or a
+          &ldquo;distribution&rdquo; over text, and reactions to an early graph prototype&mdash;grounding the design goals
+          behind GROVE.
         </p>
+        <h3>Findings</h3>
+        <ul className="article-formative-findings">
+          <li>
+            <strong>Adopting LMs out of necessity, not enthusiasm.</strong> Many participants treated models as the only
+            practical way to get fluent language on novel tasks without massive data or crowdwork, not because the LM was
+            ideal. One researcher said simply: &ldquo;there just wasn&rsquo;t really anything else that would have worked
+            [for our task].&rdquo;
+          </li>
+          <li>
+            <strong>Tools that enable nuanced behaviors also produce nuanced failures.</strong> Benchmarks and automatic
+            metrics were often a starting point, but rarely settled whether behavior was good enough for a specific use
+            case. As one put it: &ldquo;quantitative evaluation isn&rsquo;t great. No automatic metrics really apply to
+            our problem.&rdquo;
+          </li>
+          <li>
+            <strong>Evaluation requires distributional analysis.</strong> A single completion could be misleading; people
+            cared about within-input diversity versus meaningful differences when comparing prompts. One summarized the
+            iteration problem this way: &ldquo;it&rsquo;s a huge problem that a single output from model A could have also
+            come from model B.&rdquo;
+          </li>
+          <li>
+            <strong>What does &ldquo;distribution&rdquo; mean for natural language?</strong> There was no shared
+            operationalization&mdash;unlike numeric outputs, text has no agreed units of variation, so assessments were
+            often an &ldquo;impression test&rdquo; from reading many examples.
+          </li>
+          <li>
+            <strong>Direct evaluation does not scale for distributions.</strong> Inspecting many generations at once was
+            cognitively costly; some avoided stochasticity or large batches. One wished for richer multi-example
+            workflows but noted: &ldquo;It&rsquo;s expensive to generate, and hard to qualitatively understand.&rdquo;
+          </li>
+          <li>
+            <strong>Distributions matter beyond evaluation.</strong> Open-ended creativity, synthetic data uniformity,
+            matching human-like variation, reasoning traces, and intentionally diverse multi-agent setups all made the
+            spread of outputs a first-class concern. One researcher building multiple LM experts asked: &ldquo;If I&rsquo;ve
+            accidentally created the same agent multiple times, or they&rsquo;re all giving the same advice, then why not
+            just make one?&rdquo;
+          </li>
+          <li>
+            <strong>Consistency can also be desirable.</strong> For multi-step or user-facing systems, inconsistency could
+            cascade; participants wanted controlled variation (semantic consistency with flexible phrasing), not
+            chaotically different behaviors. As one participant put it, &ldquo;[inconsistency] is worse when it&rsquo;s a
+            part of a larger system. It can cascade and mess up the whole thing,&rdquo; motivating careful inspection of
+            full output sets.
+          </li>
+        </ul>
         <InteractiveGraphPlaceholder
           label="user-study-figure-1"
           caption="Placeholder: figure from the paper (e.g. task overview, quantitative summary, or qualitative coding)."
