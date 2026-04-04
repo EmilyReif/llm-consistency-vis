@@ -1,5 +1,6 @@
 .article-app {
-  max-width: 900px;
+  box-sizing: border-box;
+  max-width: min(42rem, calc(100vw - 2rem));
   margin: 0 auto;
   padding: 1rem 1.25rem 4rem;
   line-height: 1.55;
@@ -84,34 +85,201 @@
   margin-bottom: 0.5rem;
 }
 
+/* Motivating examples: break graphs out to full viewport width (no side padding) */
+.article-motivating-fullbleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.article-motivating-figure {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.article-motivating-graph-host {
+  min-height: min(72vh, 640px);
+  display: flex;
+  flex-direction: column;
+  /* Let long prompt cards (e.g. translation) extend past the SVG without clipping */
+  overflow: visible;
+}
+
+/* Full-bleed motivating viz: no card border/radius (still uses placeholder-frame class for layout) */
+.article-graph-placeholder-frame.article-motivating-graph-host {
+  border: none;
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+}
+
+.article-motivating-graph-host > .article-example-untangle {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.article-motivating-graph-host .article-example-untangle > svg,
+.article-motivating-graph-host .article-wordgraph-viz-pane > svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+.article-motivating-graph-host--manual-svg-h {
+  min-height: unset;
+}
+
+.article-motivating-graph-host--manual-svg-h .article-example-untangle > svg,
+.article-motivating-graph-host--manual-svg-h .article-wordgraph-viz-pane > svg {
+  height: var(--article-motivating-svg-h);
+  max-height: none;
+}
+
+/* Motivating examples: prompt — width follows text, capped at 75% of viz; 10px from top & sidebar */
+.article-wordgraph-floating-prompt {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  left: auto;
+  width: fit-content;
+  max-width: 75%;
+  z-index: 3;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.article-motivating-floating-prompt-card.scrolly-seq-prompt-block {
+  margin: 0;
+  width: auto;
+  max-width: 100%;
+  align-self: auto;
+  opacity: 1;
+  transform: none;
+  box-sizing: border-box;
+  padding-top: 10px;
+  padding-right: 10px;
+  padding-bottom: 0.5rem;
+  padding-left: 0.6rem;
+}
+
+.article-motivating-floating-prompt-card .scrolly-seq-prompt-body {
+  margin: 0;
+  overflow: visible;
+  max-height: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 /* Sticky won’t work if an ancestor clips overflow; Distill is usually fine. */
 #root,
 .article-app {
   overflow: visible;
 }
 
+/* Full-width band for scrolly (break out of .article-app max-width) */
+.scrolly-full-bleed {
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  max-width: none;
+  box-sizing: border-box;
+}
+
 /* Scrolly: text + sticky viz */
 .scrolly-root {
   margin: 2rem 0 3rem;
+  padding: 0 1.75rem;
+  box-sizing: border-box;
 }
 
 .scrolly-inner {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  max-width: none;
 }
 
 .scrolly-text-col {
-  flex: 1;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: min(28rem, 92vw);
   min-width: 0;
 }
 
 .scrolly-viz-col {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
-  /* Let desktop stretch (below) so sticky has a tall scroll range */
   display: flex;
   flex-direction: column;
+}
+
+.scrolly-viz-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.scrolly-viz-panel--sequence {
+  gap: 0;
+}
+
+.scrolly-viz-main--sequence {
+  display: flex;
+  flex-direction: column;
+  min-height: min(68vh, 620px);
+}
+
+.scrolly-viz-main--sequence > .scrolly-diagram {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.scrolly-prompt-rail {
+  flex: 0 0 auto;
+  width: 100%;
+  max-height: min(38vh, 15rem);
+  overflow: auto;
+  padding: 0.55rem 0.75rem;
+  background: #f4f4f4;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.scrolly-prompt-rail-body {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #222;
+}
+
+.scrolly-viz-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: min(52vh, 480px);
+}
+
+.scrolly-viz-main--pre-viz {
+  min-height: 0;
+}
+
+.scrolly-viz-panel--pre-viz {
+  min-height: 0;
+}
+
+/* Early scrolly keyframes: no zoom / pan / click on the SVG */
+.article-wordgraph-no-interaction svg {
+  pointer-events: none;
+  cursor: default;
+  touch-action: none;
 }
 
 .scrolly-viz-sticky {
@@ -144,16 +312,210 @@
   background: #fff;
 }
 
-/* Placeholder diagram */
+/* Scrolly diagram surface (prompt card or embedded untangle graph) */
 .scrolly-diagram {
-  border: 2px dashed #bbb;
+  border: 1px solid #d8d8d8;
   border-radius: 12px;
   min-height: 240px;
-  padding: 1rem;
+  padding: 0.45rem 0.5rem 0.55rem;
   background: #fafafa;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
+}
+
+.scrolly-diagram-prompt-label {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #666;
+}
+
+.scrolly-diagram-untangle {
+  padding: 0.25rem 0.2rem 0.45rem;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* Prompt → loader → outputs → graph story (no outer frame—only prompt/output cards keep borders) */
+.scrolly-viz-main--sequence .scrolly-diagram-sequence {
+  flex: 1;
+  min-height: 100%;
+  background: transparent;
+}
+
+.scrolly-diagram.scrolly-diagram-sequence {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  gap: 0;
+}
+
+.scrolly-diagram-sequence {
+  padding: 0;
+}
+
+.scrolly-sequence-viz {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  gap: 0.35rem;
+}
+
+.scrolly-seq-prompt-block {
+  opacity: 0;
+  transform: translateY(5px);
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s ease;
+  align-self: flex-end;
+  width: 75%;
+  max-width: 75%;
+  padding: 0.5rem 0.6rem;
+  background: #f4f4f4;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.scrolly-seq-prompt-block--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scrolly-seq-prompt-body {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #222;
+}
+
+.scrolly-seq-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  min-height: 2.25rem;
+  padding: 0.35rem 0;
+}
+
+@keyframes scrolly-seq-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.28;
+    transform: scale(0.88);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scrolly-seq-loading-dot {
+  width: 7px;
+  height: 7px;
+  margin: 0 4px;
+  border-radius: 50%;
+  background: #64748b;
+  animation: scrolly-seq-dot 1.15s ease-in-out infinite;
+}
+
+.scrolly-seq-loading-dot:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.scrolly-seq-loading-dot:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+.scrolly-seq-output-card {
+  border: none;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.5rem 0.65rem 0.55rem;
+  margin-top: 0.15rem;
+  transition: min-height 0.45s ease;
+  box-sizing: border-box;
+  min-width: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.scrolly-seq-output-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+
+.scrolly-seq-output-lines {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  /* ~match ExamplesWordGraphUntangle ROW_SPACING_1D (20px) between completion rows */
+  gap: 1.25rem;
+}
+
+.scrolly-seq-output-line {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #1a1a1a;
+}
+
+/* Keyframe 3: first line only + ellipsis (pure CSS; pre-line so \\n creates breaks for line-clamp) */
+.scrolly-seq-output-line--one-line-preview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  min-width: 0;
+  overflow-wrap: break-word;
+  white-space: pre-line;
+}
+
+.scrolly-seq-graph-panel {
+  margin-top: 0.35rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.scrolly-seq-graph-panel .scrolly-untangle-root {
+  min-height: 100vh;
+  height: 100vh;
+}
+
+.scrolly-untangle-root {
+  position: relative;
+  width: 100%;
+  min-height: min(65vh, 520px);
+}
+
+.scrolly-diagram-untangle .graph-controls-overlay {
+  top: 0.5rem;
+  right: 0.35rem;
+}
+
+.scrolly-diagram-untangle .loader:not(.hidden) ~ svg {
+  visibility: hidden;
 }
 
 .scrolly-diagram-debug {
@@ -209,18 +571,24 @@
 @media (min-width: 900px) {
   .scrolly-inner {
     flex-direction: row;
-    /* stretch (not flex-start): both columns match tall text height so sticky can pin */
     align-items: stretch;
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
+  /* Article left, graph right; grey rule between the columns. */
   .scrolly-text-col {
-    flex: 6 1 0;
+    flex: 0 0 min(28rem, 36vw);
+    width: min(28rem, 36vw);
+    max-width: min(28rem, 36vw);
     order: 1;
+    border-right: 1px solid #c8c8c8;
+    padding-right: 1.5rem;
+    box-sizing: border-box;
   }
 
   .scrolly-viz-col {
-    flex: 5 1 0;
+    flex: 1 1 auto;
+    min-width: 0;
     order: 2;
   }
 
@@ -228,20 +596,50 @@
     position: sticky;
     top: 1rem;
     align-self: flex-start;
+    width: 100%;
+  }
+
+  .scrolly-viz-panel {
+    flex-direction: column;
+    gap: 0.85rem;
+    min-height: min(72vh, 560px);
+  }
+
+  .scrolly-viz-panel.scrolly-viz-panel--pre-viz {
+    min-height: 0;
+  }
+
+  .scrolly-prompt-rail {
+    max-height: min(32vh, 16rem);
+  }
+
+  .scrolly-viz-main {
+    min-height: min(70vh, 560px);
+  }
+
+  .scrolly-viz-main.scrolly-viz-main--pre-viz {
+    min-height: 0;
   }
 
   .scrolly-diagram {
-    min-height: min(70vh, 420px);
+    min-height: min(68vh, 520px);
   }
 }
 
 @media (max-width: 899px) {
   .scrolly-viz-col {
     order: -1;
+    border-bottom: 1px solid #c8c8c8;
+    padding-bottom: 1.25rem;
+    margin-bottom: 0.25rem;
   }
 
   .scrolly-viz-sticky {
     position: relative;
     top: auto;
+  }
+
+  .scrolly-prompt-rail {
+    max-height: none;
   }
 }

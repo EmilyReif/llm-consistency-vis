@@ -1,0 +1,360 @@
+.wordgraph-holder {
+    width: 180vw;
+    background-color: rgba(0, 0, 0, .05);
+    padding: 10px;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+text {
+    cursor: default;
+}
+
+/*
+ * Layout code measures labels with canvas "monospace"; without this, SVG text inherits
+ * article/template body fonts and the scrolly panel can pick up a different stack.
+ */
+.wordgraph-holder > svg,
+.article-example-untangle > svg,
+.article-wordgraph-viz-pane > svg,
+.scrolly-wg-svg {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.node, .link {
+    transition: filter .5s ease;
+}
+
+.node, .node text {
+    cursor: pointer;
+}
+
+.graph-controls-overlay {
+    position: absolute;
+    top: -80px;
+    right: 0px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px 12px 12px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    display: flex;
+    gap: 22px;
+    min-width: 180px;
+    font-family: monospace;
+}
+
+/* Article motivating: viz + right sidebar (column on narrow viewports) */
+.article-example-untangle.article-example-untangle--sidebar {
+    flex-direction: column;
+    min-height: 0;
+}
+
+@media (min-width: 720px) {
+    .article-example-untangle.article-example-untangle--sidebar {
+        flex-direction: row;
+    }
+}
+
+.article-wordgraph-viz-pane {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    overflow: visible;
+}
+
+/* Full-area loader until graph simulation + first draw complete */
+.article-wordgraph-viz-pane .article-wordgraph-loader,
+.article-example-untangle > .article-wordgraph-loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 4;
+    pointer-events: none;
+}
+
+.article-wordgraph-loader__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.article-wordgraph-loader__spinner {
+    box-sizing: border-box;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 3px solid #e3e8ef;
+    border-top-color: #1976d2;
+    border-radius: 50%;
+    animation: article-wordgraph-spin 0.75s linear infinite;
+}
+
+.article-wordgraph-loader__label {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.82rem;
+    color: #555;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+@keyframes article-wordgraph-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .article-wordgraph-loader__spinner {
+        animation-duration: 1.4s;
+        border-top-color: #90caf9;
+    }
+}
+
+.article-wordgraph-loader.hidden {
+    display: none !important;
+}
+
+.graph-controls-sidebar.graph-controls-sidebar--article-motivating {
+    position: static;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 10px 12px 12px;
+    margin: 0;
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    border-radius: 0;
+    background: #f8f8f9;
+    box-shadow: none;
+    z-index: 2;
+    font-family: monospace;
+}
+
+@media (min-width: 720px) {
+    .graph-controls-sidebar.graph-controls-sidebar--article-motivating {
+        width: 200px;
+        max-width: 200px;
+        min-width: 200px;
+        border-top: none;
+        border-left: 1px solid #e0e0e0;
+        align-self: stretch;
+    }
+}
+
+.graph-controls-sidebar.graph-controls-sidebar--article-motivating .toggle-switch-container {
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.graph-controls-sidebar.graph-controls-sidebar--article-motivating .slider-container {
+    font-size: 0.78rem;
+    min-width: 0;
+}
+
+.graph-controls-sidebar.graph-controls-sidebar--article-motivating .slider-container label {
+    margin-bottom: 2px;
+    line-height: 1.15;
+    cursor: default;
+}
+
+.graph-controls-sidebar.graph-controls-sidebar--article-motivating .slider-container--nowrap-label label {
+    white-space: nowrap;
+}
+
+.graph-controls-sidebar.graph-controls-sidebar--article-motivating .slider-label-outputs {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem;
+}
+
+.graph-controls-sidebar.graph-controls-sidebar--article-motivating .slider-container .MuiSlider-root {
+    max-width: 100%;
+}
+
+.graph-controls-sidebar.graph-controls-sidebar--article-motivating .slider-value-narrow {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.graph-controls-sidebar.graph-controls-sidebar--article-motivating .slider-value-muted {
+    font-weight: normal;
+    color: #888;
+    font-size: 0.92em;
+}
+
+/* In user study mode, header elements are hidden so place controls below top (not overlapping prompt) */
+.graph-controls-overlay.graph-controls-overlay-user-study {
+    top: 10px;
+}
+
+.graph-controls-overlay .slider-container,
+.graph-controls-overlay .dropdown-container,
+.graph-controls-overlay .checkbox-container,
+.graph-controls-overlay .button-container {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9em;
+    position: relative;
+}
+
+.graph-controls-overlay .slider-container label {
+    cursor: help;
+    margin-bottom: 4px;
+}
+
+.graph-controls-overlay .slider-container .tooltip {
+    visibility: hidden;
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    position: absolute;
+    z-index: 1;
+    top: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    font-size: 0.9em;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.graph-controls-overlay .slider-container .tooltip::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #333 transparent;
+}
+
+.graph-controls-overlay .slider-container label:hover + .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.graph-controls-overlay .dropdown-container label {
+    font-weight: normal;
+    white-space: nowrap;
+    margin-bottom: 4px;
+}
+
+.graph-controls-overlay .dropdown-container select {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    font-size: 0.9em;
+    min-width: 120px;
+}
+
+.graph-controls-overlay .checkbox-container label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: normal;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.graph-controls-overlay .checkbox-container input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.graph-controls-overlay .button-container button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    font-size: 0.9em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+}
+
+.graph-controls-overlay .button-container button:hover:not(:disabled) {
+    background-color: #f0f0f0;
+}
+
+.graph-controls-overlay .button-container button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Graph/List toggle switch */
+.toggle-switch-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.toggle-switch-container .toggle-label {
+    font-weight: normal;
+    color: #999;
+}
+
+.toggle-switch-container.toggle-state-graph .toggle-label-graph,
+.toggle-switch-container.toggle-state-list .toggle-label-list {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.toggle-switch {
+    padding: 0;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    background: #e0e0e0;
+    cursor: pointer;
+    width: 48px;
+    height: 24px;
+    position: relative;
+}
+
+.toggle-switch:hover {
+    background: #d0d0d0;
+}
+
+.toggle-switch .toggle-switch-track {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+}
+
+.toggle-switch .toggle-switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    transition: transform 0.2s ease;
+}
+
+.toggle-switch.toggle-switch-list .toggle-switch-thumb {
+    transform: translateX(24px);
+}

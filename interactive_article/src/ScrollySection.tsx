@@ -1,8 +1,16 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ScrollyDiagram } from './ScrollyDiagram';
+import { prefetchScrollyWordGraphModel } from './ScrollyWordGraphUntangle';
 
-/** Scroll spy: beat advances when this sentinel crosses the top of the viewport. */
-const SCROLL_TRIGGER_TOP_PX = 0;
+/**
+ * Scroll spy thresholds (viewport coordinates):
+ * - First beat: sentinel crosses `SCROLL_TRIGGER_VIEWPORT_TOP_PX` from the top of the viewport.
+ * - Later beats: sentinel crosses `(bottom of previous sticky article + SCROLL_TRIGGER_AFTER_PREV_PX)`.
+ *   This matches stacked sticky copy: advancement is tied to the card above, not the screen edge.
+ */
+const SCROLL_TRIGGER_VIEWPORT_TOP_PX = 0;
+/** Positive = switch later (sentinel must rise higher); negative = switch earlier. */
+const SCROLL_TRIGGER_AFTER_PREV_PX = 0;
 
 /** Vertical gap between stacked sticky beats (px). */
 const STACK_GAP_PX = 4;
@@ -13,49 +21,69 @@ export interface ScrollyStep {
   html: string;
 }
 
+/** Edit this list only — `id` is `step-scrolly-${index + 1}` for scroll sentinels / diagram keys. */
+export interface ScrollyStepBeat {
+  keyframe: number;
+  html: string;
+}
+
+const SCROLLY_STEP_ID_PREFIX = 'step-scrolly';
+
 /**
- * Story beats (edit freely). Keyframes line up with diagram states: 1 = prompt only, 2 = single stream /
- * token-by-token, 3 = many lines, 4 = wall → graph / untangle. Multiple beats can share a keyframe while the
- * narration catches up.
+ * Keyframes: 2 = prompt / loading / single streaming output, 3 = many output lines (two beats: reveal + static copy), 4 = graph.
  */
-const STEPS: ScrollyStep[] = [
+const SCROLLY_STEP_BEATS: ScrollyStepBeat[] = [
   {
-    id: 'step-1',
-    keyframe: 1,
-    html: `<p>We usually interact with LLMs by giving a prompt, getting a response, maybe following up with another prompt, getting another response, and so on.</p>`,
-  },
-  {
-    id: 'step-2',
     keyframe: 2,
-    html: `<p>The model can show that as a single completion—a straight line of text, built up token by token.</p>`,
+    html: `<p>We typically interact with LLMs by giving them a prompt, and then getting a single response.</p>`,
   },
   {
-    id: 'step-3',
     keyframe: 3,
-    html: `<p>But LLMs produce <em>distributions</em>, not single answers. For a given input, what you see is just one <strong>sample</strong>—there could actually be many different outputs.</p>`,
+    html: `<p>However, LLMs produce <em>distributions</em>. Each output is just one sample from a given distribution: we usually just see one, but many are possible. How does this stochasticity manifest? Some sets of outputs are divergent, some are convergent.</p>`,
   },
   {
-    id: 'step-4',
-    keyframe: 3,
-    html: `<p>Sometimes that doesn&rsquo;t matter for the user&rsquo;s task, but sometimes it does. <em>[TODO: formative studies]</em></p>`,
-  },
-  {
-    id: 'step-5',
-    keyframe: 3,
-    html: `<p>That raises a new question: what&rsquo;s the best way to look at a bunch of outputs? In reality, since the LLM generates token by token, the full structure is a <strong>tree</strong>.</p>`,
-  },
-  {
-    id: 'step-6',
     keyframe: 4,
-    html: `<p>But sometimes outputs <strong>reconverge</strong> on a common phrase—so we can visualize them as a <strong>graph</strong>. A wall of many completions can &ldquo;detangle&rdquo; into overlapping paths.</p><p>We sacrifice some legibility of each exact example to show the overall shape of the distribution: outputs as paths in a graph, <strong>nodes</strong> as words or phrases, <strong>paths</strong> as individual generations, <strong>thickness</strong> as frequency.</p>`,
+    html: `<p>This raises a new question: What&rsquo;s the best way to look at a bunch of outputs?</p><p>In reality, since the LLM generates token-by-token, this is a tree. However, the outputs often reconverge on a common phrase.</p>`,
+  },
+  {
+    keyframe: 4,
+    html: `<p>Can we instead visualize this as a graph? We lose the ability to read each completion line by line, but gain a single picture of how mass is spread across phrasing&mdash;where samples agree, branch apart, and meet again.</p><p>In the view below, each completion is a <em>path</em> through <em>nodes</em> (words or short chunks). When generations share a stretch of text, their paths run along the same edges, so overlap makes shared structure visible. Node size and weight reflect how often a piece of wording appears across samples, highlighting backbone phrases and hubs in the distribution.</p>`,
   },
 ];
+
+const STEPS: ScrollyStep[] = SCROLLY_STEP_BEATS.map((beat, i) => ({
+  ...beat,
+  id: `${SCROLLY_STEP_ID_PREFIX}-${i + 1}`,
+}));
+
+/** First keyframe-3 beat only: line-by-line output reveal runs when this index is active. */
+export const SCROLLY_DISTRIBUTIONS_BEAT_INDEX = SCROLLY_STEP_BEATS.findIndex((b) => b.keyframe === 3);
 
 export function ScrollySection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [stickyTops, setStickyTops] = useState<number[]>(() => STEPS.map(() => 0));
   const textColRef = useRef<HTMLDivElement | null>(null);
   const articleRefs = useRef<(HTMLElement | null)[]>([]);
+  /** Last committed `activeIndex` (updated after paint) so the *current* render compares to the previous beat. */
+  const prevBeatRef = useRef(0);
+  /** When `activeIndex` is unchanged, reuse last direction so StrictMode / re-renders don’t flip to default. */
+  const scrollDirRef = useRef<'forward' | 'backward'>('forward');
+
+  let scrollDirection: 'forward' | 'backward';
+  if (activeIndex !== prevBeatRef.current) {
+    scrollDirection = activeIndex > prevBeatRef.current ? 'forward' : 'backward';
+    scrollDirRef.current = scrollDirection;
+  } else {
+    scrollDirection = scrollDirRef.current;
+  }
+
+  useLayoutEffect(() => {
+    prevBeatRef.current = activeIndex;
+  }, [activeIndex]);
+
+  useEffect(() => {
+    prefetchScrollyWordGraphModel().catch(() => {});
+  }, []);
 
   const recomputeStickyTops = () => {
     const heights = STEPS.map((_, i) => {
@@ -95,12 +123,21 @@ export function ScrollySection() {
 
     const updateActive = () => {
       scheduled = false;
-      const y = SCROLL_TRIGGER_TOP_PX;
       let next = 0;
       for (let i = STEPS.length - 1; i >= 0; i--) {
         const el = document.getElementById(STEPS[i].id);
         if (!el) continue;
-        if (el.getBoundingClientRect().top <= y) {
+        let triggerY: number;
+        if (i === 0) {
+          triggerY = SCROLL_TRIGGER_VIEWPORT_TOP_PX;
+        } else {
+          const prevArticle = articleRefs.current[i - 1];
+          triggerY =
+            prevArticle ?
+              prevArticle.getBoundingClientRect().bottom + SCROLL_TRIGGER_AFTER_PREV_PX
+            : SCROLL_TRIGGER_VIEWPORT_TOP_PX;
+        }
+        if (el.getBoundingClientRect().top <= triggerY) {
           next = i;
           break;
         }
@@ -124,6 +161,16 @@ export function ScrollySection() {
       window.removeEventListener('resize', onScrollOrResize);
     };
   }, []);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return;
+    const step = STEPS[activeIndex] ?? STEPS[0];
+    console.log('[scrolly scroll-spy] active beat → keyframe should start', {
+      beatIndex: activeIndex,
+      stepId: step.id,
+      keyframe: step.keyframe,
+    });
+  }, [activeIndex]);
 
   const { keyframe, id: stepId } = STEPS[activeIndex] ?? STEPS[0];
 
@@ -151,7 +198,17 @@ export function ScrollySection() {
         </div>
         <div className="scrolly-viz-col">
           <div className="scrolly-viz-sticky">
-            <ScrollyDiagram keyframe={keyframe} stepId={stepId} />
+            <div className="scrolly-viz-panel scrolly-viz-panel--sequence">
+              <div className="scrolly-viz-main scrolly-viz-main--sequence">
+                <ScrollyDiagram
+                  activeIndex={activeIndex}
+                  distributionsBeatIndex={SCROLLY_DISTRIBUTIONS_BEAT_INDEX}
+                  keyframe={keyframe}
+                  scrollDirection={scrollDirection}
+                  stepId={stepId}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

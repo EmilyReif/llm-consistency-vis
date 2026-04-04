@@ -14,7 +14,7 @@ export function InteractiveGraphPlaceholder({ label, caption }: Props) {
   const gridId = useId().replace(/:/g, '');
 
   return (
-    <figure className="article-graph-figure">
+    <div className="article-graph-figure">
       <div className="article-graph-placeholder-frame">
         <svg
           className="article-graph-placeholder-svg"
@@ -66,7 +66,7 @@ export function InteractiveGraphPlaceholder({ label, caption }: Props) {
           </text>
         </svg>
       </div>
-      <figcaption className="article-graph-figcaption">{caption}</figcaption>
-    </figure>
+      <div className="article-graph-figcaption">{caption}</div>
+    </div>
   );
 }
