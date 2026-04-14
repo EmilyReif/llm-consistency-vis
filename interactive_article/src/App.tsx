@@ -1,7 +1,6 @@
 import React from 'react';
 import './article.css';
 import { ScrollySection } from './ScrollySection';
-import { InteractiveGraphPlaceholder } from './InteractiveGraphPlaceholder';
 import { ArticleMotivatingExample } from './ArticleMotivatingExample';
 import {
   DISPLAY_QUOTE_BAUDELAIRE,
@@ -18,6 +17,8 @@ import {
 } from './articleMotivatingExamplesData';
 
 export default function App() {
+  const paperFig = (file: string) => `${process.env.PUBLIC_URL || ''}/paper-figures/${file}`;
+
   return (
     <>
       <div className="article-app">
@@ -47,6 +48,14 @@ export default function App() {
         of tens to hundreds to a single prompt). In a formative study with researchers who rely on LMs in their
         work (13 participants), people described models as infrastructure for filling gaps in their workflows but
         lacked lightweight ways to see the distribution underneath.
+      </p>
+
+      <p>
+        <em>
+          [TODO: Relate this work to <strong>automatic metrics</strong> for diversity, semantic uncertainty, and
+          variability in NLP&mdash;what aggregate scores capture well, what they hide about structure in a concrete batch,
+          and how interactive views like GROVE complement (or conflict with) metric-driven workflows.]
+        </em>
       </p>
 
       <p>
@@ -257,14 +266,40 @@ export default function App() {
             full output sets.
           </li>
         </ul>
-        <InteractiveGraphPlaceholder
-          label="user-study-figure-1"
-          caption="Placeholder: figure from the paper (e.g. task overview, quantitative summary, or qualitative coding)."
-        />
-        <InteractiveGraphPlaceholder
-          label="user-study-figure-2"
-          caption="Placeholder: second study figure if needed."
-        />
+        <h3>Controlled studies</h3>
+        <p>
+          We also ran three within-subjects crowdsourced studies on Prolific (N=47, 44, and 40), comparing the merged
+          graph with the same outputs in a plain list. Wilcoxon tests on per-participant accuracy (graph &minus; list)
+          favored the graph <em>only</em> for judging relative diversity across temperature (<i>p</i> = 0.012, <i>n</i> =
+          36); the list was more accurate for questions about one distribution and for two-prompt comparison (
+          <i>p</i> = 0.009, <i>n</i> = 26; <i>p</i> = 0.002, <i>n</i> = 40). Preferences mirrored that
+          split&mdash;strongly pro-graph for diversity, more mixed or polarized on the other tasks.
+        </p>
+        <figure className="article-graph-figure">
+          <img
+            className="article-paper-figure-img"
+            src={paperFig('combined_diff_accuracy_by_participant.png')}
+            loading="lazy"
+            alt="Per-participant accuracy difference (graph minus list) for diversity, single-distribution, and comparison studies."
+          />
+          <figcaption className="article-graph-figcaption">
+            Per-participant difference (graph &minus; list) in accuracy; positive favors graph. Diversity: graph
+            higher, <i>p</i> = 0.012. Single distribution and two-prompt comparison: list higher, <i>p</i> = 0.009 and{' '}
+            <i>p</i> = 0.002.
+          </figcaption>
+        </figure>
+        <figure className="article-graph-figure">
+          <img
+            className="article-paper-figure-img"
+            src={paperFig('direct_comparison_overall_preference.png')}
+            loading="lazy"
+            alt="Overall interface preference by study: 1 is graph, 7 is list."
+          />
+          <figcaption className="article-graph-figcaption">
+            Overall preference (1 = graph, 7 = list): pro-graph for diversity; polarized for single-distribution; more
+            spread for comparison.
+          </figcaption>
+        </figure>
       </section>
 
       <section className="article-below-scrolly" aria-label="Discussion">

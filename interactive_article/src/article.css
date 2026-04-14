@@ -74,6 +74,15 @@
   max-height: 320px;
 }
 
+.article-paper-figure-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+  border: 1px solid #e8e8e8;
+  background: #fafafa;
+}
+
 .article-graph-figcaption {
   margin: 0.65rem 0 0;
   font-size: 0.88rem;
