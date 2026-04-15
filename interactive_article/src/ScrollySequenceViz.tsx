@@ -7,9 +7,22 @@ import { SCROLLY_PROMPT, SCROLLY_GENERATIONS } from './scrollyData';
 
 export type ScrollySequenceKeyframe = 2 | 3 | 4;
 
-const BLANK_MS = 350;
-const PROMPT_HOLD_MS = 420;
-const LOADING_MS = 1100;
+/**
+ * Keyframe 2 only — wall-clock timeline from effect start (prompt already visible):
+ *
+ *   t = 0                          … prompt only
+ *   t = LOADING_SHOW_MS            … “…” loading dots appear
+ *   t = LOADING_SHOW_MS + LOADING_MS
+ *                                  … dots hide, “Output” card appears (still empty)
+ *   t = LOADING_SHOW_MS + LOADING_MS + OUTPUT_AFTER_LOADING_MS
+ *                                  … first token streams in; then +TOKEN_MS per word
+ */
+/** Delay before the three loading dots appear (after prompt-only beat). */
+const LOADING_SHOW_MS = 100;
+/** How long the dots stay visible before the output card replaces them. */
+const LOADING_MS = 100;
+/** Pause after the card mounts so layout can settle before token streaming begins. */
+const OUTPUT_AFTER_LOADING_MS = 200;
 const TOKEN_MS = 95;
 const ROW_REVEAL_MS = 220;
 /** Generations shown as lines in the output card (before graph). */
@@ -33,7 +46,7 @@ export default function ScrollySequenceViz({
   distributionsBeatIndex,
   scrollDirection,
 }: Props) {
-  const [promptVisible, setPromptVisible] = useState(false);
+  const [promptVisible, setPromptVisible] = useState(true);
   const [showLoading, setShowLoading] = useState(false);
   const [showOutputCard, setShowOutputCard] = useState(false);
   const [tokenCount, setTokenCount] = useState(0);
@@ -78,7 +91,7 @@ export default function ScrollySequenceViz({
   const graphListRowsControlled =
     keyframe === 3 && !reverseGraphInProgress && !exitingGraphToList;
 
-  // Keyframe 2: blank → prompt → loading → single streaming line (always full intro so holds aren’t skipped when re-entering this beat).
+  // Keyframe 2: prompt (immediate) → loading dots → single streaming line.
   useEffect(() => {
     if (keyframe !== 2) {
       prevKeyframeForEffects.current = keyframe;
@@ -91,7 +104,7 @@ export default function ScrollySequenceViz({
     }
     clearTimers();
     cancelledIntroRef.current = false;
-    setPromptVisible(false);
+    setPromptVisible(true);
     setShowLoading(false);
     setShowOutputCard(false);
     setTokenCount(0);
@@ -106,19 +119,15 @@ export default function ScrollySequenceViz({
     };
 
     schedule(() => {
-      setPromptVisible(true);
-    }, BLANK_MS);
-
-    schedule(() => {
       setShowLoading(true);
-    }, BLANK_MS + PROMPT_HOLD_MS);
+    }, LOADING_SHOW_MS);
 
     schedule(() => {
       setShowLoading(false);
       setShowOutputCard(true);
-    }, BLANK_MS + PROMPT_HOLD_MS + LOADING_MS);
+    }, LOADING_SHOW_MS + LOADING_MS);
 
-    const streamStart = BLANK_MS + PROMPT_HOLD_MS + LOADING_MS + 200;
+    const streamStart = LOADING_SHOW_MS + LOADING_MS + OUTPUT_AFTER_LOADING_MS;
     for (let i = 1; i <= tokens0.length; i++) {
       const ntok = i;
       schedule(() => {

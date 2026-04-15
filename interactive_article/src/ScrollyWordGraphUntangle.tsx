@@ -15,6 +15,7 @@ import {
   SCROLLY_GENERATIONS,
   SCROLLY_FIRST_OUTPUT_FIRST_LINE_WORDS,
 } from './scrollyData';
+import { wordGraphZoomEventFilter } from './lib/wordGraphZoomArm';
 
 const PROMPT_ID = 'scrolly-bio';
 const SIMILARITY = 0.7;
@@ -407,14 +408,6 @@ function graphDisplayLabel(node: NodeDatum): string {
   return node.word;
 }
 
-/** d3-zoom’s filter must return false for presses on graph markup; `event.target` is sometimes a Text node (no `.closest`). */
-function zoomFilterTargetElement(event: Event): Element | null {
-  const t = event.target;
-  if (t instanceof Element) return t;
-  if (t instanceof Text) return t.parentElement;
-  return null;
-}
-
 function avg1d(node: NodeDatum, inst: NodeInst1D[]): { x: number; y: number } | null {
   const slice = inst.filter((i) => i.node === node);
   if (!slice.length) return null;
@@ -446,6 +439,15 @@ export default function ScrollyWordGraphUntangle({
   const selectedNodesRef = useRef<Set<NodeDatum>>(new Set());
   const hoveredNodeRef = useRef<NodeDatum | null>(null);
   const hoveredSentRef = useRef<number[] | null>(null);
+  /** Wheel + pan zoom only after explicit click; reset on mouse leave (see article UX). */
+  const mapZoomArmedRef = useRef(false);
+  const [mapZoomArmed, setMapZoomArmed] = useState(false);
+  const [vizPointerInside, setVizPointerInside] = useState(false);
+
+  const disarmMapZoom = useCallback(() => {
+    mapZoomArmedRef.current = false;
+    setMapZoomArmed(false);
+  }, []);
 
   const clearAnim = useCallback(() => {
     timersRef.current.forEach(clearTimeout);
@@ -630,6 +632,10 @@ export default function ScrollyWordGraphUntangle({
       })
       .on('click', (e, d) => {
         if (!graphInteract) return;
+        if (!mapZoomArmedRef.current) {
+          mapZoomArmedRef.current = true;
+          setMapZoomArmed(true);
+        }
         e.stopPropagation();
         const n = getNode(d);
         const sel = selectedNodesRef.current;
@@ -781,20 +787,16 @@ export default function ScrollyWordGraphUntangle({
       const zoom = d3
         .zoom<SVGSVGElement, unknown>()
         // If this returns true on a node press, d3 calls stopPropagation — clicks never fire (hover still does).
-        .filter((event) => {
-          const e = event as MouseEvent;
-          if (e.type !== 'wheel') {
-            const el = zoomFilterTargetElement(event);
-            if (el?.closest?.('.node')) return false;
-            if (el?.closest?.('.link')) return false;
-          }
-          return (!e.ctrlKey || event.type === 'wheel') && !e.button;
-        })
+        .filter((event) => wordGraphZoomEventFilter(event, mapZoomArmedRef.current))
         .scaleExtent([0.5, 3])
         .on('zoom', (e) => root.attr('transform', e.transform));
       svg.call(zoom as any).on('dblclick.zoom', null);
 
       svg.on('click', (event: MouseEvent) => {
+        if (!mapZoomArmedRef.current) {
+          mapZoomArmedRef.current = true;
+          setMapZoomArmed(true);
+        }
         const t = event.target as Element;
         if (t.closest('.node') || t.closest('.link')) return;
         if (
@@ -1073,10 +1075,30 @@ export default function ScrollyWordGraphUntangle({
     };
   }, [keyframe, ready, clearAnim, onReverseMorphComplete, listRowsControlled]);
 
+  const showZoomArmHint = ready && vizPointerInside && !mapZoomArmed;
+
   return (
-    <div className={className}>
+    <div
+      className={className}
+      onMouseEnter={() => setVizPointerInside(true)}
+      onMouseLeave={() => {
+        setVizPointerInside(false);
+        disarmMapZoom();
+      }}
+    >
+      {showZoomArmHint ? (
+        <div className="scrolly-wg-zoom-hint" role="status">
+          Click map to enable zoom
+        </div>
+      ) : null}
       <svg ref={svgRef} id={svgId} className={ready ? 'scrolly-wg-svg' : 'hidden'} role="img" />
-      {!ready && <div className="scrolly-wg-loading" aria-busy="true" />}
+      {!ready && (
+        <div className="scrolly-wg-loading" aria-busy="true" aria-live="polite">
+          <span className="scrolly-seq-loading-dot" />
+          <span className="scrolly-seq-loading-dot" />
+          <span className="scrolly-seq-loading-dot" />
+        </div>
+      )}
     </div>
   );
 }

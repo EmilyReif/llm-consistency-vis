@@ -1,5 +1,6 @@
 import React from 'react';
 import './article.css';
+import { prefetchScrollyWordGraphModel } from './ScrollyWordGraphUntangle';
 import { ScrollySection } from './ScrollySection';
 import { ArticleMotivatingExample } from './ArticleMotivatingExample';
 import {
@@ -15,6 +16,10 @@ import {
   getRandomNumbersGenerations,
   getTrumpSummaries,
 } from './articleMotivatingExamplesData';
+
+if (typeof window !== 'undefined') {
+  prefetchScrollyWordGraphModel().catch(() => {});
+}
 
 export default function App() {
   const paperFig = (file: string) => `${process.env.PUBLIC_URL || ''}/paper-figures/${file}`;

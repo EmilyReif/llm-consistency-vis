@@ -521,6 +521,19 @@
   background: #fff;
 }
 
+/* Shown while `buildModel` / layout runs — previously an unstyled empty div (looked like a frozen blank panel). */
+.scrolly-wg-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex: 1 1 auto;
+  min-height: min(52vh, 480px);
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.92);
+}
+
 .scrolly-seq-graph-panel .scrolly-untangle-root {
   min-height: 100vh;
   height: 100vh;
@@ -530,6 +543,26 @@
   position: relative;
   width: 100%;
   min-height: min(65vh, 520px);
+}
+
+/* Click-to-arm: shown while pointer is over the graph and wheel/pan zoom is not yet enabled */
+.scrolly-wg-zoom-hint {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  bottom: 0.75rem;
+  transform: translateX(-50%);
+  z-index: 2;
+  max-width: calc(100% - 1.5rem);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+  text-align: center;
 }
 
 .scrolly-diagram-untangle .graph-controls-overlay {

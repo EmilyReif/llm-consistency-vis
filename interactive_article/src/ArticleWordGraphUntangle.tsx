@@ -6,6 +6,7 @@ import * as d3 from "d3";
 import { ellipseForce } from "./lib/force_collide_ellipse";
 import { getNodeColor } from './lib/articleColorUtils';
 import { TokenizeMode, NodeDatum, LinkDatum } from './lib/graphTypes';
+import { wordGraphZoomEventFilter } from './lib/wordGraphZoomArm';
 
 const TRANSITION_DURATION = 300;
 /** Duration (ms) for untangle toggle animation */
@@ -88,6 +89,10 @@ interface State {
     isUntangled: boolean;
     /** Animated 0–1, drives smooth transition when toggling */
     interpolationFraction: number;
+    /** True until first layout + draw completes for the current rebuild. */
+    pendingGraphLayout: boolean;
+    chartZoomArmed: boolean;
+    chartPointerInside: boolean;
 }
 
 const NUM_WORDS_TO_WRAP = 5;
@@ -133,6 +138,7 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
     /** Cached 1D endpoints per link for interpolation */
     private link1DEndpoints: Map<LinkDatum, Link1DEndpoints> = new Map();
     private mainGroup: d3.Selection<SVGGElement, unknown, HTMLElement, any> | null = null;
+    private chartZoomArmedSync = false;
     constructor(props: Props) {
         super(props);
         this.state = {
@@ -148,7 +154,22 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
             animationPhase: 'first',
             isUntangled: props.startInListView ?? false,
             interpolationFraction: props.startInListView ? 0 : 1,
+            pendingGraphLayout: true,
+            chartZoomArmed: false,
+            chartPointerInside: false,
         };
+    }
+
+    private armChartZoom() {
+        if (this.props.allowChartInteraction === false) return;
+        if (this.chartZoomArmedSync) return;
+        this.chartZoomArmedSync = true;
+        this.setState({ chartZoomArmed: true });
+    }
+
+    private disarmChartZoom() {
+        this.chartZoomArmedSync = false;
+        this.setState({ chartZoomArmed: false });
     }
 
     private sid(): string {
@@ -289,8 +310,25 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
         ]
             .filter(Boolean)
             .join(' ');
+        const allowZoomArm = this.props.allowChartInteraction !== false;
+        const { pendingGraphLayout, chartZoomArmed, chartPointerInside } = this.state;
+        const showZoomArmHint =
+            allowZoomArm && chartPointerInside && !chartZoomArmed && !pendingGraphLayout;
         return (
-            <div className={rootClass || undefined} style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <div
+                className={rootClass || undefined}
+                style={{ position: 'relative', width: '100%', height: '100%' }}
+                onMouseEnter={() => this.setState({ chartPointerInside: true })}
+                onMouseLeave={() => {
+                    this.setState({ chartPointerInside: false });
+                    this.disarmChartZoom();
+                }}
+            >
+                {showZoomArmHint ? (
+                    <div className="scrolly-wg-zoom-hint" role="status">
+                        Click map to enable zoom
+                    </div>
+                ) : null}
                 <span id={`${sid}-loader`} className="loader"></span>
                 <svg id={sid}></svg>
                 {showToggle && (
@@ -381,9 +419,11 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
             cancelAnimationFrame(this.interpAnimationFrame);
             this.interpAnimationFrame = null;
         }
+        this.disarmChartZoom();
         const rebuildId = ++this.liveRebuildId;
         this.setState((prev) => ({
             interpolationFraction: prev.isUntangled ? 0 : 1,
+            pendingGraphLayout: true,
         }));
         this.toggleLoading(true);
         setTimeout(async () => {
@@ -430,6 +470,7 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
             if (rebuildId !== this.liveRebuildId) return;
             const hasRealData = this.props.promptGroups.some((g) => g.generations && g.generations.length > 0);
             this.toggleLoading(false, hasRealData);
+            this.setState({ pendingGraphLayout: false });
             this.scheduleAutoRevealAndFirstGenAnimation();
             if (runFirstGenTimers) {
                 this.startFirstGenStepTimers();
@@ -496,6 +537,7 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
             .style("cursor", "grab") // Change cursor to indicate draggable
             // Add click handler to the SVG background
             .on('click', (event: any) => {
+                this.armChartZoom();
                 // Only clear selection if the click was directly on the SVG background
                 if (event.target.tagName === 'svg') {
                     if (this.nodeSelected() || this.state.hoveredNode || this.state.hoveredSentIndices) {
@@ -517,6 +559,9 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
             .on("zoom", (event) => {
                 g.attr("transform", event.transform);
             });
+        if (this.props.allowChartInteraction !== false) {
+            zoom.filter((event) => wordGraphZoomEventFilter(event, this.chartZoomArmedSync));
+        }
 
         svg.call(zoom as any)
             .on("dblclick.zoom", null);
@@ -790,6 +835,7 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
                 this.setState({ hoveredNode: null, hoveredSentIndices: null });
             })
             .on('click', (event: any, d: NodeDisplayDatum) => {
+                this.armChartZoom();
                 const n = getNode(d);
                 // When nodes are selected, only allow clicking nodes in same sentences. First click: allow any node.
                 if (this.nodeSelected() && !this.nodeIsInSelectedSents(n)) return;
