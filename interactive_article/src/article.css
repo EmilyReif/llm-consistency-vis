@@ -143,8 +143,7 @@
   min-height: 0;
 }
 
-.article-motivating-graph-host .article-example-untangle > svg,
-.article-motivating-graph-host .article-wordgraph-viz-pane > svg {
+.article-motivating-graph-host .article-wordgraph-viz-pane > .wordgraph-svg-clip-wrap > svg {
   display: block;
   width: 100%;
   max-width: 100%;
@@ -155,8 +154,7 @@
   min-height: unset;
 }
 
-.article-motivating-graph-host--manual-svg-h .article-example-untangle > svg,
-.article-motivating-graph-host--manual-svg-h .article-wordgraph-viz-pane > svg {
+.article-motivating-graph-host--manual-svg-h .article-wordgraph-viz-pane > .wordgraph-svg-clip-wrap > svg {
   height: var(--article-motivating-svg-h);
   max-height: none;
 }

@@ -37,10 +37,18 @@ text {
  * article/template body fonts and the scrolly panel can pick up a different stack.
  */
 .wordgraph-holder > svg,
-.article-example-untangle > svg,
-.article-wordgraph-viz-pane > svg,
+.article-example-untangle .wordgraph-svg-clip-wrap > svg,
+.article-wordgraph-viz-pane > .wordgraph-svg-clip-wrap > svg,
 .scrolly-wg-svg {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Wraps the motivating / examples SVG for layout (viewBox + meet vs CSS box). */
+.wordgraph-svg-clip-wrap {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
 }
 
 .node, .link {
@@ -49,6 +57,18 @@ text {
 
 .node, .node text {
     cursor: pointer;
+}
+
+/* Article motivating examples (not scrolly): block drag-select “highlight” boxes on SVG labels */
+.article-example-untangle svg,
+.article-example-untangle svg text,
+.article-example-untangle svg tspan {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.article-example-untangle svg *::selection {
+    background: transparent;
 }
 
 .graph-controls-overlay {

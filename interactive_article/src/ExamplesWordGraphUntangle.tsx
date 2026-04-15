@@ -162,6 +162,8 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
     /** Cached 1D endpoints per link for interpolation */
     private link1DEndpoints: Map<LinkDatum, Link1DEndpoints> = new Map();
     private mainGroup: d3.Selection<SVGGElement, unknown, HTMLElement, any> | null = null;
+    private svgRoot: d3.Selection<SVGSVGElement, unknown, HTMLElement, any> | null = null;
+    private zoomBehavior: d3.ZoomBehavior<SVGSVGElement, unknown> | null = null;
     /** Synchronous mirror of `state.chartZoomArmed` for d3-zoom’s filter. */
     private chartZoomArmedSync = false;
     constructor(props: Props) {
@@ -275,6 +277,127 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
 
     private handleResize = () => {
         this.rebuildGraph();
+    }
+
+    /** SVG user-space viewport (viewBox when set; else width/height attrs). */
+    private getSvgViewportUserSize(): { w: number; h: number } {
+        const el = this.svgRoot?.node();
+        if (!el) return { w: this.width, h: this.height };
+        const vb = el.viewBox?.baseVal;
+        if (vb && vb.width > 0 && vb.height > 0) {
+            return { w: vb.width, h: vb.height };
+        }
+        const w = el.width.baseVal.value;
+        const h = el.height.baseVal.value;
+        if (w > 0 && h > 0) return { w, h };
+        const cw = el.clientWidth;
+        const ch = el.clientHeight;
+        if (cw > 0 && ch > 0) return { w: cw, h: ch };
+        return { w: this.width, h: this.height };
+    }
+
+    /**
+     * viewBox aspect ratio must match the SVG element's laid-out box (clientWidth/clientHeight) so
+     * preserveAspectRatio="meet" fills the red wrapper instead of pillarboxing/letterboxing inside it.
+     * The box always covers the simulation canvas (this.width × this.height).
+     */
+    private computeDisplayMatchedViewBox(): { vbW: number; vbH: number } {
+        const el = this.svgRoot?.node();
+        const simW = this.width;
+        const simH = this.height;
+        if (!el) return { vbW: simW, vbH: simH };
+        const cw = el.clientWidth;
+        const ch = el.clientHeight;
+        if (cw <= 0 || ch <= 0) return { vbW: simW, vbH: simH };
+        const ar = cw / ch;
+        let vbH = Math.max(simH, simW / ar);
+        let vbW = vbH * ar;
+        if (vbW < simW) {
+            vbW = simW;
+            vbH = vbW / ar;
+        }
+        return { vbW, vbH };
+    }
+
+    private refreshSvgViewBox() {
+        if (!this.svgRoot) return;
+        const { vbW, vbH } = this.computeDisplayMatchedViewBox();
+        this.svgRoot
+            .attr('viewBox', `0 0 ${vbW} ${vbH}`)
+            .attr('preserveAspectRatio', 'xMidYMid meet');
+    }
+
+    /**
+     * Flex layout can change the SVG’s rendered width before the next full rebuild; keep the width
+     * attribute aligned with clientWidth so fit/zoom use the current horizontal viewport. Height is
+     * left to layout + fixedSvgHeightPx (changing it here would desync the force layout).
+     */
+    private syncSvgWidthAttrFromClient() {
+        const el = this.svgRoot?.node();
+        if (!el) return;
+        const cw = el.clientWidth;
+        if (cw <= 0) return;
+        const w0 = el.width.baseVal.value;
+        if (Math.abs(cw - w0) < 1) return;
+        this.width = Math.max(320, Math.min(cw, 5000));
+        this.svgRoot!.attr('width', this.width);
+        this.refreshSvgViewBox();
+    }
+
+    /** Center and scale the pan layer so all nodes/links fit in the SVG (user units match width/height attrs). */
+    private fitGraphToViewport() {
+        if (!this.mainGroup || !this.svgRoot || !this.zoomBehavior) return;
+        const gSel = this.mainGroup;
+        const gNode = gSel.node();
+        if (!gNode) return;
+
+        this.syncSvgWidthAttrFromClient();
+        this.refreshSvgViewBox();
+
+        gSel.attr('transform', null);
+        let bbox: DOMRect;
+        try {
+            bbox = gNode.getBBox();
+        } catch {
+            this.svgRoot.call(this.zoomBehavior.transform, d3.zoomIdentity);
+            return;
+        }
+        if (
+            !Number.isFinite(bbox.width) ||
+            !Number.isFinite(bbox.height) ||
+            bbox.width <= 0 ||
+            bbox.height <= 0
+        ) {
+            this.svgRoot.call(this.zoomBehavior.transform, d3.zoomIdentity);
+            return;
+        }
+
+        const { w, h } = this.getSvgViewportUserSize();
+        /** Extra inset on the left; small symmetric inset elsewhere. “Contain” fit touches one axis of the inner rect. */
+        const padL = 0.028;
+        const padR = 0.002;
+        const padY = 0.002;
+        const innerLeft = w * padL;
+        const innerRight = w * (1 - padR);
+        const innerTop = h * padY;
+        const innerBottom = h * (1 - padY);
+        const innerW = innerRight - innerLeft;
+        const innerH = innerBottom - innerTop;
+        const inkSlop = 4;
+        const fitW = bbox.width + 2 * inkSlop;
+        const fitH = bbox.height + 2 * inkSlop;
+        let scale = Math.min(innerW / fitW, innerH / fitH);
+        const kMin = 0.02;
+        const kMax = 64;
+        scale = Math.max(kMin, Math.min(kMax, scale));
+        const cx = bbox.x + bbox.width / 2;
+        const cy = bbox.y + bbox.height / 2;
+        const cxTarget = (innerLeft + innerRight) / 2;
+        const cyTarget = (innerTop + innerBottom) / 2;
+        const tx = cxTarget - scale * cx;
+        const ty = cyTarget - scale * cy;
+        const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
+        this.svgRoot.call(this.zoomBehavior.transform, t);
     }
 
     /** Animate interpolationFraction from start to target over UNTANGLE_ANIMATION_DURATION */
@@ -477,7 +600,9 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
                                 </div>
                             ) : null}
                             {loaderEl}
-                            <svg id={sid} className={pendingGraphLayout ? 'hidden' : undefined}></svg>
+                            <div className="wordgraph-svg-clip-wrap">
+                                <svg id={sid} className={pendingGraphLayout ? 'hidden' : undefined}></svg>
+                            </div>
                             {this.props.floatingPrompt ? (
                                 <div className="article-wordgraph-floating-prompt">{this.props.floatingPrompt}</div>
                             ) : null}
@@ -508,7 +633,9 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
                                 </div>
                             ) : null}
                             {loaderEl}
-                            <svg id={sid} className={pendingGraphLayout ? 'hidden' : undefined}></svg>
+                            <div className="wordgraph-svg-clip-wrap">
+                                <svg id={sid} className={pendingGraphLayout ? 'hidden' : undefined}></svg>
+                            </div>
                         </div>
                         {showOverlay && (
                             <div className="graph-controls-overlay">
@@ -553,10 +680,16 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
         if (prevState.minOpacityThreshold !== this.state.minOpacityThreshold) {
             this.createFontScale();
             this.update();
+            this.fitGraphToViewport();
+            return;
+        }
+        if (prevState.animatingGeneration && !this.state.animatingGeneration) {
+            this.update();
+            this.fitGraphToViewport();
             return;
         }
         if (prevState.spread !== this.state.spread) {
-            this.updateSimulation();
+            this.updateSimulation(false, true);
             return;
         }
         if (prevState.isUntangled !== this.state.isUntangled) {
@@ -569,6 +702,14 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
         }
         if (prevState.interpolationFraction !== this.state.interpolationFraction) {
             this.update();
+            if (this.interpAnimationFrame === null) {
+                this.fitGraphToViewport();
+            }
+            return;
+        }
+        if (prevState.pendingGraphLayout && !this.state.pendingGraphLayout) {
+            this.update();
+            requestAnimationFrame(() => this.fitGraphToViewport());
             return;
         }
         this.update();
@@ -631,7 +772,7 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
                 }
 
                 if (rebuildId !== this.liveRebuildId) return;
-                this.updateSimulation(true);
+                this.updateSimulation(true, true);
                 if (rebuildId !== this.liveRebuildId) return;
                 this.scheduleAutoRevealAndFirstGenAnimation();
                 if (runFirstGenTimers) {
@@ -714,10 +855,14 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
         const fixed = this.props.fixedSvgHeightPx;
         this.height =
             fixed != null ? Math.max(fixed, minHeight1D) : Math.max(defaultH, minHeight1D);
-        const svg = d3.select(`#${this.sid()}`)
+        const svg = d3.select(`#${this.sid()}`) as d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
+        this.svgRoot = svg;
+        svg
             .html('')
             .attr("width", this.width)
             .attr("height", this.height)
+            .attr("viewBox", `0 0 ${this.width} ${this.height}`)
+            .attr("preserveAspectRatio", "xMidYMid meet")
             .style("cursor", "grab") // Change cursor to indicate draggable
             // Add click handler to the SVG background
             .on('click', (event: any) => {
@@ -737,16 +882,17 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
         const g = svg.append("g").attr("style", "will-change: transform");
         this.mainGroup = g;
 
-        // Add zoom behavior
-        const zoom = d3.zoom()
-            .scaleExtent([0.5, 3])
+        // Add zoom behavior (wide scale range so initial fit can shrink large graphs)
+        const zoom = d3.zoom<SVGSVGElement, unknown>()
+            .scaleExtent([0.02, 64])
             .on("zoom", (event) => {
-                g.attr("transform", event.transform);
+                g.attr("transform", String(event.transform));
             });
         if (this.props.allowChartInteraction !== false) {
             zoom.filter((event) => wordGraphZoomEventFilter(event, this.chartZoomArmedSync));
         }
 
+        this.zoomBehavior = zoom;
         svg.call(zoom as any)
             .on("dblclick.zoom", null);
 
@@ -1108,7 +1254,7 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
     };
 
     // Create the simulation.
-    private updateSimulation(firstTime: boolean = false) {
+    private updateSimulation(firstTime: boolean = false, fitViewport: boolean = false) {
         if (this.simulation) {
             this.simulation.stop();
             this.simulation.force('x', null);
@@ -1164,6 +1310,11 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
         // Run convergence without tick handler to avoid 1000s of DOM updates; render once at end
         this.runSimulationToConvergence();
         this.update(firstTime);
+        if (fitViewport) {
+            this.fitGraphToViewport();
+            // First paint often runs before flex/CSS layout is final; refit once the SVG has real client metrics.
+            requestAnimationFrame(() => this.fitGraphToViewport());
+        }
     }
 
     /**
