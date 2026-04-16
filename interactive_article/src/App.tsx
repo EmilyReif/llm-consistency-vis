@@ -33,44 +33,28 @@ export default function App() {
           Emily Reif, Claire Yang, Jared Hwang, Deniz Nazar, Noah Smith, and Jeff Heer
         </p>
       </header>
-
       <p>
         When a language model answers you, you&rsquo;re usually seeing <strong>one draw</strong> from a much larger
-        space of possible completions. Language models show distributional quirks in practice: homogeneous
-        open-ended responses, mode collapse, patterns that feel oddly non-human, and &ldquo;sticky&rdquo; completions
-        such as the fictional name &ldquo;Elara Voss&rdquo; appearing far more often than naive intuition would
-        predict. That single-shot view hides structure users care about&mdash;modes, uncommon edge cases, and
-        sensitivity to small prompt changes&mdash;making it easy to treat one sample as representative of the whole
-        model behavior.
-      </p>
-
-      <p>
-        Presenting only one answer can encourage misplaced trust and anthropomorphism; when people iterate on
-        prompts, they often over-generalize from a single success or failure. Resampling the same prompt can produce
-        different outputs, so it may be unclear whether a change reflects the wording or plain randomness, and
-        unlike numbers, text has no agreed-on &ldquo;units&rdquo; of variation. For open-ended tasks with sparse
-        feedback, prior work argues for inspecting <strong>many</strong> completions at once (mesoscale batches
-        of tens to hundreds to a single prompt). In a formative study with researchers who rely on LMs in their
-        work (13 participants), people described models as infrastructure for filling gaps in their workflows but
-        lacked lightweight ways to see the distribution underneath.
-      </p>
-
-      <p>
-        <em>
-          [TODO: Relate this work to <strong>automatic metrics</strong> for diversity, semantic uncertainty, and
-          variability in NLP&mdash;what aggregate scores capture well, what they hide about structure in a concrete batch,
-          and how interactive views like GROVE complement (or conflict with) metric-driven workflows.]
-        </em>
-      </p>
-
-      <p>
-        We introduce <strong>GROVE</strong> (Graph Representation of Output Variability and Examples): an interactive
-        visualization that merges overlapping tokens into a shared graph, represents each sampled completion as a path
-        through that structure, and keeps raw outputs within reach. Across three crowdsourced user studies, graph-style
-        summaries helped with structural judgments such as comparing diversity across distributions, while a simple
-        list worked better for fine-grained and single-distribution questions; participants often preferred a hybrid.
-        The section below uses <strong>stacking</strong> beats on the left&mdash;earlier paragraphs stay pinned while
-        you read on&mdash;with a panel on the right keyed to the narrative.
+        space of possible completions, and in practice that surfaces as homogeneous open-ended replies, mode collapse,
+        patterns that feel oddly non-human, and &ldquo;sticky&rdquo; completions such as the fictional name &ldquo;Elara
+        Voss&rdquo; appearing far more often than intuition predicts&mdash;yet that single-shot view hides modes,
+        uncommon edge cases, and sensitivity to small prompt changes, making it easy to mistake one sample for the whole
+        model. Showing only one answer can encourage misplaced trust and anthropomorphism; when people iterate on prompts
+        they often over-generalize from a single success or failure, and resampling the same wording can yield different
+        outputs, so it may be unclear whether a change reflects the prompt or plain randomness, while text still lacks
+        agreed-on &ldquo;units&rdquo; of variation. For open-ended tasks with sparse feedback, prior work argues for
+        inspecting <strong>many</strong> completions at once (mesoscale batches of tens to hundreds per prompt), and in a
+        formative study with researchers who rely on language models in their work (13 participants), people described
+        models as infrastructure for filling workflow gaps but wanted lightweight ways to see the distribution
+        underneath&mdash;a need that sits alongside automatic metrics for diversity, semantic uncertainty, and
+        variability, which summarize batches efficiently but can obscure concrete structure that practitioners still
+        need to inspect. We introduce <strong>GROVE</strong> (Graph Representation of Output Variability and Examples):
+        an interactive visualization that merges overlapping tokens into a shared graph, represents each sampled
+        completion as a path through that structure, and keeps raw outputs within reach; across three crowdsourced user
+        studies, graph-style summaries helped with structural judgments such as comparing diversity across distributions,
+        while a simple list worked better for fine-grained and single-distribution questions, and participants often
+        preferred a hybrid. The section below uses <strong>stacking</strong> beats on the left&mdash;earlier paragraphs
+        stay pinned while you read on&mdash;with a panel on the right keyed to the narrative.
       </p>
       </div>
 

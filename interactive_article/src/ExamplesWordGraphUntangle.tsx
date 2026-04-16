@@ -866,9 +866,10 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
             .style("cursor", "grab") // Change cursor to indicate draggable
             // Add click handler to the SVG background
             .on('click', (event: any) => {
+                const zoomWasArmed = this.chartZoomArmedSync;
                 this.armChartZoom();
-                // Only clear selection if the click was directly on the SVG background
-                if (event.target.tagName === 'svg') {
+                // First click only arms zoom; clearing selection is for later clicks on the SVG root.
+                if (event.target.tagName === 'svg' && zoomWasArmed) {
                     if (this.nodeSelected() || this.state.hoveredNode || this.state.hoveredSentIndices) {
                         this.selectedNodes.clear();
                         this.setState({ hoveredNode: null, hoveredSentIndices: null });
@@ -1167,7 +1168,9 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
                 this.setState({ hoveredNode: null, hoveredSentIndices: null });
             })
             .on('click', (event: any, d: NodeDisplayDatum) => {
+                const zoomWasArmed = this.chartZoomArmedSync;
                 this.armChartZoom();
+                if (!zoomWasArmed) return;
                 const n = getNode(d);
                 // When nodes are selected, only allow clicking nodes in same sentences. First click: allow any node.
                 if (this.nodeSelected() && !this.nodeIsInSelectedSents(n)) return;

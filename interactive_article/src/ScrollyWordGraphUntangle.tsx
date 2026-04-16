@@ -632,9 +632,12 @@ export default function ScrollyWordGraphUntangle({
       })
       .on('click', (e, d) => {
         if (!graphInteract) return;
-        if (!mapZoomArmedRef.current) {
+        const zoomWasArmed = mapZoomArmedRef.current;
+        if (!zoomWasArmed) {
           mapZoomArmedRef.current = true;
           setMapZoomArmed(true);
+          e.stopPropagation();
+          return;
         }
         e.stopPropagation();
         const n = getNode(d);
@@ -793,9 +796,11 @@ export default function ScrollyWordGraphUntangle({
       svg.call(zoom as any).on('dblclick.zoom', null);
 
       svg.on('click', (event: MouseEvent) => {
-        if (!mapZoomArmedRef.current) {
+        const zoomWasArmed = mapZoomArmedRef.current;
+        if (!zoomWasArmed) {
           mapZoomArmedRef.current = true;
           setMapZoomArmed(true);
+          return;
         }
         const t = event.target as Element;
         if (t.closest('.node') || t.closest('.link')) return;
