@@ -85,6 +85,7 @@ class PromptContainer extends React.Component<PromptContainerProps, { expanded: 
                         key={'prompt-' + promptIndex + '-' + (prompt.text || '')}
                         value={prompt.text || ''}
                         options={Object.keys(examples)}
+                        examplesByPrompt={examples}
                         onSubmit={(val: string) => {
                             onUpdateText(promptIndex, val);
                             telemetry.logPromptEdit(promptIndex, val);
@@ -323,7 +324,7 @@ class EditableDropdown extends React.Component<any, any> {
     };
 
     render() {
-        const { options, readOnly } = this.props;
+        const { options, readOnly, examplesByPrompt } = this.props;
         const { open, value } = this.state;
 
         return (
@@ -346,15 +347,23 @@ class EditableDropdown extends React.Component<any, any> {
                 />
                 {open && (
                     <ul className="dropdown-list">
-                        {options.map((opt: string) => (
-                            <li
-                                key={opt}
-                                onClick={() => this.handleSelect(opt)}
-                                title={opt}
-                            >
-                                {opt}
-                            </li>
-                        ))}
+                        {options.map((opt: string) => {
+                            const n = examplesByPrompt?.[opt]?.length ?? 0;
+                            return (
+                                <li
+                                    key={opt}
+                                    onClick={() => this.handleSelect(opt)}
+                                    title={opt}
+                                >
+                                    <span className="dropdown-list-item-label">{opt}</span>
+                                    {n > 0 && (
+                                        <span className="dropdown-list-cached-count">
+                                            {n} cached
+                                        </span>
+                                    )}
+                                </li>
+                            );
+                        })}
                     </ul>
                 )}
                 {!readOnly && (

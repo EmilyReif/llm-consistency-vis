@@ -133,10 +133,26 @@
 }
 
 .dropdown-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     padding: 6px 8px;
-    text-overflow: ellipsis;
-    overflow: hidden;
     cursor: pointer;
+}
+
+.dropdown-list-item-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.dropdown-list-cached-count {
+    flex-shrink: 0;
+    color: #bdbdbd;
+    font-size: 0.85em;
     white-space: nowrap;
 }
 

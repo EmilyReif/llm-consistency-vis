@@ -10,6 +10,10 @@ import { examplesUserStudyPlaces as examplesUserStudyPlacesTemp } from "./cached
 import { examplesUserStudyMonsters as examplesUserStudyMonstersTemp } from "./cached_data/monsters_temp";
 import { examplesPresidents } from "./cached_data/presidents";
 import { examplesRewardMathResponses } from "./cached_data/reward_math";
+import {
+    examplesAteppByPiece,
+    examplesAteppByPiecePerformer,
+} from "./cached_data/examples_atepp";
 import { urlParams, URLParam } from "./url_params_manager";
 
 /** Round temp to avoid float key collisions (e.g. 0.7000000000000001 -> 0.7) */
@@ -59,15 +63,25 @@ const datasetMap: { [key: string]: { [key: string]: string[] } } = {
     'user_study_places': examplesUserStudyPlaces,
     'user_study_places_temp': placesTemp.examples,
     'user_study_monsters_temp': monstersTemp.examples,
+    /** ATEPP: one prompt per piece; outputs = all performances (transcripts only, 500 chars). */
+    'atepp_piece': examplesAteppByPiece,
+    /** ATEPP: one prompt per piece + performer; outputs = that performer’s transcripts only. */
+    'atepp_performer': examplesAteppByPiecePerformer,
+    /** @deprecated Use atepp_performer; kept for older links. */
+    'atepp': examplesAteppByPiecePerformer,
 };
 
 const datasetParam = urlParams.get(URLParam.DATASET);
+
+/** Piece+performer ATEPP prompts are opt-in via ?dataset=atepp_performer (or atepp); omit from default merge. */
+const DATASETS_OMIT_FROM_DEFAULT_COMBINED = new Set(["atepp_performer", "atepp"]);
 
 let selectedDataset: { [key: string]: string[] };
 if (!datasetParam || datasetParam === '') {
     // When dataset is unset: combine all datasets into a flattened list
     const combined: { [key: string]: string[] } = {};
-    for (const dsData of Object.values(datasetMap)) {
+    for (const [dsId, dsData] of Object.entries(datasetMap)) {
+        if (DATASETS_OMIT_FROM_DEFAULT_COMBINED.has(dsId)) continue;
         for (const [promptKey, generations] of Object.entries(dsData)) {
             combined[promptKey] = generations;
         }
