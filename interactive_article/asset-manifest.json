@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/llm-consistency-vis/interactive_article/static/css/main.c478f02c.css",
+    "main.js": "/llm-consistency-vis/interactive_article/static/js/main.4eba8fd1.js",
+    "index.html": "/llm-consistency-vis/interactive_article/index.html",
+    "main.c478f02c.css.map": "/llm-consistency-vis/interactive_article/static/css/main.c478f02c.css.map",
+    "main.4eba8fd1.js.map": "/llm-consistency-vis/interactive_article/static/js/main.4eba8fd1.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.c478f02c.css",
+    "static/js/main.4eba8fd1.js"
+  ]
+}
