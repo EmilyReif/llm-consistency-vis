@@ -16,15 +16,9 @@ Download node/npm [here](https://nodejs.org/en/download/) if you don't already h
 Open a terminal, and check that it worked with `npm -v`. It should say a version number (not `command not found`).
 
 ### Run the app in development mode
-`cd` into the llm-consistency-vis github and run `npm start`. 
+`cd` into the the base llm-consistency-vis directory and run `npm start`. 
 
 Open [http://localhost:3000](http://localhost:3000). When you edit the code, it should update.
 
-### Deploy to gitlab pages
-When it's time to push your changes and deploy, run:
-
-```
-npm run build_and_deploy
-```
-
-which will deploy the app [here](https://emilyreif.com/llm-consistency-vis/) (might take a couple of minutes)
+### API keys
+There are a set of cached examples pre-loaded in the UI, but you will need to BYO API key to generate new outputs on-the-fly. 
