@@ -8,7 +8,7 @@ However, it's hard to grasp the shape of a distribution by reading dozens or hun
 
 ## Development
 
-This vis is built using [react](https://react.dev/) and typescript, rather than just being static js/css/html. To build and run it, follow the steps below:
+This vis is built using [react](https://react.dev/) and typescript, rather than just being static js/css/html. To build and run it, follow the steps below. **Use npm** (this repo tracks `package-lock.json`, not Yarn).
 
 ### Install node/npm
 Download node/npm [here](https://nodejs.org/en/download/) if you don't already have it.
@@ -16,7 +16,7 @@ Download node/npm [here](https://nodejs.org/en/download/) if you don't already h
 Open a terminal, and check that it worked with `npm -v`. It should say a version number (not `command not found`).
 
 ### Run the app in development mode
-`cd` into the the base llm-consistency-vis directory and run `npm start`. 
+From the base `llm-consistency-vis` directory, install dependencies once with `npm install`, then run `npm start`.
 
 Open [http://localhost:3000](http://localhost:3000). When you edit the code, it should update.
 

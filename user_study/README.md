@@ -9,10 +9,10 @@ This folder contains **static study interfaces** (HTML landing pages) and **note
 
 ## Main visualization app (separate from this folder)
 
-From the repo root, the interactive LLM consistency visualization is a Create React App:
+From the repo root, the interactive LLM consistency visualization is a Create React App. Use **npm** (see root `package-lock.json`).
 
 ```bash
-npm install   # first time
+npm install   # first time only
 npm start
 ```
 
