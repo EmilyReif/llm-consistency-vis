@@ -11,6 +11,93 @@
   margin-bottom: 0.5rem;
 }
 
+/* Distill-inspired byline: Authors + affiliations (left), Published + date (right) */
+.article-distill-byline {
+  margin: 1.75rem 0 0;
+  padding: 0.85rem 0 0.9rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.14);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.14);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.32;
+  color: #000;
+}
+
+.article-distill-byline-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(5.5rem, max-content);
+  column-gap: 1.75rem;
+  row-gap: 0.35rem;
+  align-items: start;
+}
+
+.article-distill-byline-cell-authors-h {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.article-distill-byline-cell-published-h {
+  grid-column: 2;
+  grid-row: 1;
+  text-align: right;
+}
+
+.article-distill-byline-cell-authors-names {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.article-distill-byline-cell-published-date {
+  grid-column: 2;
+  grid-row: 2;
+  text-align: right;
+}
+
+.article-distill-byline-cell-affil-h {
+  grid-column: 1;
+  grid-row: 3;
+  margin-top: 0.45rem;
+  padding-top: 0.1rem;
+}
+
+.article-distill-byline-cell-affil-line {
+  grid-column: 1;
+  grid-row: 4;
+  font-weight: 400;
+  color: #000;
+}
+
+.article-distill-byline-cell-affil-line .article-distill-fn-ref {
+  margin-right: 0.12em;
+}
+
+.article-distill-byline-label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.45);
+  padding-bottom: 0.45rem;
+  margin-bottom: 0.05rem;
+}
+
+.article-distill-names-line {
+  font-weight: 700;
+  color: #000;
+}
+
+.article-distill-fn-ref {
+  font-weight: 700;
+  font-size: 0.65em;
+  line-height: 0;
+  vertical-align: super;
+}
+
+.article-distill-byline-published {
+  font-weight: 400;
+  color: #000;
+}
+
 .article-byline {
   color: #555;
   font-size: 0.95rem;

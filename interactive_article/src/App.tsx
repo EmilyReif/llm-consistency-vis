@@ -21,6 +21,10 @@ if (typeof window !== 'undefined') {
   prefetchScrollyWordGraphModel().catch(() => {});
 }
 
+function DistillAffilRef({ id }: { id: 1 | 2 }) {
+  return <sup className="article-distill-fn-ref">{id}</sup>;
+}
+
 export default function App() {
   const paperFig = (file: string) => `${process.env.PUBLIC_URL || ''}/paper-figures/${file}`;
 
@@ -29,32 +33,38 @@ export default function App() {
       <div className="article-app">
       <header className="article-header">
         <h1>Exploring LLM output distributions</h1>
-        <p className="article-byline">
-          Emily Reif, Claire Yang, Jared Hwang, Deniz Nazar, Noah Smith, and Jeff Heer
-        </p>
+        <div className="article-distill-byline" aria-label="Authors and affiliations">
+          <div className="article-distill-byline-columns">
+            <div className="article-distill-byline-label article-distill-byline-cell-authors-h">Authors</div>
+            <div className="article-distill-byline-label article-distill-byline-cell-published-h">Published</div>
+            <div className="article-distill-names-line article-distill-byline-cell-authors-names">
+              Emily Reif
+              <DistillAffilRef id={1} />, Claire Yang
+              <DistillAffilRef id={1} />, Jared Hwang
+              <DistillAffilRef id={1} />, Deniz Nazar
+              <DistillAffilRef id={1} />, Noah Smith
+              <DistillAffilRef id={1} />
+              <DistillAffilRef id={2} />, Jeff Heer
+              <DistillAffilRef id={1} />
+            </div>
+            <div className="article-distill-byline-published article-distill-byline-cell-published-date">
+              Apr. 15, 2026
+            </div>
+            <div className="article-distill-byline-label article-distill-byline-cell-affil-h">Affiliations</div>
+            <div className="article-distill-byline-affil-line article-distill-byline-cell-affil-line">
+              <DistillAffilRef id={1} /> University of Washington
+              {', '}
+              <DistillAffilRef id={2} /> AI2 (Allen Institute for AI)
+            </div>
+          </div>
+        </div>
       </header>
       <p>
-        When a language model answers you, you&rsquo;re usually seeing <strong>one draw</strong> from a much larger
-        space of possible completions, and in practice that surfaces as homogeneous open-ended replies, mode collapse,
-        patterns that feel oddly non-human, and &ldquo;sticky&rdquo; completions such as the fictional name &ldquo;Elara
-        Voss&rdquo; appearing far more often than intuition predicts&mdash;yet that single-shot view hides modes,
-        uncommon edge cases, and sensitivity to small prompt changes, making it easy to mistake one sample for the whole
-        model. Showing only one answer can encourage misplaced trust and anthropomorphism; when people iterate on prompts
-        they often over-generalize from a single success or failure, and resampling the same wording can yield different
-        outputs, so it may be unclear whether a change reflects the prompt or plain randomness, while text still lacks
-        agreed-on &ldquo;units&rdquo; of variation. For open-ended tasks with sparse feedback, prior work argues for
-        inspecting <strong>many</strong> completions at once (mesoscale batches of tens to hundreds per prompt), and in a
-        formative study with researchers who rely on language models in their work (13 participants), people described
-        models as infrastructure for filling workflow gaps but wanted lightweight ways to see the distribution
-        underneath&mdash;a need that sits alongside automatic metrics for diversity, semantic uncertainty, and
-        variability, which summarize batches efficiently but can obscure concrete structure that practitioners still
-        need to inspect. We introduce <strong>GROVE</strong> (Graph Representation of Output Variability and Examples):
-        an interactive visualization that merges overlapping tokens into a shared graph, represents each sampled
-        completion as a path through that structure, and keeps raw outputs within reach; across three crowdsourced user
-        studies, graph-style summaries helped with structural judgments such as comparing diversity across distributions,
-        while a simple list worked better for fine-grained and single-distribution questions, and participants often
-        preferred a hybrid. The section below uses <strong>stacking</strong> beats on the left&mdash;earlier paragraphs
-        stay pinned while you read on&mdash;with a panel on the right keyed to the narrative.
+        A language model is indeed a statistical model: it samples from a distribution over a set of possible outputs. This
+        distribution can contain quirks like mode collapse, divergent outputs, and sensitivity to small prompt changes. How
+        does this stochasticity manifest in practice? How does it affect the way people use and evaluate language models?
+        What is the best way to inspect and understand these distributions? In our paper (TODO: link), we explore these
+        questions through a series of interactive examples and a user study.
       </p>
       </div>
 
@@ -66,16 +76,12 @@ export default function App() {
       <section className="article-below-scrolly-top" aria-label="Interactive examples">
         <h2>What can we see?</h2>
         <p className="article-section-lede">
-          The same interactive tool as in our studies: use the control strip on each figure to switch between{' '}
-          <strong>list</strong> and <strong>graph</strong> views, choose how many cached completions to include, fade rare
-          phrasing, and adjust layout spread. Each example highlights a different &ldquo;shape&rdquo; of an output
-          distribution&mdash;how tightly the model clusters on one phrasing versus how much parallel structure appears
-          once you see many samples at once.
+The examples below all show a collection of outputs from a single prompt. Use the control strip on each figure to switch between list and graph views, choose how many cached completions to include, fade rare phrasing, and adjust layout spread.
         </p>
 
         <ArticleMotivatingExample
           id="greek-deity"
-          title="Factual recall: a dominant mode"
+          title="Factual recall"
           svgHeightPx={300}
           promptQuote={DISPLAY_QUOTE_GREEK}
           promptGroupsSpec={{
@@ -85,16 +91,13 @@ export default function App() {
           }}
         >
           <p>
-            For a straightforward knowledge question, most draws collapse on the same entity&mdash;here,
-            Zeus&mdash;with only modest edits (&ldquo;prominent&rdquo; vs &ldquo;well-known&rdquo;). A single completion
-            looks definitive; the graph makes the <em>mode</em> obvious and shows where the wording drifts without
-            changing the answer.
+            For a straightforward knowledge question ("What is a diety from Greek mythology?"), most outputs are different phrasings of "Zeus".
           </p>
         </ArticleMotivatingExample>
 
         <ArticleMotivatingExample
           id="baudelaire"
-          title="Translation: shared spine, flexible surface"
+          title="Translation"
           svgHeightPx={330}
           promptQuote={DISPLAY_QUOTE_BAUDELAIRE}
           promptGroupsSpec={{
@@ -104,16 +107,19 @@ export default function App() {
           }}
         >
           <p>
-            Translations of the same stanza agree on content but vary in connective glue (&ldquo;In the days when&hellip;&rdquo;
-            vs &ldquo;Back when&hellip;&rdquo;) and near-synonyms for the same image (&ldquo;creativity&rdquo; vs
-            &ldquo;mood&rdquo; vs &ldquo;zeal&rdquo;). The merged graph foregrounds the long shared backbone of the
-            English line while branches expose stylistic choices easy to miss from one sample.
+            Translations of the same stanza from the Baudelaire poem {' '}
+            <a href="https://fleursdumal.org/poem/118">La Géante </a> share a similar structure but differ in some
+            phrasings. These kinds of visualizations have been used for machine translation historically as well, for example,{' '}
+            <a href="https://www.cs.toronto.edu/~gpenn/papers/collins_lattice_uncertainty_2007.pdf">
+              lattice- and graph-style views of many hypotheses
+            </a>
+            .
           </p>
         </ArticleMotivatingExample>
 
         <ArticleMotivatingExample
           id="haiku-snow"
-          title="Tiny creative constraint"
+          title="Generic poetry"
           svgHeightPx={400}
           promptQuote={DISPLAY_QUOTE_HAIKU}
           promptGroupsSpec={{
@@ -123,30 +129,19 @@ export default function App() {
           }}
         >
           <p>
-            Short-form prompts often produce a family of completions that <em>feel</em> diverse yet reuse the same
-            scaffolding&mdash;here, opening on silent snowfall and a winter hush. Many samples look &ldquo;different
-            enough&rdquo; in isolation; together they reveal repeated motifs and line-breaking habits across the batch.
+            Another open-ended prompt, this time asking for a haiku about snow, produces a collection of outputs that share very similar words and phrasings. LLMs have been critiqued for generating generic poetry that doesn't feel like human-written poetry; reverting to the same phrases is one aspect of this.
           </p>
         </ArticleMotivatingExample>
 
-        <ArticleMotivatingExample
-          id="random-nums"
-          title="Apparent randomness, structural regularities"
-          svgHeightPx={500}
-          promptQuote={DISPLAY_QUOTE_RANDOM}
-          promptGroupsSpec={{
-            mode: 'single',
-            promptId: 'random-nums',
-            generationsFull: getRandomNumbersGenerations(),
-          }}
-        >
-          <p>
-            A request for random numbers ought to scatter across the space of lists; in practice, models still exhibit
-            tropes (favorite integers, repeated patterns in ordering and phrasing). Inspecting many draws at once helps
-            separate true variability from stylistic defaults that survive even when the literal digits change.
-          </p>
-        </ArticleMotivatingExample>
+      </section>
 
+      <section className="article-below-scrolly" aria-label="Planned comparison examples">
+        <h2>Comparisons</h2>
+        <p className="article-section-lede">
+          <em>
+            [TODO: Frame how side-by-side or overlaid distributions support cross-model and sampling comparisons.]
+          </em>
+        </p>
         <ArticleMotivatingExample
           id="presidents-compare"
           title="Comparison: two related prompts, two color tracks"
@@ -160,22 +155,12 @@ export default function App() {
         >
           <p>
             Asking for one-sentence summaries of two presidencies surfaces two partially overlapping vocabularies
-            (policy areas, epithets, historical references) in two distinct bands. <strong>Comparison mode</strong>{' '}
-            lays out each prompt&rsquo;s completions in its own vertical region so you can relate intra-prompt consensus
+            (policy areas, epithets, historical references) in two distinct bands. Comparison mode lays out each
+            prompt&rsquo;s completions in its own vertical region so you can relate intra-prompt consensus
             to cross-prompt differences&mdash;the kind of structural judgment our participants often made with graph-style
             summaries.
           </p>
         </ArticleMotivatingExample>
-      </section>
-
-      <section className="article-below-scrolly" aria-label="Planned comparison examples">
-        <h2>Comparisons</h2>
-        <p className="article-section-lede">
-          <em>
-            [TODO: Frame how side-by-side or overlaid distributions support cross-model and sampling comparisons.]
-          </em>
-        </p>
-
         <h3>Comparing models (across families)</h3>
         <p>
           <em>
@@ -312,7 +297,7 @@ export default function App() {
         </p>
 
         <p className="article-placeholder-end">
-          <strong>End of draft body.</strong> Replace lorem and placeholders with final prose and embedded diagrams.
+          End of draft body. Replace lorem and placeholders with final prose and embedded diagrams.
         </p>
       </section>
       </div>

@@ -34,19 +34,19 @@ const SCROLLY_STEP_ID_PREFIX = 'step-scrolly';
 const SCROLLY_STEP_BEATS: ScrollyStepBeat[] = [
   {
     keyframe: 2,
-    html: `<p>We typically interact with LLMs by giving them a prompt, and then getting a single response.</p>`,
+    html: `<p>For example, we typically interact with LLMs by giving them a prompt, and then getting a single response.</p>`,
   },
   {
     keyframe: 3,
-    html: `<p>However, LLMs produce <em>distributions</em>. Each output is just one sample from a given distribution: we usually just see one, but many are possible. How does this stochasticity manifest? Some sets of outputs are divergent, some are convergent.</p>`,
+    html: `<p>In reality, though, this output is just one sample from the underlying distribution: many are possible, and the ways they differ or are similar can be surprising.</p> <p>For example, in the generations here, <strong>Elara</strong> appears more frequently than you might expect based on how open-ended the prompt is.</p>`,
   },
   {
     keyframe: 4,
-    html: `<p>This raises a new question: What&rsquo;s the best way to look at a bunch of outputs?</p><p>In reality, since the LLM generates token-by-token, this is a tree. However, the outputs often reconverge on a common phrase.</p>`,
+    html: `<p>This raises a new question: What is the best way to look at a bunch of outputs?</p><p>In reality, since the LLM generates token-by-token, a tree might seem natural. However, the outputs often reconverge on a common word or phrase.</p>`,
   },
   {
     keyframe: 4,
-    html: `<p>Can we instead visualize this as a graph? We lose the ability to read each completion line by line, but gain a single picture of how mass is spread across phrasing&mdash;where samples agree, branch apart, and meet again.</p><p>In the view below, each completion is a <em>path</em> through <em>nodes</em> (words or short chunks). When generations share a stretch of text, their paths run along the same edges, so overlap makes shared structure visible. Node size and weight reflect how often a piece of wording appears across samples, highlighting backbone phrases and hubs in the distribution.</p>`,
+    html: `<p>Can we instead visualize this as a graph? We lose the ability to read each completion line by line, but gain a single picture of how mass is spread across phrasing&mdash;where samples agree, branch apart, and meet again.</p><p>Each completion is a <em>path</em> through <em>nodes</em> (words or short chunks). When generations share a stretch of text, their paths run along the same edges, showing shared structure. Node size and weight reflect how often a piece of wording appears across samples.</p>`,
   },
 ];
 
