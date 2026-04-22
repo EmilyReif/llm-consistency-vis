@@ -1104,21 +1104,32 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
             }
             return ((so + to) / 2) * 0.2; // match gradient multiplier from graph mode
         };
+        const nPrompts = this.props.promptGroups.length;
+        /** Multi-prompt figures: solid per-prompt stroke tracks text color; URL gradients key off link index and can mismatch. */
+        const usePromptSolidEdges = nPrompts > 1 && interp >= 0.35;
         this.links.select('.link-visible')
             .attr("stroke", (d: LinkDatum, i: number) => {
+                const idx = d.promptId ? color_utils.getPromptIndexFromId(d.promptId, this.promptOrder()) : 0;
+                const color = color_utils.MILLER_STONE_COLORS[idx % color_utils.MILLER_STONE_COLORS.length];
                 if (interp < 0.35) {
-                    const idx = d.promptId ? color_utils.getPromptIndexFromId(d.promptId, this.promptOrder()) : 0;
-                    return color_utils.MILLER_STONE_COLORS[idx % color_utils.MILLER_STONE_COLORS.length];
+                    return color;
+                }
+                if (usePromptSolidEdges) {
+                    return color;
                 }
                 return `url(#gradient-${i})`;
             })
             .attr("stroke-width", 2)
-            .attr("stroke-opacity", (d: LinkDatum) => (interp < 0.35 ? linkOpacity(d) : 1))
+            .attr("stroke-opacity", (d: LinkDatum) => {
+                if (interp < 0.35) return linkOpacity(d);
+                if (usePromptSolidEdges) return linkOpacity(d);
+                return 1;
+            })
             .style('filter', (d: LinkDatum) => isUntangled ? 'none' : getBlur(d));
         this.links.style('pointer-events', isUntangled ? 'none' : 'auto');
 
         // Update gradient opacity when selection/hover changes (skip when in 1D mode - uses solid stroke)
-        if (interp >= 0.35) {
+        if (interp >= 0.35 && !usePromptSolidEdges) {
             const multiplier = .2;
             this.links.each((d: LinkDatum, i: number) => {
                 let sourceOpacity = opacity(d.source);

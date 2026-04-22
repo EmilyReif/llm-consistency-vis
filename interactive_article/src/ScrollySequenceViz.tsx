@@ -1,5 +1,5 @@
 /**
- * Prompt → loading → single streaming output → many lines → word graph (reuses ScrollyWordGraphUntangle).
+ * Prompt + single streaming output (no loading) → many lines → word graph (reuses ScrollyWordGraphUntangle).
  */
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import ScrollyWordGraphUntangle from './ScrollyWordGraphUntangle';
@@ -8,21 +8,11 @@ import { SCROLLY_PROMPT, SCROLLY_GENERATIONS } from './scrollyData';
 export type ScrollySequenceKeyframe = 2 | 3 | 4;
 
 /**
- * Keyframe 2 only — wall-clock timeline from effect start (prompt already visible):
- *
- *   t = 0                          … prompt only
- *   t = LOADING_SHOW_MS            … “…” loading dots appear
- *   t = LOADING_SHOW_MS + LOADING_MS
- *                                  … dots hide, “Output” card appears (still empty)
- *   t = LOADING_SHOW_MS + LOADING_MS + OUTPUT_AFTER_LOADING_MS
- *                                  … first token streams in; then +TOKEN_MS per word
+ * Keyframe 2 only — from effect start: prompt and output card are shown immediately, then
+ * first line streams in: t = STREAM_START_MS, then +TOKEN_MS per word.
  */
-/** Delay before the three loading dots appear (after prompt-only beat). */
-const LOADING_SHOW_MS = 100;
-/** How long the dots stay visible before the output card replaces them. */
-const LOADING_MS = 100;
-/** Pause after the card mounts so layout can settle before token streaming begins. */
-const OUTPUT_AFTER_LOADING_MS = 200;
+/** Brief pause so layout can settle before token streaming begins. */
+const STREAM_START_MS = 50;
 const TOKEN_MS = 95;
 const ROW_REVEAL_MS = 220;
 /** Generations shown as lines in the output card (before graph). */
@@ -35,6 +25,8 @@ interface Props {
   activeIndex: number;
   /** Index of the beat with keyframe 3 (`SCROLLY_DISTRIBUTIONS_BEAT_INDEX`). */
   distributionsBeatIndex: number;
+  /** KF3 SVG list: highlight this substring in tokens when set. */
+  listHighlightSubstring?: string;
   /** Whether the reader moved to an earlier or later beat (inverse animations on backward). */
   scrollDirection: 'forward' | 'backward';
 }
@@ -44,11 +36,11 @@ export default function ScrollySequenceViz({
   stepId,
   activeIndex,
   distributionsBeatIndex,
+  listHighlightSubstring,
   scrollDirection,
 }: Props) {
   const [promptVisible, setPromptVisible] = useState(true);
-  const [showLoading, setShowLoading] = useState(false);
-  const [showOutputCard, setShowOutputCard] = useState(false);
+  const [showOutputCard, setShowOutputCard] = useState(true);
   const [tokenCount, setTokenCount] = useState(0);
   const [visibleLineCount, setVisibleLineCount] = useState(1);
   /** True until graph→list reverse morph finishes (scroll up from graph beat). */
@@ -64,6 +56,12 @@ export default function ScrollySequenceViz({
     timersRef.current = [];
   }, []);
   const cancelledIntroRef = useRef(false);
+  /** After the HTML stream finishes once, avoid restarting it on brief scroll-spy flicker (beat 0) while moving down. */
+  const htmlIntroCompletedRef = useRef(false);
+  const activeIndexRef = useRef(activeIndex);
+  const scrollDirectionRef = useRef(scrollDirection);
+  activeIndexRef.current = activeIndex;
+  scrollDirectionRef.current = scrollDirection;
 
   useLayoutEffect(() => {
     const prev = prevKeyframeForGraphRef.current;
@@ -91,22 +89,41 @@ export default function ScrollySequenceViz({
   const graphListRowsControlled =
     keyframe === 3 && !reverseGraphInProgress && !exitingGraphToList;
 
-  // Keyframe 2: prompt (immediate) → loading dots → single streaming line.
-  useEffect(() => {
+  // Keyframe 2: prompt + output card immediately → single streaming line (no loading dots).
+  useLayoutEffect(() => {
     if (keyframe !== 2) {
+      // Do not set htmlIntroCompletedRef here: a one-frame KF3 flash from scroll-spy would skip the stream.
       prevKeyframeForEffects.current = keyframe;
       return;
     }
+
+    if (scrollDirectionRef.current === 'backward') {
+      htmlIntroCompletedRef.current = false;
+    }
+
     prevKeyframeForEffects.current = keyframe;
 
+    if (
+      htmlIntroCompletedRef.current &&
+      scrollDirectionRef.current === 'forward' &&
+      activeIndexRef.current === 0
+    ) {
+      clearTimers();
+      cancelledIntroRef.current = false;
+      setPromptVisible(true);
+      setShowOutputCard(true);
+      setTokenCount(tokens0.length);
+      setVisibleLineCount(1);
+      return;
+    }
+
     if (process.env.NODE_ENV === 'development') {
-      console.log('[scrolly viz] keyframe 2 effect start (prompt → loading → stream)', { stepId });
+      console.log('[scrolly viz] keyframe 2 effect start (prompt + stream, no loading)', { stepId });
     }
     clearTimers();
     cancelledIntroRef.current = false;
     setPromptVisible(true);
-    setShowLoading(false);
-    setShowOutputCard(false);
+    setShowOutputCard(true);
     setTokenCount(0);
     setVisibleLineCount(1);
 
@@ -118,20 +135,12 @@ export default function ScrollySequenceViz({
       );
     };
 
-    schedule(() => {
-      setShowLoading(true);
-    }, LOADING_SHOW_MS);
-
-    schedule(() => {
-      setShowLoading(false);
-      setShowOutputCard(true);
-    }, LOADING_SHOW_MS + LOADING_MS);
-
-    const streamStart = LOADING_SHOW_MS + LOADING_MS + OUTPUT_AFTER_LOADING_MS;
+    const streamStart = STREAM_START_MS;
     for (let i = 1; i <= tokens0.length; i++) {
       const ntok = i;
       schedule(() => {
         setTokenCount(ntok);
+        if (ntok === tokens0.length) htmlIntroCompletedRef.current = true;
       }, streamStart + ntok * TOKEN_MS);
     }
 
@@ -149,7 +158,6 @@ export default function ScrollySequenceViz({
     if (keyframe !== 3) return undefined;
     clearTimers();
     setPromptVisible(true);
-    setShowLoading(false);
     setShowOutputCard(true);
     setTokenCount(tokens0.length);
 
@@ -188,7 +196,6 @@ export default function ScrollySequenceViz({
     if (activeIndex === distributionsBeatIndex) return;
     clearTimers();
     setPromptVisible(true);
-    setShowLoading(false);
     setShowOutputCard(true);
     setTokenCount(tokens0.length);
     setVisibleLineCount(Math.min(LIST_LINE_CAP, SCROLLY_GENERATIONS.length));
@@ -202,7 +209,6 @@ export default function ScrollySequenceViz({
     }
     clearTimers();
     setPromptVisible(true);
-    setShowLoading(false);
     setShowOutputCard(false);
     setTokenCount(tokens0.length);
   }, [keyframe, clearTimers, tokens0.length, stepId]);
@@ -217,15 +223,14 @@ export default function ScrollySequenceViz({
         }`}
       >
         <p className="scrolly-seq-prompt-body">{SCROLLY_PROMPT}</p>
+        <p className="scrolly-seq-prompt-source">
+          Prompt from{' '}
+          <a href="https://arxiv.org/abs/2504.05228" rel="noopener noreferrer">
+            NoveltyBench
+          </a>
+          .
+        </p>
       </div>
-
-      {showLoading ? (
-        <div className="scrolly-seq-loading" aria-live="polite" aria-busy="true">
-          <span className="scrolly-seq-loading-dot" />
-          <span className="scrolly-seq-loading-dot" />
-          <span className="scrolly-seq-loading-dot" />
-        </div>
-      ) : null}
 
       {showOutputCard && keyframe === 2 && !blockOutputForGraph ? (
         <div
@@ -236,7 +241,7 @@ export default function ScrollySequenceViz({
         >
           <p className="scrolly-seq-output-label">Output</p>
           <div className="scrolly-seq-output-lines" aria-live="polite">
-            <p className="scrolly-seq-output-line">{firstLineText}</p>
+            <p className="scrolly-seq-output-line scrolly-seq-output-line--streaming">{firstLineText}</p>
           </div>
         </div>
       ) : null}
@@ -247,6 +252,7 @@ export default function ScrollySequenceViz({
             keyframe={keyframe}
             svgId={`scrolly-wg-svg-${stepId}`}
             className="scrolly-untangle-root"
+            listHighlightSubstring={listHighlightSubstring}
             listRowsControlled={graphListRowsControlled}
             visibleListRowCount={visibleLineCount}
             onReverseMorphComplete={onReverseMorphComplete}

@@ -17,12 +17,18 @@ import {
 } from './scrollyData';
 import { wordGraphZoomEventFilter } from './lib/wordGraphZoomArm';
 
+function yieldOneFrame(): Promise<void> {
+  if (typeof requestAnimationFrame === 'undefined') {
+    return new Promise((r) => setTimeout(r, 0));
+  }
+  return new Promise((r) => requestAnimationFrame(() => r()));
+}
+
 const PROMPT_ID = 'scrolly-bio';
 const SIMILARITY = 0.7;
 const SPREAD = 0.5;
 const TOKENIZE: TokenizeMode = 'space';
 const LIST_FONT_PX = 14;
-const WORDS_PER_CHUNK = 5;
 const MARGIN_L = 14;
 const MARGIN_T = 30;
 const MARGIN_B = 60;
@@ -31,6 +37,9 @@ const ROW_SPACING = 32;
 const REF_ROW_W = 500;
 /** Match `GAP_PX_1D` in `ExamplesWordGraphUntangle` (1D list token spacing). */
 const LIST_GAP = 4;
+/** Must match `.scrolly-wg-svg` in `single_example_wordgraph.css` so canvas layout matches SVG text. */
+const SCROLLY_LABEL_FONT_STACK =
+  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 const GRAPH_THRESHOLD = 1;
 const INTERACT_THRESHOLD = 0.7;
 const PX_FALLBACK = 2;
@@ -43,6 +52,58 @@ const UNTANGLE_MS = 1100;
 /** Single text/link color in list (exploded) mode; graph uses frequency-based colors once interp reaches 1. */
 const LIST_LINE_TEXT = '#1e293b';
 const LIST_LINE_LINK = '#64748b';
+/** Highlighter fill (SVG has no CSS background on text — we draw rects from tspan bboxes). */
+const LIST_HIGHLIGHT_BG = '#fef08a';
+
+/** Split list-mode label into plain + highlighted tspans (case-insensitive `phrase` match). */
+function appendListLabelWithOptionalHighlight(
+  textSel: d3.Selection<d3.BaseType, unknown, null, undefined>,
+  label: string,
+  phrase: string | undefined | null,
+  textFill: string
+) {
+  textSel.text(null);
+  const ph = phrase?.trim();
+  if (!ph) {
+    textSel.append('tspan').attr('x', 0).attr('dy', 0).text(label);
+    return;
+  }
+  const lowerLabel = label.toLowerCase();
+  const lowerPh = ph.toLowerCase();
+  let cursor = 0;
+  let first = true;
+
+  const appendPlain = (s: string) => {
+    if (!s) return;
+    const ts = textSel.append('tspan');
+    if (first) {
+      ts.attr('x', 0).attr('dy', 0);
+      first = false;
+    }
+    ts.text(s);
+  };
+
+  const appendHi = (s: string) => {
+    if (!s) return;
+    const ts = textSel.append('tspan');
+    if (first) {
+      ts.attr('x', 0).attr('dy', 0);
+      first = false;
+    }
+    ts.attr('class', 'scrolly-wg-list-highlight').attr('fill', textFill).text(s);
+  };
+
+  while (cursor < label.length) {
+    const idx = lowerLabel.indexOf(lowerPh, cursor);
+    if (idx < 0) {
+      appendPlain(label.slice(cursor));
+      break;
+    }
+    appendPlain(label.slice(cursor, idx));
+    appendHi(label.slice(idx, idx + ph.length));
+    cursor = idx + ph.length;
+  }
+}
 
 export type ScrollyKeyframe = 2 | 3 | 4;
 
@@ -77,6 +138,8 @@ interface Props {
   listRowsControlled?: boolean;
   /** 1-based number of rows to show in list mode; ignored unless `listRowsControlled`. */
   visibleListRowCount?: number;
+  /** Exploded list: highlight this substring in token labels (e.g. narrative callout). */
+  listHighlightSubstring?: string;
 }
 
 interface Scene {
@@ -117,27 +180,26 @@ function measureTextWidth(text: string, fontSize: number): number {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) return (text ?? '').length * PX_FALLBACK;
-  ctx.font = `${fontSize}px monospace`;
+  ctx.font = `${fontSize}px ${SCROLLY_LABEL_FONT_STACK}`;
   return ctx.measureText((text ?? '').replace(/^##/, '')).width;
 }
 
-function chunksForNode(word: string): string[] {
-  const s = (utils.unformat(word) ?? word ?? '').toString();
-  const words = s.split(/\s+/).filter((w) => w.length > 0);
-  const out: string[] = [];
-  for (let i = 0; i < words.length; i += WORDS_PER_CHUNK) {
-    out.push(words.slice(i, i + WORDS_PER_CHUNK).join(' '));
-  }
-  return out.length ? out : [''];
+/** Graph `node.word` is an internal token key; match the string drawn on collapsed `text` nodes. */
+function graphDisplayLabel(node: NodeDatum): string {
+  const u = utils.unformat(node.word);
+  if (u != null && String(u).trim().length > 0) return String(u);
+  const parts = node.origSentenceInfo?.flatMap((o) => o.origWords) ?? [];
+  if (parts.length) return parts.join(' ');
+  return node.word;
 }
 
+/** Collapsed graph labels render as a single `tspan` line — width/height must match that, not per-chunk heuristics. */
 function textLen(node: NodeDatum): number {
-  const ch = chunksForNode(node.word);
-  return d3.max(ch.map((c) => c.length * node.fontSize * 0.6)) ?? 0;
+  return measureTextWidth(graphDisplayLabel(node), node.fontSize);
 }
 
 function textH(node: NodeDatum): number {
-  return chunksForNode(node.word).length * node.fontSize;
+  return node.fontSize * 1.2;
 }
 
 function scaleToPx(xN: number, yRow: number) {
@@ -230,7 +292,7 @@ function build1D(
   return { instances1D, link1D };
 }
 
-function runForce(nodesData: NodeDatum[], linksData: LinkDatum[], height: number): void {
+function buildForceSim(nodesData: NodeDatum[], linksData: LinkDatum[], height: number) {
   const sim = d3.forceSimulation(nodesData);
   sim
     .force('collide', ellipseForce(nodesData, 14, 5, 5))
@@ -246,7 +308,39 @@ function runForce(nodesData: NodeDatum[], linksData: LinkDatum[], height: number
       nodesData.forEach((d) => (d.x = getExpectedX(d, nodesData)));
     });
   sim.stop();
+  return sim;
+}
+
+/** Full layout in one go (e.g. small selection subgraphs). */
+function runForce(nodesData: NodeDatum[], linksData: LinkDatum[], height: number): void {
+  const sim = buildForceSim(nodesData, linksData, height);
   for (let i = 0; i < 1000; i++) sim.tick();
+}
+
+const FORCE_TICKS_TOTAL = 1000;
+/** Spread force ticks across frames so the intro / timeouts stay responsive during prefetch. */
+function runForceChunked(
+  nodesData: NodeDatum[],
+  linksData: LinkDatum[],
+  height: number,
+  ticksTotal = FORCE_TICKS_TOTAL,
+  ticksPerFrame = 45
+): Promise<void> {
+  const sim = buildForceSim(nodesData, linksData, height);
+  let done = 0;
+  return new Promise((resolve) => {
+    const step = () => {
+      const target = Math.min(done + ticksPerFrame, ticksTotal);
+      for (let i = done; i < target; i++) sim.tick();
+      done = target;
+      if (done >= ticksTotal) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
 }
 
 function linkIsInSentsForHighlight(
@@ -301,13 +395,17 @@ function applySelectionLayout(model: BuiltModel, selected: Set<NodeDatum>): void
 
 async function buildModel(): Promise<BuiltModel> {
   const promptGroups = promptGroupsAll();
+  console.log('START')
   const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(
     promptGroups,
     SIMILARITY,
     false,
     TOKENIZE,
-    false
+    false,
+    true
   );
+  console.log('DONE')
+
   const totalGen = promptGroups.reduce((a, g) => a + g.generations.length, 0);
   const fontScale = d3
     .scaleLinear()
@@ -330,14 +428,16 @@ async function buildModel(): Promise<BuiltModel> {
     n.ry = textH(n) / 2;
   });
 
+  await yieldOneFrame();
   const { instances1D, link1D } = build1D(linksData, promptGroups);
+  await yieldOneFrame();
   const nRows = totalGen;
   const minH1D = nRows > 1 ? MARGIN_T + MARGIN_B + (nRows - 1) * ROW_SPACING : 640;
   const viewportH = typeof window !== 'undefined' ? window.innerHeight : 800;
   let height = Math.max(viewportH, minH1D);
   const width = Math.min(window.innerWidth, 5000);
 
-  runForce(nodesData, linksData, Math.min(height, viewportH));
+  await runForceChunked(nodesData, linksData, Math.min(height, viewportH));
   height = viewportH;
 
   const row0Count = instances1D.filter((i) => i.sentIdx === 0).length;
@@ -399,15 +499,6 @@ function getNode(d: NodeViz): NodeDatum {
   return 'pathIndex' in d && 'node' in d ? (d as NodeInst1D & { word: string }).node : (d as NodeDatum);
 }
 
-/** Graph `node.word` is an internal token key (e.g. `Name:` + sentIdx + idx → `Name:10`); show original text. */
-function graphDisplayLabel(node: NodeDatum): string {
-  const u = utils.unformat(node.word);
-  if (u != null && String(u).trim().length > 0) return String(u);
-  const parts = node.origSentenceInfo?.flatMap((o) => o.origWords) ?? [];
-  if (parts.length) return parts.join(' ');
-  return node.word;
-}
-
 function avg1d(node: NodeDatum, inst: NodeInst1D[]): { x: number; y: number } | null {
   const slice = inst.filter((i) => i.node === node);
   if (!slice.length) return null;
@@ -424,6 +515,7 @@ export default function ScrollyWordGraphUntangle({
   onReverseMorphComplete,
   listRowsControlled = false,
   visibleListRowCount = 1,
+  listHighlightSubstring,
 }: Props) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const modelRef = useRef<BuiltModel | null>(null);
@@ -443,6 +535,8 @@ export default function ScrollyWordGraphUntangle({
   const mapZoomArmedRef = useRef(false);
   const [mapZoomArmed, setMapZoomArmed] = useState(false);
   const [vizPointerInside, setVizPointerInside] = useState(false);
+  const listHighlightSubstringRef = useRef<string | undefined>(undefined);
+  listHighlightSubstringRef.current = listHighlightSubstring;
 
   const disarmMapZoom = useCallback(() => {
     mapZoomArmedRef.current = false;
@@ -686,9 +780,48 @@ export default function ScrollyWordGraphUntangle({
       .each(function (d: NodeViz) {
         const t = d3.select(this);
         const label = useCollapsed ? graphDisplayLabel(getNode(d)) : (d as NodeInst1D & { word: string }).origWord;
-        t.text(null);
-        t.append('tspan').attr('x', 0).attr('dy', 0).text(label);
+        const hl = !useCollapsed ? listHighlightSubstringRef.current : undefined;
+        const fill = nodeFill(d);
+        if (hl) {
+          appendListLabelWithOptionalHighlight(t, label, hl, fill);
+        } else {
+          t.text(null);
+          t.append('tspan').attr('x', 0).attr('dy', 0).text(label);
+        }
       });
+
+    merged.each(function () {
+      const g = d3.select(this);
+      g.select('.scrolly-wg-hl-layer').remove();
+      if (useCollapsed) return;
+      const phrase = listHighlightSubstringRef.current?.trim();
+      if (!phrase) return;
+      const textEl = g.select('text').node() as SVGTextElement | null;
+      if (!textEl) return;
+      const marks = textEl.querySelectorAll('tspan.scrolly-wg-list-highlight');
+      if (!marks.length) return;
+      const layer = g.insert('g', 'text').attr('class', 'scrolly-wg-hl-layer').attr('pointer-events', 'none');
+      marks.forEach((tsp) => {
+        try {
+          const bb = (tsp as SVGGraphicsElement).getBBox();
+          if (bb.width <= 0 || bb.height <= 0) return;
+          const padX = 2;
+          const padY = 1;
+          layer.append('rect')
+            .attr('class', 'scrolly-wg-highlight-rect')
+            .attr('x', bb.x - padX)
+            .attr('y', bb.y - padY * 0.5)
+            .attr('width', bb.width + padX * 2)
+            .attr('height', bb.height + padY)
+            .attr('rx', 2)
+            .attr('ry', 2)
+            .attr('fill', LIST_HIGHLIGHT_BG);
+        } catch {
+          /* getBBox can fail before layout in some engines */
+        }
+      });
+    });
+
     nodeJoin.exit().remove();
 
     const linksSel = main.selectAll<SVGGElement, LinkDatum>('g.link').data(model.linksData);
@@ -741,6 +874,11 @@ export default function ScrollyWordGraphUntangle({
 
   const drawRef = useRef(draw);
   drawRef.current = draw;
+
+  useEffect(() => {
+    if (!ready) return;
+    drawRef.current();
+  }, [listHighlightSubstring, ready]);
 
   /** Keyframe 3 + scrolly: sync SVG list rows to parent `visibleListRowCount` (same geometry as graph list / morph). */
   useEffect(() => {
@@ -948,7 +1086,9 @@ export default function ScrollyWordGraphUntangle({
       };
     }
 
-    if (keyframe === 3 && listRowsControlled) {
+    // Keyframe 3 from intro (2) or remount: first line already streamed in HTML — never run `runTokens` here.
+    // Only 4 → 3 uses `runReverseUntangle` above; internal `runTokens('rows-done')` is for standalone KF3 demos.
+    if (keyframe === 3 && prevKf !== 4) {
       return () => {
         cancelled = true;
         clearAnim();
@@ -1078,7 +1218,7 @@ export default function ScrollyWordGraphUntangle({
       cancelled = true;
       clearAnim();
     };
-  }, [keyframe, ready, clearAnim, onReverseMorphComplete, listRowsControlled]);
+  }, [keyframe, ready, clearAnim, onReverseMorphComplete]);
 
   const showZoomArmHint = ready && vizPointerInside && !mapZoomArmed;
 

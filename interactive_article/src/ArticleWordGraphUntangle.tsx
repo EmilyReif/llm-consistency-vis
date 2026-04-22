@@ -499,6 +499,10 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
         }, delay);
     }
 
+    private promptOrder(): string[] {
+        return this.props.promptGroups.map((g) => g.promptId);
+    }
+
     private async rebuildGraphContent() {
         // Generate graph data from all text
         const { nodesData, linksData } = await utils.createGraphDataFromPromptGroups(this.props.promptGroups, this.state.similarityThreshold, false, this.state.tokenizeMode, this.state.separateByPrompt);
@@ -580,7 +584,9 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
                 .attr("gradientUnits", "objectBoundingBox")
 
             // Get stroke color
-            const strokeColor = edgeColors(String(d.promptId ? color_utils.getPromptIndexFromId(d.promptId) : 0));
+            const strokeColor = edgeColors(
+                String(d.promptId ? color_utils.getPromptIndexFromId(d.promptId, this.promptOrder()) : 0)
+            );
 
             grad.append("stop")
                 .attr("offset", "0%")
@@ -771,21 +777,31 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
             }
             return ((so + to) / 2) * 0.2; // match gradient multiplier from graph mode
         };
+        const nPrompts = this.props.promptGroups.length;
+        const usePromptSolidEdges = nPrompts > 1 && interp >= 0.35;
         this.links.select('.link-visible')
             .attr("stroke", (d: LinkDatum, i: number) => {
+                const idx = d.promptId ? color_utils.getPromptIndexFromId(d.promptId, this.promptOrder()) : 0;
+                const color = color_utils.MILLER_STONE_COLORS[idx % color_utils.MILLER_STONE_COLORS.length];
                 if (interp < 0.35) {
-                    const idx = d.promptId ? color_utils.getPromptIndexFromId(d.promptId) : 0;
-                    return color_utils.MILLER_STONE_COLORS[idx % color_utils.MILLER_STONE_COLORS.length];
+                    return color;
+                }
+                if (usePromptSolidEdges) {
+                    return color;
                 }
                 return `url(#gradient-${i})`;
             })
             .attr("stroke-width", 2)
-            .attr("stroke-opacity", (d: LinkDatum) => (interp < 0.35 ? linkOpacity(d) : 1))
+            .attr("stroke-opacity", (d: LinkDatum) => {
+                if (interp < 0.35) return linkOpacity(d);
+                if (usePromptSolidEdges) return linkOpacity(d);
+                return 1;
+            })
             .style('filter', (d: LinkDatum) => isUntangled ? 'none' : getBlur(d));
         this.links.style('pointer-events', isUntangled ? 'none' : 'auto');
 
         // Update gradient opacity when selection/hover changes (skip when in 1D mode - uses solid stroke)
-        if (interp >= 0.35) {
+        if (interp >= 0.35 && !usePromptSolidEdges) {
             const multiplier = .2;
             this.links.each((d: LinkDatum, i: number) => {
                 let sourceOpacity = opacity(d.source);
@@ -903,7 +919,8 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
             )
             .attr("text-anchor", "start");
 
-        const nodeColor = (d: NodeDisplayDatum) => getNodeColor(getNode(d), this.linksData);
+        const nodeColor = (d: NodeDisplayDatum) =>
+            getNodeColor(getNode(d), this.linksData, this.promptOrder());
         merged.attr('fill', nodeColor);
 
         merged

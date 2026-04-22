@@ -41,6 +41,7 @@ text {
 .article-wordgraph-viz-pane > .wordgraph-svg-clip-wrap > svg,
 .scrolly-wg-svg {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    letter-spacing: normal;
 }
 
 /* Wraps the motivating / examples SVG for layout (viewBox + meet vs CSS box). */

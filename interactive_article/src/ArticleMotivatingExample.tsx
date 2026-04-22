@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import ExamplesWordGraphUntangle from './ExamplesWordGraphUntangle';
+import { MILLER_STONE_COLORS } from './lib/articleColorUtils';
 
 type SpecSingle = {
   mode: 'single';
@@ -19,6 +20,11 @@ export type ArticleMotivatingExampleProps = {
   children: React.ReactNode;
   /** Prompt shown as a floating card in the graph area (left of the controls sidebar). */
   promptQuote: string;
+  /**
+   * When `promptGroupsSpec.mode === 'compare'`, optional color key for the two bands (matches graph/link hues).
+   * `a` uses the first palette color, `b` the second.
+   */
+  compareLegend?: { aLabel: string; bLabel: string };
   promptGroupsSpec: SpecSingle | SpecCompare;
   /**
    * Fixed height for the word graph SVG (px). Width still fills the card.
@@ -32,6 +38,7 @@ export function ArticleMotivatingExample({
   title,
   children,
   promptQuote,
+  compareLegend,
   promptGroupsSpec,
   svgHeightPx,
 }: ArticleMotivatingExampleProps) {
@@ -84,14 +91,34 @@ export function ArticleMotivatingExample({
         } as React.CSSProperties)
       : undefined;
 
-  const floatingPrompt = useMemo(
-    () => (
+  const floatingPrompt = useMemo(() => {
+    const showLegend = promptGroupsSpec.mode === 'compare' && compareLegend != null;
+    return (
       <div className="scrolly-seq-prompt-block scrolly-seq-prompt-block--visible article-motivating-floating-prompt-card">
         <p className="scrolly-seq-prompt-body">{promptQuote}</p>
+        {showLegend ? (
+          <div className="article-motivating-compare-legend" aria-label="Color key for comparison bands">
+            <div className="article-motivating-compare-legend-item">
+              <span
+                className="article-motivating-compare-swatch"
+                style={{ background: MILLER_STONE_COLORS[0] }}
+                aria-hidden
+              />
+              <span>{compareLegend!.aLabel}</span>
+            </div>
+            <div className="article-motivating-compare-legend-item">
+              <span
+                className="article-motivating-compare-swatch"
+                style={{ background: MILLER_STONE_COLORS[1] }}
+                aria-hidden
+              />
+              <span>{compareLegend!.bLabel}</span>
+            </div>
+          </div>
+        ) : null}
       </div>
-    ),
-    [promptQuote]
-  );
+    );
+  }, [promptQuote, compareLegend, promptGroupsSpec.mode]);
 
   return (
     <div className="article-motivating-block">

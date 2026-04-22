@@ -48,10 +48,21 @@ export function objectsAreEqual(a: any, b: any) {
     return JSON.stringify(a) === JSON.stringify(b);
 }
 
+/** Lets the browser paint / run timers between heavy steps (e.g. scrolly intro streaming). */
+function yieldToBrowser(): Promise<void> {
+    if (typeof requestAnimationFrame === 'undefined') {
+        return new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    return new Promise((resolve) => {
+        requestAnimationFrame(() => resolve());
+    });
+}
+
 export async function tokenize(
     sent: string,
     sentenceIdx?: number,
-    mode: TokenizeMode = "space"
+    mode: TokenizeMode = "space",
+    cooperativeYield = false
 ): Promise<string[]> {
     // normalize text
 
@@ -72,6 +83,9 @@ export async function tokenize(
     const tokens: string[] = [];
 
     for (let i = 0; i < chunks.length; i++) {
+        if (cooperativeYield && i > 0 && i % 6 === 0) {
+            await yieldToBrowser();
+        }
         const chunk = chunks[i];
         const originalChunk = chunk;
         const word = chunk;
@@ -279,7 +293,9 @@ export async function createGraphDataFromPromptGroups(
     similarityThreshold: number = 0.5,
     shuffle: boolean = false,
     tokenizeMode: TokenizeMode = "space",
-    separateByPrompt: boolean = false
+    separateByPrompt: boolean = false,
+    /** When true, yields a frame between sentences and during merge so UI (e.g. word-by-word text) stays responsive. */
+    cooperativeYield: boolean = true
 ): Promise<{ nodesData: NodeDatum[]; linksData: LinkDatum[] }> {
 
 
@@ -292,8 +308,12 @@ export async function createGraphDataFromPromptGroups(
         for (const generation of generations) {
             sentIdx++;
             let prevWord = '';
-            const words = await tokenize(generation, sentIdx, tokenizeMode);
-            words.forEach((word, j) => {
+            const words = await tokenize(generation, sentIdx, tokenizeMode, cooperativeYield);
+            for (let j = 0; j < words.length; j++) {
+                if (cooperativeYield && j > 0 && j % 12 === 0) {
+                    await yieldToBrowser();
+                }
+                let word = words[j];
                 let similarNodes = Object.keys(nodesDict).map((existingWord: any) => {
                     const sameSentence = nodesDict[existingWord]?.origSentIndices.includes(sentIdx);
                     if (sameSentence) return ;
@@ -330,7 +350,10 @@ export async function createGraphDataFromPromptGroups(
                 }
                 addLinks(nodesDict, linksDict, word, prevWord, sentIdx, promptId);
                 prevWord = word;
-            });
+            }
+            if (cooperativeYield) {
+                await yieldToBrowser();
+            }
         }
     }
 
@@ -340,12 +363,16 @@ export async function createGraphDataFromPromptGroups(
         node.children = [];
     });
 
-    merge(nodesDict as any, linksDict as any);
+    await merge(nodesDict as any, linksDict as any, cooperativeYield);
 
     // Derive origSentIndices from origSentenceInfo for all nodes after parsing/merging
     Object.values(nodesDict).forEach(node => {
         deriveOrigSentIndices(node);
     });
+
+    if (cooperativeYield) {
+        await yieldToBrowser();
+    }
 
     const nodesData = Object.values(nodesDict);
     const linksData: LinkDatum[] = Object.entries(linksDict).flatMap(([source, targets]) => {
@@ -377,8 +404,15 @@ export async function createGraphDataFromPromptGroups(
 }
 
 /** Merge words that are sequential when there are no other branches. */
-function merge(nodesDict: { [key: string]: NodeDatum }, linksDict: { [key: string]: { [key: string]: any[] } }) {
+async function merge(
+    nodesDict: { [key: string]: NodeDatum },
+    linksDict: { [key: string]: { [key: string]: any[] } },
+    cooperativeYield = false
+): Promise<void> {
     for (let i = 0; i < Object.keys(nodesDict).length; i++) {
+        if (cooperativeYield && i > 0) {
+            await yieldToBrowser();
+        }
         for (const source in nodesDict) {
 
             // Skip if we already merged this node.

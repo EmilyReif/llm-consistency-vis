@@ -10,12 +10,14 @@ export interface ScrollyDiagramProps {
   activeIndex: number;
   /** `SCROLLY_DISTRIBUTIONS_BEAT_INDEX` — beat where many outputs should animate in. */
   distributionsBeatIndex: number;
+  /** KF3 list: highlight this substring in output tokens (e.g. “Elara”); omit on other steps. */
+  listHighlightSubstring?: string;
   /** Beat index increased vs decreased since last commit (drives reverse animations). */
   scrollDirection: 'forward' | 'backward';
 }
 
 /**
- * Scrolly diagram: prompt → loading → streaming output → many lines → graph.
+ * Scrolly diagram: prompt + streaming output → many lines → graph (no loading phase).
  * Keyframes: 1 = no viz, 2 = intro sequence, 3 = expand outputs, 4 = word graph.
  */
 export function ScrollyDiagram({
@@ -23,6 +25,7 @@ export function ScrollyDiagram({
   stepId,
   activeIndex,
   distributionsBeatIndex,
+  listHighlightSubstring,
   scrollDirection,
 }: ScrollyDiagramProps) {
   if (keyframe === 1) {
@@ -32,7 +35,7 @@ export function ScrollyDiagram({
   const k = keyframe as ScrollySequenceKeyframe;
   const aria =
     keyframe === 2 ?
-      'Prompt appears, then a single model output streams in word by word'
+      'Prompt and a single model output that streams in word by word'
     : keyframe === 3 ?
       'Many alternative outputs appear as separate lines'
     : 'Interactive word graph: overlapping paths across generations, node size or styling by frequency';
@@ -49,6 +52,7 @@ export function ScrollyDiagram({
         stepId={stepId}
         activeIndex={activeIndex}
         distributionsBeatIndex={distributionsBeatIndex}
+        listHighlightSubstring={listHighlightSubstring}
         scrollDirection={scrollDirection}
       />
     </div>

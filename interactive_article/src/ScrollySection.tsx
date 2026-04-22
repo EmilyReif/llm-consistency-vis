@@ -18,45 +18,90 @@ export interface ScrollyStep {
   id: string;
   keyframe: number;
   html: string;
+  /** Id of the first scroll step in this editorial group — pass to the diagram so keyframe viz does not remount mid-group. */
+  diagramStepId: string;
+  /** When set (KF3 list), substring matches in SVG output tokens get a highlight; cleared on the next scroll step. */
+  listHighlightSubstring?: string;
 }
 
-/** Edit this list only — `id` is `step-scrolly-${index + 1}` for scroll sentinels / diagram keys. */
+/** Plain string = paragraph inner HTML; object = optional `listHighlightSubstring` for the viz list view. */
+export type ScrollyParagraphSpec = string | { html: string; listHighlightSubstring?: string };
+
+function paragraphHtml(p: ScrollyParagraphSpec): string {
+  return typeof p === 'string' ? p : p.html;
+}
+
+function paragraphListHighlight(p: ScrollyParagraphSpec): string | undefined {
+  return typeof p === 'string' ? undefined : p.listHighlightSubstring;
+}
+
+/**
+ * One narrative group: shared keyframe; each entry is one paragraph (`<p>`) that scrolls in as its own sticky step.
+ * Only the first paragraph of a group “anchors” keyframe transitions for the viz (`diagramStepId`).
+ */
 export interface ScrollyStepBeat {
   keyframe: number;
-  html: string;
+  paragraphs: ScrollyParagraphSpec[];
 }
 
 const SCROLLY_STEP_ID_PREFIX = 'step-scrolly';
 
 /**
- * Keyframes: 2 = prompt / loading / single streaming output, 3 = many output lines (two beats: reveal + static copy), 4 = graph.
+ * Keyframes: 2 = prompt / loading / single streaming output, 3 = many output lines, 4 = graph.
  */
 const SCROLLY_STEP_BEATS: ScrollyStepBeat[] = [
   {
     keyframe: 2,
-    html: `<p>For example, we typically interact with LLMs by giving them a prompt, and then getting a single response.</p>`,
+    paragraphs: [
+      'For example, we typically interact with LLMs by giving them a prompt, and then getting a single response.',
+    ],
   },
   {
     keyframe: 3,
-    html: `<p>In reality, though, this output is just one sample from the underlying distribution: many are possible, and the ways they differ or are similar can be surprising.</p> <p>For example, in the generations here, <strong>Elara</strong> appears more frequently than you might expect based on how open-ended the prompt is.</p>`,
+    paragraphs: [
+      'In reality, though, this output is just one sample from the underlying distribution: many are possible, and the ways they differ or are similar can be surprising.',
+      {
+        html: 'For example, in the generations here (prompt from <a href="https://arxiv.org/abs/2504.05228" rel="noopener noreferrer">NoveltyBench</a>), <strong>Elara</strong> appears more frequently than you might expect based on how open-ended the prompt is.',
+        listHighlightSubstring: 'Elara',
+      },
+    ],
   },
   {
     keyframe: 4,
-    html: `<p>This raises a new question: What is the best way to look at a bunch of outputs?</p><p>In reality, since the LLM generates token-by-token, a tree might seem natural. However, the outputs often reconverge on a common word or phrase.</p>`,
+    paragraphs: [
+      'This raises a new question: What is the best way to look at a bunch of outputs and show these types of repetitions?',
+      'Since the LLM generates token-by-token, a tree might seem natural. However, the outputs often reconverge on a common word or phrase.',
+    ],
   },
   {
     keyframe: 4,
-    html: `<p>Can we instead visualize this as a graph? We lose the ability to read each completion line by line, but gain a single picture of how mass is spread across phrasing&mdash;where samples agree, branch apart, and meet again.</p><p>Each completion is a <em>path</em> through <em>nodes</em> (words or short chunks). When generations share a stretch of text, their paths run along the same edges, showing shared structure. Node size and weight reflect how often a piece of wording appears across samples.</p>`,
+    paragraphs: [
+      'Can we instead visualize this as a graph? We lose the ability to read each completion line by line, but gain a single picture of where samples agree, branch apart, and meet again.',
+      'Each completion is a <em>path</em> through <em>nodes</em> (words or short chunks). When generations share a stretch of text, their paths run along the same edges, showing shared structure. Node size and weight reflect how often a piece of wording appears across samples. We call this visualization GROVE (a Graph Representation of Output Variability and Examples)'
+    ],
   },
 ];
 
-const STEPS: ScrollyStep[] = SCROLLY_STEP_BEATS.map((beat, i) => ({
-  ...beat,
-  id: `${SCROLLY_STEP_ID_PREFIX}-${i + 1}`,
-}));
+const STEPS: ScrollyStep[] = [];
+SCROLLY_STEP_BEATS.forEach((beat) => {
+  let diagramStepId = '';
+  beat.paragraphs.forEach((para, pIdx) => {
+    const id = `${SCROLLY_STEP_ID_PREFIX}-${STEPS.length + 1}`;
+    if (pIdx === 0) diagramStepId = id;
+    const inner = paragraphHtml(para);
+    const listHighlightSubstring = paragraphListHighlight(para);
+    STEPS.push({
+      id,
+      keyframe: beat.keyframe,
+      html: `<p>${inner}</p>`,
+      diagramStepId,
+      ...(listHighlightSubstring ? { listHighlightSubstring } : {}),
+    });
+  });
+});
 
-/** First keyframe-3 beat only: line-by-line output reveal runs when this index is active. */
-export const SCROLLY_DISTRIBUTIONS_BEAT_INDEX = SCROLLY_STEP_BEATS.findIndex((b) => b.keyframe === 3);
+/** Scroll index of the first paragraph of the keyframe-3 group — line-by-line output reveal runs only here. */
+export const SCROLLY_DISTRIBUTIONS_BEAT_INDEX = STEPS.findIndex((s) => s.keyframe === 3 && s.id === s.diagramStepId);
 
 function getActiveScrollyBeat(articleRefs: React.MutableRefObject<(HTMLElement | null)[]>): number {
   let next = 0;
@@ -81,14 +126,6 @@ function getActiveScrollyBeat(articleRefs: React.MutableRefObject<(HTMLElement |
   return next;
 }
 
-function isPageReload(): boolean {
-  if (typeof performance === 'undefined') return false;
-  const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
-  if (entry?.type === 'reload') return true;
-  const legacy = (performance as unknown as { navigation?: { type: number } }).navigation;
-  return legacy?.type === 1;
-}
-
 export function ScrollySection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [stickyTops, setStickyTops] = useState<number[]>(() => STEPS.map(() => 0));
@@ -111,24 +148,6 @@ export function ScrollySection() {
   useLayoutEffect(() => {
     prevBeatRef.current = activeIndex;
   }, [activeIndex]);
-
-  /**
-   * Full reload while scrolled into the block (e.g. graph beat) restores a heavy mid-sequence state.
-   * Jump to the top of the scrolly so the narrative and viz stay aligned without a long catch-up.
-   */
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined' || !isPageReload()) return;
-    const root = sectionRef.current;
-    if (!root) return;
-    const docTop = root.getBoundingClientRect().top + window.scrollY;
-    const docBottom = docTop + root.offsetHeight;
-    const scrollY = window.scrollY;
-    const viewBottom = scrollY + window.innerHeight;
-    const overlapsScrolly = viewBottom > docTop && scrollY < docBottom;
-    if (overlapsScrolly && scrollY > docTop + 1) {
-      window.scrollTo({ top: docTop, behavior: 'auto' });
-    }
-  }, []);
 
   const recomputeStickyTops = () => {
     const heights = STEPS.map((_, i) => {
@@ -206,7 +225,8 @@ export function ScrollySection() {
     });
   }, [activeIndex]);
 
-  const { keyframe, id: stepId } = STEPS[activeIndex] ?? STEPS[0];
+  const activeStep = STEPS[activeIndex] ?? STEPS[0];
+  const { keyframe, diagramStepId: stepId, listHighlightSubstring } = activeStep;
 
   return (
     <section ref={sectionRef} className="scrolly-root" aria-label="Scrollytelling">
@@ -238,6 +258,7 @@ export function ScrollySection() {
                   activeIndex={activeIndex}
                   distributionsBeatIndex={SCROLLY_DISTRIBUTIONS_BEAT_INDEX}
                   keyframe={keyframe}
+                  listHighlightSubstring={listHighlightSubstring}
                   scrollDirection={scrollDirection}
                   stepId={stepId}
                 />

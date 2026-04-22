@@ -7,18 +7,27 @@ import {
   DISPLAY_QUOTE_BAUDELAIRE,
   DISPLAY_QUOTE_GREEK,
   DISPLAY_QUOTE_HAIKU,
+  DISPLAY_QUOTE_GREEK_TEMP_COMPARE,
+  DISPLAY_QUOTE_JOKE_MODEL_COMPARE,
   DISPLAY_QUOTE_PRESIDENTS,
-  DISPLAY_QUOTE_RANDOM,
   getBaudelaireGenerations,
   getGreekDeityGenerations,
+  getGreekDeityTemp02Generations,
+  getGreekDeityTemp09Generations,
   getHaikuGenerations,
+  getJokeGpt4oGenerations,
+  getJokeGpt35TurboGenerations,
   getObamaSummaries,
-  getRandomNumbersGenerations,
   getTrumpSummaries,
 } from './articleMotivatingExamplesData';
 
 if (typeof window !== 'undefined') {
-  prefetchScrollyWordGraphModel().catch(() => {});
+  const startScrollyGraphPrefetch = () => prefetchScrollyWordGraphModel().catch(() => {});
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.setTimeout(startScrollyGraphPrefetch, 0);
+    });
+  });
 }
 
 function DistillAffilRef({ id }: { id: 1 | 2 }) {
@@ -28,11 +37,50 @@ function DistillAffilRef({ id }: { id: 1 | 2 }) {
 export default function App() {
   const paperFig = (file: string) => `${process.env.PUBLIC_URL || ''}/paper-figures/${file}`;
 
+  React.useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'manual';
+      }
+    } catch {
+      /* ignore */
+    }
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    const legacy = (performance as unknown as { navigation?: { type: number } }).navigation;
+    const isReload = nav?.type === 'reload' || legacy?.type === 1;
+    if (isReload) {
+      window.scrollTo(0, 0);
+    }
+  }, []);
+
   return (
     <>
       <div className="article-app">
       <header className="article-header">
-        <h1>Exploring LLM output distributions</h1>
+        <h1>Beyond One Output</h1>
+        <p className="article-header-subtitle">
+          Visualizing and Comparing Distributions of Language Model Generations
+        </p>
+        <nav className="article-header-links" aria-label="Paper, demo, and code">
+          <a className="article-header-outlink" href="https://arxiv.org/abs/2604.18724" rel="noopener noreferrer">
+            paper
+          </a>
+          <span className="article-header-link-sep" aria-hidden>
+            {' '}
+            &middot;{' '}
+          </span>
+          <a className="article-header-outlink" href="https://emilyreif.com/llm-consistency-vis/" rel="noopener noreferrer">
+            demo
+          </a>
+          <span className="article-header-link-sep" aria-hidden>
+            {' '}
+            &middot;{' '}
+          </span>
+          <a className="article-header-outlink" href="https://github.com/EmilyReif/llm-consistency-vis" rel="noopener noreferrer">
+            code
+          </a>
+        </nav>
         <div className="article-distill-byline" aria-label="Authors and affiliations">
           <div className="article-distill-byline-columns">
             <div className="article-distill-byline-label article-distill-byline-cell-authors-h">Authors</div>
@@ -42,7 +90,7 @@ export default function App() {
               <DistillAffilRef id={1} />, Claire Yang
               <DistillAffilRef id={1} />, Jared Hwang
               <DistillAffilRef id={1} />, Deniz Nazar
-              <DistillAffilRef id={1} />, Noah Smith
+              <DistillAffilRef id={1} />, Noah A. Smith
               <DistillAffilRef id={1} />
               <DistillAffilRef id={2} />, Jeff Heer
               <DistillAffilRef id={1} />
@@ -52,20 +100,33 @@ export default function App() {
             </div>
             <div className="article-distill-byline-label article-distill-byline-cell-affil-h">Affiliations</div>
             <div className="article-distill-byline-affil-line article-distill-byline-cell-affil-line">
-              <DistillAffilRef id={1} /> University of Washington
-              {', '}
-              <DistillAffilRef id={2} /> AI2 (Allen Institute for AI)
+              <DistillAffilRef id={1} />University of Washington
+              {' '}
+              <DistillAffilRef id={2} />Allen Institute for AI
             </div>
           </div>
         </div>
       </header>
       <p>
-        A language model is indeed a statistical model: it samples from a distribution over a set of possible outputs. This
-        distribution can contain quirks like mode collapse, divergent outputs, and sensitivity to small prompt changes. How
-        does this stochasticity manifest in practice? How does it affect the way people use and evaluate language models?
-        What is the best way to inspect and understand these distributions? In our paper (TODO: link), we explore these
-        questions through a series of interactive examples and a user study.
+        While we usually interact with language models on a turn-by-turn basis, a single output is just one sample from
+        a distribution of possible outputs. This distribution can contain quirks like mode collapse, divergent outputs,
+        and sensitivity to small prompt changes.
+        
+        </p>
+        <p>
+
+         A growing line of work interrogates that default: a single
+        on-screen response can increase{' '}
+        <a href="https://arxiv.org/abs/2503.16114">undue trust</a> and anthropomorphization relative to showing many
+        samples, while &ldquo;mesoscale&rdquo; interfaces aim to help people make sense of{' '}
+        <a href="https://doi.org/10.1145/3613904.3642139">tens to hundreds</a> of completions at once. Meanwhile, people
+        struggle to iterate on prompts, whether because it's because they{' '}
+        <a href="https://doi.org/10.1145/3544548.3581388">explore opportunistically</a> rather than systematically, or
+        because, <a href="https://doi.org/10.1145/3706598.3714319">without gold labels</a> for a new task, it is hard to know whether a
+        prompt is improving. How does this stochasticity manifest in practice? How does it affect the way people use and evaluate language
+        models? What is the best way to inspect, understand, and compare these distributions?
       </p>
+
       </div>
 
       <div className="scrolly-full-bleed">
@@ -74,11 +135,10 @@ export default function App() {
 
       <div className="article-app">
       <section className="article-below-scrolly-top" aria-label="Interactive examples">
-        <h2>What can we see?</h2>
         <p className="article-section-lede">
-The examples below all show a collection of outputs from a single prompt. Use the control strip on each figure to switch between list and graph views, choose how many cached completions to include, fade rare phrasing, and adjust layout spread.
+The examples below show collections of outputs from a single prompt, visualized in this way. Use the control strip on each figure to switch between list and graph views, choose how many cached completions to include, hide longtail outputs, and adjust layout spread.
         </p>
-
+{/* 
         <ArticleMotivatingExample
           id="greek-deity"
           title="Factual recall"
@@ -91,9 +151,13 @@ The examples below all show a collection of outputs from a single prompt. Use th
           }}
         >
           <p>
-            For a straightforward knowledge question ("What is a diety from Greek mythology?"), most outputs are different phrasings of "Zeus".
+            For a straightforward knowledge question (&ldquo;What is a diety from Greek mythology?&rdquo;; prompt from{' '}
+            <a href="https://arxiv.org/abs/2504.05228" rel="noopener noreferrer">
+              NoveltyBench
+            </a>
+            ), the answer is always Zeus, though there is some variety in phrasing.
           </p>
-        </ArticleMotivatingExample>
+        </ArticleMotivatingExample> */}
 
         <ArticleMotivatingExample
           id="baudelaire"
@@ -108,8 +172,7 @@ The examples below all show a collection of outputs from a single prompt. Use th
         >
           <p>
             Translations of the same stanza from the Baudelaire poem {' '}
-            <a href="https://fleursdumal.org/poem/118">La Géante </a> share a similar structure but differ in some
-            phrasings. These kinds of visualizations have been used for machine translation historically as well, for example,{' '}
+            <a href="https://fleursdumal.org/poem/118">La Géante</a> share a similar structure, but specific words have a variety of possibile translations. Similar graph-based visualizations have been used for machine translation historically, for example,{' '}
             <a href="https://www.cs.toronto.edu/~gpenn/papers/collins_lattice_uncertainty_2007.pdf">
               lattice- and graph-style views of many hypotheses
             </a>
@@ -129,7 +192,7 @@ The examples below all show a collection of outputs from a single prompt. Use th
           }}
         >
           <p>
-            Another open-ended prompt, this time asking for a haiku about snow, produces a collection of outputs that share very similar words and phrasings. LLMs have been critiqued for generating generic poetry that doesn't feel like human-written poetry; reverting to the same phrases is one aspect of this.
+            An open-ended prompt asking for a haiku about snow produces a collection of outputs that share very similar words and phrasings. LLM poetry is often criticized as formulaic and derivative, and this is one aspect of that.
           </p>
         </ArticleMotivatingExample>
 
@@ -138,13 +201,11 @@ The examples below all show a collection of outputs from a single prompt. Use th
       <section className="article-below-scrolly" aria-label="Planned comparison examples">
         <h2>Comparisons</h2>
         <p className="article-section-lede">
-          <em>
-            [TODO: Frame how side-by-side or overlaid distributions support cross-model and sampling comparisons.]
-          </em>
+            When comparing prompts or models, it can be hard to know if a single output is representative of the overall behavior. Visualizing the distributions side-by-side can help understand whether or not there is a meaningful change, and if so, how it manifests.
         </p>
         <ArticleMotivatingExample
           id="presidents-compare"
-          title="Comparison: two related prompts, two color tracks"
+          title="Two related prompts"
           svgHeightPx={700}
           promptQuote={DISPLAY_QUOTE_PRESIDENTS}
           promptGroupsSpec={{
@@ -154,100 +215,77 @@ The examples below all show a collection of outputs from a single prompt. Use th
           }}
         >
           <p>
-            Asking for one-sentence summaries of two presidencies surfaces two partially overlapping vocabularies
-            (policy areas, epithets, historical references) in two distinct bands. Comparison mode lays out each
-            prompt&rsquo;s completions in its own vertical region so you can relate intra-prompt consensus
-            to cross-prompt differences&mdash;the kind of structural judgment our participants often made with graph-style
-            summaries.
+            Each of the one-sentence summaries of the Trump and Obama presidencies share a similar structure, but different specific policies and historical references are mentioned.
           </p>
         </ArticleMotivatingExample>
-        <h3>Comparing models (across families)</h3>
-        <p>
-          <em>
-            [TODO: e.g. same prompt under GPT vs. Claude vs. Gemini (or similar)&mdash;contrasting vocabulary,
-            structure, and modal phrasing across model families; figure / interactive.]
-          </em>
-        </p>
+        <ArticleMotivatingExample
+          id="greek-deity-temp-compare"
+          title="Comparing temperature settings"
+          svgHeightPx={700}
+          promptQuote={DISPLAY_QUOTE_GREEK_TEMP_COMPARE}
+          compareLegend={{
+            aLabel: 'Temperature: 0.2',
+            bLabel: 'Temperature: 0.9',
+          }}
+          promptGroupsSpec={{
+            mode: 'compare',
+            a: { promptId: 'greek-deity-t0.2', generationsFull: getGreekDeityTemp02Generations() },
+            b: { promptId: 'greek-deity-t0.9', generationsFull: getGreekDeityTemp09Generations() },
+          }}
+        >
+          <p>
+            The response to the factual question (&ldquo;what is a greek Diety?&rdquo;; prompt from{' '}
+            <a href="https://arxiv.org/abs/2504.05228" rel="noopener noreferrer">
+              NoveltyBench
+            </a>
+            ) is always Zeus. Increasing the temperature from 0.2 to 0.9 produces more diverse responses, but only in
+            phrasing and detail.
+          </p>
+        </ArticleMotivatingExample>
+        <ArticleMotivatingExample
+          id="joke-model-compare"
+          title="Comparing models within a family"
+          svgHeightPx={700}
+          promptQuote={DISPLAY_QUOTE_JOKE_MODEL_COMPARE}
+          compareLegend={{
+            aLabel: 'GPT-4o',
+            bLabel: 'GPT-3.5-turbo',
+          }}
+          promptGroupsSpec={{
+            mode: 'compare',
+            a: { promptId: 'joke-gpt-4o', generationsFull: getJokeGpt4oGenerations() },
+            b: { promptId: 'joke-gpt-35-turbo', generationsFull: getJokeGpt35TurboGenerations() },
+          }}
+        >
+          <p>
+            Even within the GPT family, different models produce different jokes in response to the same prompt
+            (&ldquo;Tell me a joke&rdquo;; prompt from{' '}
+            <a href="https://arxiv.org/abs/2504.05228" rel="noopener noreferrer">
+              NoveltyBench
+            </a>
+            ). While GPT-4o is generally a higher-accuracy model, it produces less diverse jokes than GPT-3.5-turbo.
+          </p>
+        </ArticleMotivatingExample>
 
-        <h3>Comparing models (within families)</h3>
-        <p>
-          <em>
-            [TODO: e.g. successive sizes or versions within one line (3.5 vs. 4, small vs. large)&mdash;how intra-family
-            changes shift the batch distribution; figure / interactive.]
-          </em>
-        </p>
-
-        <h3>Comparing temperatures</h3>
-        <p>
-          <em>
-            [TODO: e.g. same model and prompt at low vs. high temperature&mdash;entropy, diversity, and collapse in
-            the graph; figure / interactive.]
-          </em>
-        </p>
       </section>
 
       <section className="article-below-scrolly" aria-label="User studies">
         <h2>User studies</h2>
         <p className="article-section-lede">
-          In a formative semi-structured interview study, we spoke with thirteen researchers in NLP and HCI who use
-          language models on open-ended tasks. Sessions lasted about half an hour and covered when stochasticity matters in
-          their work, how they sample and inspect many completions, what they mean by &ldquo;diversity&rdquo; or a
-          &ldquo;distribution&rdquo; over text, and reactions to an early graph prototype&mdash;grounding the design goals
-          behind GROVE.
+          We interviewed 13 researchers who use LMs for open-ended tasks to understand how they reason about stochastic
+          outputs. They emphasized that evaluation is inherently distributional (single examples are unreliable), but also
+          difficult, since text lacks clear units of variation and inspecting many outputs is costly. Participants wanted
+          tools to balance diversity and consistency without relying solely on manual inspection. These interviews grounded the design criteris for GROVE. See Sec.&nbsp;3 of our
+          <a href="https://arxiv.org/pdf/2604.18724">paper</a> for more details.
         </p>
-        <h3>Findings</h3>
-        <ul className="article-formative-findings">
-          <li>
-            <strong>Adopting LMs out of necessity, not enthusiasm.</strong> Many participants treated models as the only
-            practical way to get fluent language on novel tasks without massive data or crowdwork, not because the LM was
-            ideal. One researcher said simply: &ldquo;there just wasn&rsquo;t really anything else that would have worked
-            [for our task].&rdquo;
-          </li>
-          <li>
-            <strong>Tools that enable nuanced behaviors also produce nuanced failures.</strong> Benchmarks and automatic
-            metrics were often a starting point, but rarely settled whether behavior was good enough for a specific use
-            case. As one put it: &ldquo;quantitative evaluation isn&rsquo;t great. No automatic metrics really apply to
-            our problem.&rdquo;
-          </li>
-          <li>
-            <strong>Evaluation requires distributional analysis.</strong> A single completion could be misleading; people
-            cared about within-input diversity versus meaningful differences when comparing prompts. One summarized the
-            iteration problem this way: &ldquo;it&rsquo;s a huge problem that a single output from model A could have also
-            come from model B.&rdquo;
-          </li>
-          <li>
-            <strong>What does &ldquo;distribution&rdquo; mean for natural language?</strong> There was no shared
-            operationalization&mdash;unlike numeric outputs, text has no agreed units of variation, so assessments were
-            often an &ldquo;impression test&rdquo; from reading many examples.
-          </li>
-          <li>
-            <strong>Direct evaluation does not scale for distributions.</strong> Inspecting many generations at once was
-            cognitively costly; some avoided stochasticity or large batches. One wished for richer multi-example
-            workflows but noted: &ldquo;It&rsquo;s expensive to generate, and hard to qualitatively understand.&rdquo;
-          </li>
-          <li>
-            <strong>Distributions matter beyond evaluation.</strong> Open-ended creativity, synthetic data uniformity,
-            matching human-like variation, reasoning traces, and intentionally diverse multi-agent setups all made the
-            spread of outputs a first-class concern. One researcher building multiple LM experts asked: &ldquo;If I&rsquo;ve
-            accidentally created the same agent multiple times, or they&rsquo;re all giving the same advice, then why not
-            just make one?&rdquo;
-          </li>
-          <li>
-            <strong>Consistency can also be desirable.</strong> For multi-step or user-facing systems, inconsistency could
-            cascade; participants wanted controlled variation (semantic consistency with flexible phrasing), not
-            chaotically different behaviors. As one participant put it, &ldquo;[inconsistency] is worse when it&rsquo;s a
-            part of a larger system. It can cascade and mess up the whole thing,&rdquo; motivating careful inspection of
-            full output sets.
-          </li>
-        </ul>
         <h3>Controlled studies</h3>
         <p>
           We also ran three within-subjects crowdsourced studies on Prolific (N=47, 44, and 40), comparing the merged
           graph with the same outputs in a plain list. Wilcoxon tests on per-participant accuracy (graph &minus; list)
-          favored the graph <em>only</em> for judging relative diversity across temperature (<i>p</i> = 0.012, <i>n</i> =
-          36); the list was more accurate for questions about one distribution and for two-prompt comparison (
+          favored the graph only for judging relative diversity across temperature (<i>p</i> = 0.012, <i>n</i> =
+          36); the list led to higher accuracy on questions about one distribution and for two-prompt comparison (
           <i>p</i> = 0.009, <i>n</i> = 26; <i>p</i> = 0.002, <i>n</i> = 40). Preferences mirrored that
-          split&mdash;strongly pro-graph for diversity, more mixed or polarized on the other tasks.
+          split, and were pro-graph for diversity, more mixed or polarized on the other tasks.
         </p>
         <figure className="article-graph-figure">
           <img
@@ -279,13 +317,22 @@ The examples below all show a collection of outputs from a single prompt. Use th
       <section className="article-below-scrolly" aria-label="Discussion">
         <h2>Discussion</h2>
         <p>
-          <em>[TODO: limitations, design tradeoffs, when graph views help vs. hurt, relation to prior work.]</em> Duis
-          aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
-          occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+          Our results point to a hybrid workflow, not a single &ldquo;winning&rdquo; view. A merged-token graph
+          especially supports structural, distribution-level questions (for example, relative diversity when temperature
+          changes), but a plain list was often more accurate for reading one set of outputs closely or for comparing two
+          prompts. Qualitative feedback from the evaluative studies mirrors that tradeoff: people valued the graph for
+          spotting modes and repetition at a glance, and the list for scanning exact wording, with many asking for a way to
+          move between the two. That pattern suggests distributional sensemaking is as much about choosing the right view
+          for the task as about any one encoding in isolation.
         </p>
         <p>
-          Curabitur pretium tincidunt lacus. This section can stay text-only, or you can drop in another small figure if
-          helpful for the camera-ready version.
+          How well a structural visualization works also depends on the shape of the text itself. Merged paths are
+          clearest when outputs align for long spans or repeatedly revisit the same templates; they become hard to read
+          when many generations diverge early into long, heterogeneous text, sometimes producing a dense &ldquo;hairball&rdquo;
+          layout. GROVE always shows a finite sample, not the full output distribution, and the paper discusses further
+          limits, including subsampling, aggregation, and when to use metrics versus raw text. For the full treatment of
+          these tradeoffs, follow-on questions, and limitations, see the discussion and &ldquo;Limitations / Future
+          Work&rdquo; in our <a href="https://arxiv.org/pdf/2604.18724">paper</a> .
         </p>
       </section>
 
