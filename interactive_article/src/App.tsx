@@ -345,7 +345,7 @@ The examples below show collections of outputs from a single prompt, visualized 
       <section className="article-below-scrolly" aria-label="Closing">
         <h2>What next?</h2>
         <p>
-          This is one way of visualizing distributions of language model generations, but there are a variety of other directions to explore. Fork the <a href="https://github.com/EmilyReif/llm-consistency-vis">repo</a>, or reach out to us at <a href="mailto:emreif@cs.washington.edu">emreif@cs.washington.edu</a> if you are interested in collaboratin!
+          This is one way of visualizing distributions of language model generations, but there are a variety of other directions to explore. Fork the <a href="https://github.com/EmilyReif/llm-consistency-vis">repo</a>, or reach out to us at <a href="mailto:emreif@cs.washington.edu">emreif@cs.washington.edu</a> if you're interested in collaborating!
         </p>
       </section>
 
