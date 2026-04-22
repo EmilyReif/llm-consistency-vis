@@ -3,6 +3,7 @@ import './article.css';
 import { prefetchScrollyWordGraphModel } from './ScrollyWordGraphUntangle';
 import { ScrollySection } from './ScrollySection';
 import { ArticleMotivatingExample } from './ArticleMotivatingExample';
+import { MobileArticleNotice } from './MobileArticleNotice';
 import {
   DISPLAY_QUOTE_BAUDELAIRE,
   DISPLAY_QUOTE_GREEK,
@@ -56,6 +57,7 @@ export default function App() {
 
   return (
     <>
+      <MobileArticleNotice />
       <div className="article-app">
       <header className="article-header">
         <h1>Beyond One Output</h1>
@@ -96,7 +98,7 @@ export default function App() {
               <DistillAffilRef id={1} />
             </div>
             <div className="article-distill-byline-published article-distill-byline-cell-published-date">
-              Apr. 15, 2026
+              Apr. 22, 2026
             </div>
             <div className="article-distill-byline-label article-distill-byline-cell-affil-h">Affiliations</div>
             <div className="article-distill-byline-affil-line article-distill-byline-cell-affil-line">
@@ -343,7 +345,7 @@ The examples below show collections of outputs from a single prompt, visualized 
       <section className="article-below-scrolly" aria-label="Closing">
         <h2>What next?</h2>
         <p>
-          This is one way of visualizing distributions of language model generations, but there are a variety of other directions to explore. Fork the <a href="https://github.com/EmilyReif/llm-consistency-vis">repo</a>, or reach out to us at <a href="mailto:emreif@cs.washington.edu">emreif@cs.washington.edu</a> if you are interested in collaborating.
+          This is one way of visualizing distributions of language model generations, but there are a variety of other directions to explore. Fork the <a href="https://github.com/EmilyReif/llm-consistency-vis">repo</a>, or reach out to us at <a href="mailto:emreif@cs.washington.edu">emreif@cs.washington.edu</a> if you are interested in collaboratin!
         </p>
       </section>
 

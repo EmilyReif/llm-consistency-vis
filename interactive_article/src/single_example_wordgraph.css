@@ -94,6 +94,18 @@ text {
     min-height: 0;
 }
 
+/* DOM order is viz then controls; on mobile put controls on top, graph below. */
+@media (max-width: 719px) {
+    .article-example-untangle.article-example-untangle--sidebar {
+        flex-direction: column-reverse;
+    }
+
+    .graph-controls-sidebar.graph-controls-sidebar--article-motivating {
+        border-top: none;
+        border-bottom: 1px solid #e0e0e0;
+    }
+}
+
 @media (min-width: 720px) {
     .article-example-untangle.article-example-untangle--sidebar {
         flex-direction: row;
@@ -193,6 +205,22 @@ text {
         border-top: none;
         border-left: 1px solid #e0e0e0;
         align-self: stretch;
+    }
+}
+
+/* Tighter control stack + more horizontal inset (must follow base .graph-controls-sidebar--article-motivating so it wins) */
+@media (max-width: 719px) {
+    .graph-controls-sidebar.graph-controls-sidebar--article-motivating {
+        gap: 6px;
+        padding: 6px 1.25rem 8px;
+    }
+
+    .graph-controls-sidebar.graph-controls-sidebar--article-motivating .slider-container label {
+        margin-bottom: 0;
+    }
+
+    .graph-controls-sidebar.graph-controls-sidebar--article-motivating .MuiSlider-root {
+        padding: 3px 0 5px;
     }
 }
 

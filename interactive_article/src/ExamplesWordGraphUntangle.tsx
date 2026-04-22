@@ -576,7 +576,7 @@ class ExamplesWordGraphUntangle extends React.Component<Props, State> {
                     showMotivating
                         ? {
                               display: 'flex',
-                              flexDirection: 'row',
+                              /* flex-direction: row | column from .article-example-untangle--sidebar in CSS (inline row would break mobile) */
                               alignItems: 'stretch',
                               width: '100%',
                               height: '100%',

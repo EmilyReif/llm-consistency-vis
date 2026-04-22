@@ -6,6 +6,14 @@
   line-height: 1.55;
 }
 
+/* Mobile-only dialog: MobileArticleNotice.tsx (matchMedia max-width: 899px) */
+.article-mobile-notice-text {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.5;
+  color: #1a1a1a;
+}
+
 .article-header {
   margin-bottom: 2rem;
 }
@@ -855,20 +863,79 @@
   }
 }
 
+/* Narrow viewports: graph on top (stable height), narration below (text-sized). */
 @media (max-width: 899px) {
-  .scrolly-viz-col {
-    order: -1;
-    border-bottom: 1px solid #c8c8c8;
-    padding-bottom: 1.25rem;
-    margin-bottom: 0.25rem;
+  /* Match main column text: .article-app uses 1rem side gutter + 1.25rem padding (full-bleed scrolly has no outer margin) */
+  .scrolly-root--mobile-split {
+    margin: 1.25rem 0 0;
+    padding: 0 calc(1rem + 1.25rem);
   }
 
-  .scrolly-viz-sticky {
+  .scrolly-mobile-pinned {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 100vh;
+    max-height: 100dvh;
+    box-sizing: border-box;
+    background: #fff;
+  }
+
+  .scrolly-mobile-viz-surface {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     position: relative;
-    top: auto;
   }
 
-  .scrolly-prompt-rail {
-    max-height: none;
+  .scrolly-mobile-narration {
+    flex: 0 0 auto;
+    min-height: 0;
+    max-height: 40dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.6rem 0 0.75rem;
+    box-sizing: border-box;
+    border-top: 1px solid #c8c8c8;
+  }
+
+  .scrolly-mobile-narration p {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.5;
+    color: #1a1a1a;
+  }
+
+  .scrolly-root--mobile-split .scrolly-viz-panel--sequence,
+  .scrolly-root--mobile-split .scrolly-viz-main--sequence,
+  .scrolly-root--mobile-split .scrolly-diagram.scrolly-diagram-sequence,
+  .scrolly-root--mobile-split .scrolly-sequence-viz,
+  .scrolly-root--mobile-split .scrolly-seq-graph-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .scrolly-root--mobile-split .scrolly-viz-main--sequence {
+    min-height: 0;
+  }
+
+  .scrolly-wg-loading {
+    min-height: min(40vh, 360px);
+  }
+
+  .scrolly-root--mobile-split .scrolly-seq-graph-panel .scrolly-untangle-root {
+    min-height: 0;
+    height: 100%;
+    flex: 1 1 auto;
+  }
+
+  .scrolly-root--mobile-split .scrolly-untangle-root {
+    min-height: 0;
+    height: 100%;
   }
 }

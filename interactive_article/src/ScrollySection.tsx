@@ -77,7 +77,8 @@ const SCROLLY_STEP_BEATS: ScrollyStepBeat[] = [
     keyframe: 4,
     paragraphs: [
       'Can we instead visualize this as a graph? We lose the ability to read each completion line by line, but gain a single picture of where samples agree, branch apart, and meet again.',
-      'Each completion is a <em>path</em> through <em>nodes</em> (words or short chunks). When generations share a stretch of text, their paths run along the same edges, showing shared structure. Node size and weight reflect how often a piece of wording appears across samples. We call this visualization GROVE (a Graph Representation of Output Variability and Examples)'
+      'Each completion is a <em>path</em> through <em>nodes</em> (words or short chunks). When generations share a stretch of text, their paths run along the same edges, showing shared structure. Node size and weight reflect how often a piece of wording appears across samples.', 
+      'We call this visualization GROVE (a Graph Representation of Output Variability and Examples)'
     ],
   },
 ];
@@ -126,9 +127,30 @@ function getActiveScrollyBeat(articleRefs: React.MutableRefObject<(HTMLElement |
   return next;
 }
 
+/**
+ * Map scroll progress through the scrolly section to the active beat. Uses the section’s actual
+ * height (CSS `dvh` spacers can disagree with `innerHeight`) so the last paragraph always
+ * gets a turn before the next article.
+ */
+function getActiveScrollyBeatFromSectionScroll(section: HTMLElement, stepCount: number): number {
+  if (stepCount <= 1) return 0;
+  const top = section.getBoundingClientRect().top;
+  const rel = -top;
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+  if (vh <= 0) return 0;
+  const totalH = section.offsetHeight;
+  const maxRel = Math.max(0, totalH - vh);
+  if (maxRel < 1) return 0;
+  const t = Math.min(1, Math.max(0, rel / maxRel));
+  return Math.min(stepCount - 1, Math.max(0, Math.round(t * (stepCount - 1))));
+}
+
 export function ScrollySection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [stickyTops, setStickyTops] = useState<number[]>(() => STEPS.map(() => 0));
+  const [isNarrow, setIsNarrow] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 899px)').matches
+  );
   const sectionRef = useRef<HTMLElement | null>(null);
   const textColRef = useRef<HTMLDivElement | null>(null);
   const articleRefs = useRef<(HTMLElement | null)[]>([]);
@@ -163,7 +185,17 @@ export function ScrollySection() {
     setStickyTops(tops);
   };
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 899px)');
+    const onChange = () => setIsNarrow(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   useLayoutEffect(() => {
+    if (isNarrow) return;
     recomputeStickyTops();
     const ro = new ResizeObserver(() => {
       recomputeStickyTops();
@@ -180,17 +212,23 @@ export function ScrollySection() {
       ro.disconnect();
       window.removeEventListener('resize', recomputeStickyTops);
     };
-  }, []);
+  }, [isNarrow]);
 
   const applyScrollSpy = useCallback(() => {
+    if (isNarrow && sectionRef.current) {
+      const next = getActiveScrollyBeatFromSectionScroll(sectionRef.current, STEPS.length);
+      setActiveIndex((prev) => (prev !== next ? next : prev));
+      return;
+    }
     const next = getActiveScrollyBeat(articleRefs);
     setActiveIndex((prev) => (prev !== next ? next : prev));
-  }, []);
+  }, [isNarrow]);
 
   /** After sticky `top` offsets are applied, recomputing the beat fixes reload-at-mid-scroll and layout shifts. */
   useLayoutEffect(() => {
+    if (isNarrow) return;
     applyScrollSpy();
-  }, [stickyTops, applyScrollSpy]);
+  }, [isNarrow, stickyTops, applyScrollSpy]);
 
   useEffect(() => {
     let scheduled = false;
@@ -228,6 +266,45 @@ export function ScrollySection() {
   const activeStep = STEPS[activeIndex] ?? STEPS[0];
   const { keyframe, diagramStepId: stepId, listHighlightSubstring } = activeStep;
 
+  const diagram = (
+    <div className="scrolly-viz-panel scrolly-viz-panel--sequence">
+      <div className="scrolly-viz-main scrolly-viz-main--sequence">
+        <ScrollyDiagram
+          activeIndex={activeIndex}
+          distributionsBeatIndex={SCROLLY_DISTRIBUTIONS_BEAT_INDEX}
+          keyframe={keyframe}
+          listHighlightSubstring={listHighlightSubstring}
+          scrollDirection={scrollDirection}
+          stepId={stepId}
+        />
+      </div>
+    </div>
+  );
+
+  if (isNarrow) {
+    return (
+      <section
+        ref={sectionRef}
+        className="scrolly-root scrolly-root--mobile-split"
+        aria-label="Scrollytelling"
+      >
+        <div className="scrolly-mobile-pinned">
+          <div className="scrolly-mobile-viz-surface">{diagram}</div>
+          <div
+            className="scrolly-mobile-narration"
+            aria-live="polite"
+            dangerouslySetInnerHTML={{ __html: activeStep.html }}
+          />
+        </div>
+        <div
+          className="scrolly-mobile-spacer"
+          style={{ minHeight: `calc((${STEPS.length} - 1) * 100dvh)` }}
+          aria-hidden
+        />
+      </section>
+    );
+  }
+
   return (
     <section ref={sectionRef} className="scrolly-root" aria-label="Scrollytelling">
       <div className="scrolly-inner">
@@ -251,20 +328,7 @@ export function ScrollySection() {
           ))}
         </div>
         <div className="scrolly-viz-col">
-          <div className="scrolly-viz-sticky">
-            <div className="scrolly-viz-panel scrolly-viz-panel--sequence">
-              <div className="scrolly-viz-main scrolly-viz-main--sequence">
-                <ScrollyDiagram
-                  activeIndex={activeIndex}
-                  distributionsBeatIndex={SCROLLY_DISTRIBUTIONS_BEAT_INDEX}
-                  keyframe={keyframe}
-                  listHighlightSubstring={listHighlightSubstring}
-                  scrollDirection={scrollDirection}
-                  stepId={stepId}
-                />
-              </div>
-            </div>
-          </div>
+          <div className="scrolly-viz-sticky">{diagram}</div>
         </div>
       </div>
     </section>
