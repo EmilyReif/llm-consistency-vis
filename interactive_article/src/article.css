@@ -664,7 +664,7 @@
 .scrolly-seq-output-line--one-line-preview {
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+  /* -webkit-line-clamp: 1; */
   overflow: hidden;
   min-width: 0;
   overflow-wrap: break-word;
