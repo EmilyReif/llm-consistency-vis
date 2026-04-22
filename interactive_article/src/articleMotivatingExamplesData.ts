@@ -73,4 +73,4 @@ export const DISPLAY_QUOTE_PRESIDENTS =
 export const DISPLAY_QUOTE_GREEK_TEMP_COMPARE =
   'Same model and prompt at different temperatures: What is a deity from Greek mythology?';
 export const DISPLAY_QUOTE_JOKE_MODEL_COMPARE =
-  'Same prompt on two models (GPT-4o vs. GPT-3.5-turbo): Tell me a joke.';
+  'Same prompt on two models: Tell me a joke.';

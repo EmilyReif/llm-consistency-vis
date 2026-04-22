@@ -187,6 +187,19 @@
   border-top: 1px solid #e8e8e8;
 }
 
+.article-acknowledgements h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.article-acknowledgements p {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
 .article-below-scrolly-top h3,
 .article-below-scrolly h3 {
   margin-top: 1.75rem;

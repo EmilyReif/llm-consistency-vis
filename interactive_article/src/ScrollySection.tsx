@@ -61,7 +61,7 @@ const SCROLLY_STEP_BEATS: ScrollyStepBeat[] = [
     paragraphs: [
       'In reality, though, this output is just one sample from the underlying distribution: many are possible, and the ways they differ or are similar can be surprising.',
       {
-        html: 'For example, in the generations here (prompt from <a href="https://arxiv.org/abs/2504.05228" rel="noopener noreferrer">NoveltyBench</a>), <strong>Elara</strong> appears more frequently than you might expect based on how open-ended the prompt is.',
+        html: 'For example, in the generations here, <strong>Elara</strong> appears more frequently than you might expect based on how open-ended the prompt is.',
         listHighlightSubstring: 'Elara',
       },
     ],

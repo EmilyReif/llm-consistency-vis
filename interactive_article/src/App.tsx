@@ -115,10 +115,9 @@ export default function App() {
         </p>
         <p>
 
-         A growing line of work interrogates that default: a single
-        on-screen response can increase{' '}
+         A growing line of work interrogates that default: showing only one sample can increase{' '}
         <a href="https://arxiv.org/abs/2503.16114">undue trust</a> and anthropomorphization relative to showing many
-        samples, while &ldquo;mesoscale&rdquo; interfaces aim to help people make sense of{' '}
+        samples, while "mesoscale" interfaces aim to help people make sense of{' '}
         <a href="https://doi.org/10.1145/3613904.3642139">tens to hundreds</a> of completions at once. Meanwhile, people
         struggle to iterate on prompts, whether because it's because they{' '}
         <a href="https://doi.org/10.1145/3544548.3581388">explore opportunistically</a> rather than systematically, or
@@ -151,7 +150,7 @@ The examples below show collections of outputs from a single prompt, visualized 
           }}
         >
           <p>
-            For a straightforward knowledge question (&ldquo;What is a diety from Greek mythology?&rdquo;; prompt from{' '}
+            For a straightforward knowledge question ("What is a diety from Greek mythology?"; prompt from{' '}
             <a href="https://arxiv.org/abs/2504.05228" rel="noopener noreferrer">
               NoveltyBench
             </a>
@@ -192,7 +191,7 @@ The examples below show collections of outputs from a single prompt, visualized 
           }}
         >
           <p>
-            An open-ended prompt asking for a haiku about snow produces a collection of outputs that share very similar words and phrasings. LLM poetry is often criticized as formulaic and derivative, and this is one aspect of that.
+            An open-ended prompt asking for a haiku about snow produces a collection of outputs that share very similar words and phrasings. LLM poetry is often criticized as formulaic and derivative: this shows what that means in practice.
           </p>
         </ArticleMotivatingExample>
 
@@ -234,12 +233,12 @@ The examples below show collections of outputs from a single prompt, visualized 
           }}
         >
           <p>
-            The response to the factual question (&ldquo;what is a greek Diety?&rdquo;; prompt from{' '}
+            The response to the factual question ("what is a greek Diety?"; prompt from{' '}
             <a href="https://arxiv.org/abs/2504.05228" rel="noopener noreferrer">
               NoveltyBench
             </a>
             ) is always Zeus. Increasing the temperature from 0.2 to 0.9 produces more diverse responses, but only in
-            phrasing and detail.
+            the way that they are phrased.
           </p>
         </ArticleMotivatingExample>
         <ArticleMotivatingExample
@@ -259,7 +258,7 @@ The examples below show collections of outputs from a single prompt, visualized 
         >
           <p>
             Even within the GPT family, different models produce different jokes in response to the same prompt
-            (&ldquo;Tell me a joke&rdquo;; prompt from{' '}
+            ("Tell me a joke"; prompt from{' '}
             <a href="https://arxiv.org/abs/2504.05228" rel="noopener noreferrer">
               NoveltyBench
             </a>
@@ -275,8 +274,7 @@ The examples below show collections of outputs from a single prompt, visualized 
           We interviewed 13 researchers who use LMs for open-ended tasks to understand how they reason about stochastic
           outputs. They emphasized that evaluation is inherently distributional (single examples are unreliable), but also
           difficult, since text lacks clear units of variation and inspecting many outputs is costly. Participants wanted
-          tools to balance diversity and consistency without relying solely on manual inspection. These interviews grounded the design criteris for GROVE. See Sec.&nbsp;3 of our
-          <a href="https://arxiv.org/pdf/2604.18724">paper</a> for more details.
+          tools to balance diversity and consistency without relying solely on manual inspection. These interviews grounded the design criteris for GROVE. See Sec. 3 of our <a href="https://arxiv.org/pdf/2604.18724">paper</a> for more details.
         </p>
         <h3>Controlled studies</h3>
         <p>
@@ -317,34 +315,45 @@ The examples below show collections of outputs from a single prompt, visualized 
       <section className="article-below-scrolly" aria-label="Discussion">
         <h2>Discussion</h2>
         <p>
-          Our results point to a hybrid workflow, not a single &ldquo;winning&rdquo; view. A merged-token graph
-          especially supports structural, distribution-level questions (for example, relative diversity when temperature
+          Our results point to a hybrid workflow: the graph supports structural, distribution-level questions (for example, relative diversity when temperature
           changes), but a plain list was often more accurate for reading one set of outputs closely or for comparing two
           prompts. Qualitative feedback from the evaluative studies mirrors that tradeoff: people valued the graph for
           spotting modes and repetition at a glance, and the list for scanning exact wording, with many asking for a way to
           move between the two. That pattern suggests distributional sensemaking is as much about choosing the right view
-          for the task as about any one encoding in isolation.
+          for the task as it is about developing any one encoding in isolation.
+        </p>
+        <p>
+          The same lesson shows up in our formative interviews (Sec.&nbsp;3 of the <a href="https://arxiv.org/pdf/2604.18724">paper</a>).
+          Participants were not doing one generic "open-ended" thing: they described goals such as curating synthetic
+          data (e.g. reviews), eliciting diversity in ensembled reasoning models, creative writing, domain-specific and user-facing language (e.g. empathetic
+          or medical-style help), and building or stress-testing whole systems, including coding and alignment
+          workflows, and setups that <em>intentionally</em> elicit many distinct agents, experts, or strategies to see how
+          they actually diverge. Each of these use cases comes with its own success criteria, failure modes, and data, so one-size-fits-all inspection is a poor fit. It will be interesting to see what
+          interfaces, summaries, and companion tools we can build for this landscape of distributional needs.
         </p>
         <p>
           How well a structural visualization works also depends on the shape of the text itself. Merged paths are
           clearest when outputs align for long spans or repeatedly revisit the same templates; they become hard to read
-          when many generations diverge early into long, heterogeneous text, sometimes producing a dense &ldquo;hairball&rdquo;
-          layout. GROVE always shows a finite sample, not the full output distribution, and the paper discusses further
-          limits, including subsampling, aggregation, and when to use metrics versus raw text. For the full treatment of
-          these tradeoffs, follow-on questions, and limitations, see the discussion and &ldquo;Limitations / Future
-          Work&rdquo; in our <a href="https://arxiv.org/pdf/2604.18724">paper</a> .
+          when many generations diverge early into long, heterogeneous text, sometimes producing a dense "hairball"
+          layout. For the full treatment of these tradeoffs, follow-on questions, and limitations, see the discussion and "Limitations / Future
+          Work" in our <a href="https://arxiv.org/pdf/2604.18724">paper</a> .
         </p>
       </section>
 
       <section className="article-below-scrolly" aria-label="Closing">
         <h2>What next?</h2>
         <p>
-          Is this the perfect visualization? No. Fork the repo and build on it:{' '}
-          <a href="https://github.com/EmilyReif/llm-consistency-vis">github.com/EmilyReif/llm-consistency-vis</a>
+          This is one way of visualizing distributions of language model generations, but there are a variety of other directions to explore. Fork the <a href="https://github.com/EmilyReif/llm-consistency-vis">repo</a>, or reach out to us at <a href="mailto:emreif@cs.washington.edu">emreif@cs.washington.edu</a> if you are interested in collaborating.
         </p>
+      </section>
 
-        <p className="article-placeholder-end">
-          End of draft body. Replace lorem and placeholders with final prose and embedded diagrams.
+      <section className="article-below-scrolly article-acknowledgements" aria-label="Acknowledgements">
+        <h2>Acknowledgements</h2>
+        <p>
+          We thank members of the Interactive Data Lab, especially Madeleine Grunde-McLaughlin, Hyeok Kim, and Ameya Patil,
+          as well as Noah's ARK Lab, and Adam Pearce, Martin Wattenberg, and Fernanda Vi&eacute;gas for their valuable
+          feedback and discussions. Emily Reif is supported by the Amazon AI PhD Fellowship. This material is based upon
+          work supported by the National Science Foundation under Award No. 2413244.
         </p>
       </section>
       </div>
