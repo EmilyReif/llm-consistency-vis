@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/llm-consistency-vis/interactive_article/static/css/main.b2126f75.css",
-    "main.js": "/llm-consistency-vis/interactive_article/static/js/main.ddf85315.js",
+    "main.js": "/llm-consistency-vis/interactive_article/static/js/main.e2062692.js",
     "index.html": "/llm-consistency-vis/interactive_article/index.html",
     "main.b2126f75.css.map": "/llm-consistency-vis/interactive_article/static/css/main.b2126f75.css.map",
-    "main.ddf85315.js.map": "/llm-consistency-vis/interactive_article/static/js/main.ddf85315.js.map"
+    "main.e2062692.js.map": "/llm-consistency-vis/interactive_article/static/js/main.e2062692.js.map"
   },
   "entrypoints": [
     "static/css/main.b2126f75.css",
-    "static/js/main.ddf85315.js"
+    "static/js/main.e2062692.js"
   ]
 }
