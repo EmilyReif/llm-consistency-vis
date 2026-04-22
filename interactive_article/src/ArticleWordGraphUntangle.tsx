@@ -7,6 +7,7 @@ import { ellipseForce } from "./lib/force_collide_ellipse";
 import { getNodeColor } from './lib/articleColorUtils';
 import { TokenizeMode, NodeDatum, LinkDatum } from './lib/graphTypes';
 import { wordGraphZoomEventFilter } from './lib/wordGraphZoomArm';
+import { ARTICLE_WORDGRAPH_CANVAS_FONT_STACK } from './lib/graphCanvasFont';
 
 const TRANSITION_DURATION = 300;
 /** Duration (ms) for untangle toggle animation */
@@ -553,8 +554,7 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
                 }
             });
 
-        // Add a group for all content that will be panned (will-change hints GPU layer for transforms)
-        const g = svg.append("g").attr("style", "will-change: transform");
+        const g = svg.append("g");
         this.mainGroup = g;
 
         // Add zoom behavior
@@ -1160,7 +1160,7 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
         if (!ctx) {
             return ((text ?? '').replace(/^##/, '')).length * PX_PER_CHAR_1D;
         }
-        ctx.font = `${fs}px monospace`;
+        ctx.font = `${fs}px ${ARTICLE_WORDGRAPH_CANVAS_FONT_STACK}`;
         return ctx.measureText((text ?? '').replace(/^##/, '')).width;
     }
 
@@ -1224,14 +1224,16 @@ class ArticleWordGraphUntangle extends React.Component<Props, State> {
     }
 
     private textLength(d: any) {
-        const chunkLengths = chunkText(d.word, this.wrapChunkSize()).map(chunk => {
-            return chunk.length * d.fontSize * 0.6; // Adjusted
-        });
-        return d3.max(chunkLengths) || 0;
+        const chunks = chunkText(d.word, this.wrapChunkSize());
+        const fs = d.fontSize;
+        const w = chunks.map((chunk) => this.measureTextWidth(chunk, fs));
+        return d3.max(w) || 0;
     }
 
     private textHeight(d: any) {
-        return chunkText(d.word, this.wrapChunkSize()).length * d.fontSize;
+        const n = chunkText(d.word, this.wrapChunkSize()).length;
+        if (n <= 0) return d.fontSize;
+        return d.fontSize * (1 + 1.2 * (n - 1));
     }
 
 

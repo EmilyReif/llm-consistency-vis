@@ -326,10 +326,10 @@ The examples below show collections of outputs from a single prompt, visualized 
         </p>
         <p>
           The same lesson shows up in our formative interviews (Sec.&nbsp;3 of the <a href="https://arxiv.org/pdf/2604.18724">paper</a>).
-          Participants were not doing one generic "open-ended" thing: they described goals such as curating synthetic
+          Participants were not doing one generic open-ended task: they described goals such as curating synthetic
           data (e.g. reviews), eliciting diversity in ensembled reasoning models, creative writing, domain-specific and user-facing language (e.g. empathetic
           or medical-style help), and building or stress-testing whole systems, including coding and alignment
-          workflows, and setups that <em>intentionally</em> elicit many distinct agents, experts, or strategies to see how
+          workflows, and setups that intentionally elicit many distinct agents, experts, or strategies to see how
           they actually diverge. Each of these use cases comes with its own success criteria, failure modes, and data, so one-size-fits-all inspection is a poor fit. It will be interesting to see what
           interfaces, summaries, and companion tools we can build for this landscape of distributional needs.
         </p>

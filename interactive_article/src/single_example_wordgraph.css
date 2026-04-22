@@ -35,6 +35,7 @@ text {
 /*
  * Layout code measures labels with canvas "monospace"; without this, SVG text inherits
  * article/template body fonts and the scrolly panel can pick up a different stack.
+ * Canvas layout (graphCanvasFont.ts) must use the same stack so measured widths match Safari.
  */
 .wordgraph-holder > svg,
 .article-example-untangle .wordgraph-svg-clip-wrap > svg,
