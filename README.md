@@ -1,4 +1,10 @@
-# LLM consistency visualzation
+# LLM consistency visualization
+
+- [Live Demo](https://emilyreif.com/llm-consistency-vis)
+- [Paper (VIS 2026)](https://arxiv.org/abs/2604.18724)
+- [Interactive Article](https://emilyreif.com/llm-consistency-vis/interactive_article)
+
+![LLM consistency visualization teaser](teaser.png)
 
 When an LLM returns a response, we’re actually sampling from a probability distribution over many possible outputs. But we usually only see one of those samples—the response that gets returned.
 
